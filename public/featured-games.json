@@ -1,3 +1,4 @@
 [
-  { "manifestUrl": "./light-trails/playweft.json" }
+  { "manifestUrl": "./light-trails/playweft.json" },
+  { "manifestUrl": "./pupdoku/playweft.json" }
 ]

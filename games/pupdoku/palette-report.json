@@ -1,0 +1,261 @@
+{
+  "status": "Optimization terminated successfully. (HiGHS Status 7: Optimal)",
+  "optimal": true,
+  "mipGap": 0.0,
+  "objective": 29.524827027331643,
+  "objectiveRecomputed": 29.52482702733176,
+  "lowerBound": 29.524827027331643,
+  "candidateCount": 240,
+  "boardIndependent": true,
+  "minimumDistance": 0.09728495610156399,
+  "losses": {
+    "gray": 0.5441775065633153,
+    "lightness": 0.23525414321491622,
+    "brightness": 0.0006194620998025582,
+    "darkness": 0.8358600454465193,
+    "saturationBalance": 0.1789684690632145,
+    "vivid": 0.061663856290001415,
+    "whiteMark": 0.0,
+    "absoluteChroma": 0.1003793826276549,
+    "earthyYellow": 0.07205909156280067,
+    "worstGray": 1.8225061359701258,
+    "worstBrightness": 0.014867090395261398,
+    "worstDarkness": 8.709326610491008,
+    "worstSaturationBalance": 0.712814117342408,
+    "worstWhiteMark": 0.0,
+    "pairSimilarity": 15.869442341458747,
+    "saturationSpread": 0.3668887748059859
+  },
+  "palette": [
+    {
+      "hex": "#dd5b8b",
+      "L": 0.6495354618693088,
+      "C": 0.16853771837206324,
+      "h": 359.8733128936799,
+      "s": 76.91569925509286,
+      "M": 49.759479474940086,
+      "contrast": 3.471397158630326
+    },
+    {
+      "hex": "#c45041",
+      "L": 0.5804601195488788,
+      "C": 0.1518003931155466,
+      "h": 29.80194832668733,
+      "s": 77.56012782932324,
+      "M": 45.027626451360256,
+      "contrast": 4.513916597523675
+    },
+    {
+      "hex": "#cf750c",
+      "L": 0.6491764499032929,
+      "C": 0.14922654710696626,
+      "h": 60.04773762243563,
+      "s": 71.79964913734567,
+      "M": 43.335274967211,
+      "contrast": 3.3263250343636694
+    },
+    {
+      "hex": "#918a24",
+      "L": 0.6210026357387637,
+      "C": 0.11886175191113908,
+      "h": 105.36879678897475,
+      "s": 64.87343876899769,
+      "M": 33.83103136114288,
+      "contrast": 3.5180779153440427
+    },
+    {
+      "hex": "#58a60d",
+      "L": 0.6492940570951359,
+      "C": 0.18564529532018254,
+      "h": 134.9311233708941,
+      "s": 81.50945290520926,
+      "M": 55.97308942787191,
+      "contrast": 3.0010406902446034
+    },
+    {
+      "hex": "#338f4e",
+      "L": 0.5791321699612885,
+      "C": 0.13114136460579615,
+      "h": 149.90627822443477,
+      "s": 71.29279955410888,
+      "M": 38.07014371126521,
+      "contrast": 3.9833672427994777
+    },
+    {
+      "hex": "#10a692",
+      "L": 0.6508621800970581,
+      "C": 0.11576555612806202,
+      "h": 179.96224172695918,
+      "s": 64.62286721056478,
+      "M": 35.31357535235194,
+      "contrast": 2.993923767249873
+    },
+    {
+      "hex": "#0c87aa",
+      "L": 0.5804322758182403,
+      "C": 0.10756868020285147,
+      "h": 224.88127500849606,
+      "s": 65.44398326587151,
+      "M": 32.066536854784076,
+      "contrast": 4.076292033424018
+    },
+    {
+      "hex": "#2e8efd",
+      "L": 0.6494061813166105,
+      "C": 0.18677127850037126,
+      "h": 255.10444946008852,
+      "s": 76.69436564581608,
+      "M": 49.19380524571973,
+      "contrast": 3.222004717734788
+    },
+    {
+      "hex": "#7368d2",
+      "L": 0.5791937066781013,
+      "C": 0.1575705123333446,
+      "h": 285.07283673395915,
+      "s": 75.28030416677329,
+      "M": 42.03838028105477,
+      "contrast": 4.447006929166511
+    },
+    {
+      "hex": "#a665fd",
+      "L": 0.6496879723938668,
+      "C": 0.21775646608266538,
+      "h": 300.07721804034895,
+      "s": 82.09042230978872,
+      "M": 56.1955025473053,
+      "contrast": 3.4963627170653386
+    },
+    {
+      "hex": "#b04daa",
+      "L": 0.5806869686726117,
+      "C": 0.17167437279516456,
+      "h": 329.8993539369009,
+      "s": 79.58873536316837,
+      "M": 47.265068479021316,
+      "contrast": 4.597314412800451
+    }
+  ],
+  "viewingBackgroundY": 89.7114471323983,
+  "model": {
+    "version": 1,
+    "calibration": "Design parameters, not fitted observer data or universal comfort thresholds",
+    "viewing": {
+      "whiteXYZ": [95.047, 100, 108.883],
+      "adaptingLuminance": 20,
+      "background": "#faf2e9",
+      "discountIlluminant": true
+    },
+    "grid": {
+      "lightness": [0.58, 0.6, 0.62, 0.64, 0.65],
+      "gamutFractions": [0.65, 0.82, 0.9, 0.98],
+      "hueStep": 15,
+      "hueFamilyWidth": 30,
+      "hues": [0, 30, 60, 105, 135, 150, 180, 225, 255, 285, 300, 330]
+    },
+    "gray": {
+      "midpoint": 64,
+      "width": 3.5,
+      "weight": 4,
+      "worstWeight": 4
+    },
+    "lightness": {
+      "low": 0.61,
+      "high": 0.65,
+      "width": 0.04,
+      "highWeight": 12,
+      "weight": 1
+    },
+    "brightness": {
+      "high": 0.65,
+      "width": 0.01,
+      "weight": 1,
+      "worstWeight": 2
+    },
+    "darkness": {
+      "low": 0.6,
+      "width": 0.02,
+      "weight": 2,
+      "worstWeight": 8
+    },
+    "saturationBalance": {
+      "low": 68,
+      "high": 80,
+      "width": 4,
+      "weight": 1,
+      "worstWeight": 1
+    },
+    "saturationSpread": {
+      "target": 16,
+      "width": 4,
+      "weight": 1,
+      "curve": "piecewise-linear-square"
+    },
+    "vivid": {
+      "saturationHigh": 78,
+      "saturationWidth": 8,
+      "colorfulnessHigh": 70,
+      "colorfulnessWidth": 20,
+      "weight": 1.5
+    },
+    "whiteMark": {
+      "low": 2.1,
+      "width": 0.25,
+      "weight": 2,
+      "worstWeight": 2
+    },
+    "absoluteChroma": {
+      "low": 0.135,
+      "high": 0.19,
+      "width": 0.03,
+      "weight": 0.5
+    },
+    "earthyYellow": {
+      "hue": 95,
+      "hueWidth": 25,
+      "lightnessLow": 0.65,
+      "width": 0.04,
+      "weight": 1
+    },
+    "palettePair": {
+      "minimum": 0.095,
+      "target": 0.18,
+      "width": 0.04,
+      "near": 0.105,
+      "nearWidth": 0.01,
+      "nearWeight": 20,
+      "weight": 15
+    },
+    "dynamic": {
+      "neighbor": {
+        "target": 0.2,
+        "width": 0.04,
+        "weight": 2,
+        "pairWeight": 2,
+        "worstWeight": 8
+      },
+      "dominance": {
+        "saturationHigh": 72,
+        "width": 8,
+        "weight": 3
+      },
+      "boardLightness": {
+        "low": 0.59,
+        "high": 0.63,
+        "width": 0.03,
+        "highWeight": 2,
+        "weight": 1
+      },
+      "boardChroma": {
+        "low": 0.15,
+        "high": 0.18,
+        "width": 0.03,
+        "weight": 1
+      },
+      "hueBalance": {
+        "chromaScale": 0.17,
+        "weight": 0.5
+      }
+    }
+  }
+}

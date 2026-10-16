@@ -34,8 +34,8 @@ const server = http.createServer(async (req, res) => {
       let pathname = decodeURIComponent(url.pathname);
       if (pathname === '/') pathname = '/index.html';
       else if (pathname === '/light-trails' || pathname === '/light-trails/') pathname = '/games/light-trails/index.html';
+      else if (/^\/(light-trails|pupdoku)\/icon\.svg$/.test(pathname)) pathname = '/public' + pathname;
       else if (pathname.startsWith('/light-trails/')) pathname = '/games' + pathname;
-      else if (pathname === '/light-trails.svg') pathname = '/public/light-trails.svg';
       else if (pathname === '/featured-games.json') pathname = '/public/featured-games.json';
       if (!['/index.html', '/games/', '/src/', '/public/'].some(prefix => pathname === prefix || pathname.startsWith(prefix.endsWith('/') ? prefix : prefix + '/'))) throw new Error('Invalid path');
       path = resolve(root, '.' + pathname);

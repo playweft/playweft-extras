@@ -11,10 +11,16 @@
     "check": "vite build --emptyOutDir && node --test tests/*.test.js",
     "test": "node --test tests/*.test.js"
   },
-  "engines": { "node": ">=22.12" },
+  "engines": {
+    "node": ">=22.12"
+  },
   "devDependencies": {
+    "happy-dom": "21.0.3",
     "vite": "8.1.5",
     "wasmoon": "1.16.0",
     "ws": "8.18.3"
+  },
+  "dependencies": {
+    "preact": "11.0.1"
   }
 }

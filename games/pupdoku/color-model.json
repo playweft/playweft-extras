@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "calibration": "Design parameters, not fitted observer data or universal comfort thresholds",
+  "viewing": {
+    "whiteXYZ": [95.047, 100, 108.883],
+    "adaptingLuminance": 20,
+    "background": "#faf2e9",
+    "discountIlluminant": true
+  },
+  "grid": {
+    "lightness": [0.58, 0.6, 0.62, 0.64, 0.65],
+    "gamutFractions": [0.65, 0.82, 0.9, 0.98],
+    "hueStep": 15,
+    "hueFamilyWidth": 30,
+    "hues": [0, 30, 60, 105, 135, 150, 180, 225, 255, 285, 300, 330]
+  },
+  "gray": {
+    "midpoint": 64,
+    "width": 3.5,
+    "weight": 4,
+    "worstWeight": 4
+  },
+  "lightness": {
+    "low": 0.61,
+    "high": 0.65,
+    "width": 0.04,
+    "highWeight": 12,
+    "weight": 1
+  },
+  "brightness": {
+    "high": 0.65,
+    "width": 0.01,
+    "weight": 1,
+    "worstWeight": 2
+  },
+  "darkness": {
+    "low": 0.6,
+    "width": 0.02,
+    "weight": 2,
+    "worstWeight": 8
+  },
+  "saturationBalance": {
+    "low": 68,
+    "high": 80,
+    "width": 4,
+    "weight": 1,
+    "worstWeight": 1
+  },
+  "saturationSpread": {
+    "target": 16,
+    "width": 4,
+    "weight": 1,
+    "curve": "piecewise-linear-square"
+  },
+  "vivid": {
+    "saturationHigh": 78,
+    "saturationWidth": 8,
+    "colorfulnessHigh": 70,
+    "colorfulnessWidth": 20,
+    "weight": 1.5
+  },
+  "whiteMark": {
+    "low": 2.1,
+    "width": 0.25,
+    "weight": 2,
+    "worstWeight": 2
+  },
+  "absoluteChroma": {
+    "low": 0.135,
+    "high": 0.19,
+    "width": 0.03,
+    "weight": 0.5
+  },
+  "earthyYellow": {
+    "hue": 95,
+    "hueWidth": 25,
+    "lightnessLow": 0.65,
+    "width": 0.04,
+    "weight": 1
+  },
+  "palettePair": {
+    "minimum": 0.095,
+    "target": 0.18,
+    "width": 0.04,
+    "near": 0.105,
+    "nearWidth": 0.01,
+    "nearWeight": 20,
+    "weight": 15
+  },
+  "dynamic": {
+    "neighbor": {
+      "target": 0.2,
+      "width": 0.04,
+      "weight": 2,
+      "pairWeight": 2,
+      "worstWeight": 8
+    },
+    "dominance": {
+      "saturationHigh": 72,
+      "width": 8,
+      "weight": 3
+    },
+    "boardLightness": {
+      "low": 0.59,
+      "high": 0.63,
+      "width": 0.03,
+      "highWeight": 2,
+      "weight": 1
+    },
+    "boardChroma": {
+      "low": 0.15,
+      "high": 0.18,
+      "width": 0.03,
+      "weight": 1
+    },
+    "hueBalance": {
+      "chromaScale": 0.17,
+      "weight": 0.5
+    }
+  }
+}

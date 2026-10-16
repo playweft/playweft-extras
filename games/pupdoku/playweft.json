@@ -1,0 +1,18 @@
+{
+  "$schema": "https://play.longern.com/schemas/game-manifest-v1.json",
+  "manifest_version": 1,
+  "id": "/pupdoku/",
+  "version": "1.4.0",
+  "protocol": { "min": 1, "max": 1 },
+  "start_url": "./",
+  "name": "Pupdoku",
+  "name_localized": { "zh-CN": "小狗数独" },
+  "description": "One pup per row, column and colored region. No touching, even diagonally.",
+  "description_localized": { "zh-CN": "每行、每列、每个色块各一只小狗，相邻的小狗不能贴贴。用逻辑找到唯一答案。" },
+  "categories": ["Puzzle"],
+  "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }],
+  "background_color": "#faf6ef",
+  "theme_color": "#936278",
+  "help_url": "./help.html",
+  "modes": { "solo": {} }
+}

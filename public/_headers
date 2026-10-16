@@ -10,5 +10,6 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: no-cache
 
-/*.svg
+/:game/icon.svg
+  Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=86400, must-revalidate

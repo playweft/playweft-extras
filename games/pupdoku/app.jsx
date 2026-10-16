@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { regionColors } from './colors.js';
-import { COMPLETION_TIMING } from './controller.js';
+import { COMPLETION_TIMING, LEVEL_TRANSITION_TIMING } from './controller.js';
 
 function Icon({ path, viewBox = '0 0 32 32' }) {
   return (
@@ -87,7 +87,7 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
       { duration: 220, easing: 'ease-out' },
     );
     // Re-entering the same cell intentionally cancels its previous animation.
-    animation.finished.catch(() => { });
+    animation.finished.catch(() => {});
     animations.current.set(cell, animation);
   }
   useLayoutEffect(() => {
@@ -295,7 +295,16 @@ export function PupdokuApp({ controller }) {
     document.addEventListener('keydown', keyboard);
     return () => document.removeEventListener('keydown', keyboard);
   }, []);
-  const { game, level, busy, generationError, message, completion } = state;
+  const {
+    game,
+    level,
+    busy,
+    generationError,
+    message,
+    completion,
+    transition,
+  } = state;
+  const loadingVisible = busy && transition === 'waiting';
   const lost = game?.hearts === 0;
   return (
     <main class="game" aria-label="小狗数独">
@@ -328,8 +337,17 @@ export function PupdokuApp({ controller }) {
         <div>Pups cannot touch</div>
       </div>
       <div class="board-space">
-        <div id="board-wrap" class="board-wrap" aria-busy={String(busy)}>
+        <div
+          id="board-wrap"
+          class="board-wrap"
+          aria-busy={String(busy)}
+          data-transition={transition ?? 'idle'}
+          style={{
+            '--level-fade': `${transition === 'in' ? LEVEL_TRANSITION_TIMING.fadeIn : LEVEL_TRANSITION_TIMING.fadeOut}ms`,
+          }}
+        >
           <Board
+            key={game ? `${game.puzzle.size}:${game.puzzle.seed}` : 'pending'}
             state={state}
             controller={controller}
             keyboardFocus={keyboardFocus}
@@ -340,7 +358,9 @@ export function PupdokuApp({ controller }) {
             class="loading"
             role="status"
             aria-label="正在生成关卡"
-            hidden={!busy}
+            aria-hidden={String(!loadingVisible)}
+            data-visible={String(loadingVisible)}
+            data-active={String(busy)}
           >
             <span class="spinner" />
           </div>

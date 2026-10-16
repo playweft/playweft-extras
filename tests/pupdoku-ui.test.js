@@ -9,6 +9,7 @@ import * as puzzle from '../games/pupdoku/puzzle.js';
 import {
   createPupdokuController,
   COMPLETION_TIMING,
+  LEVEL_TRANSITION_TIMING,
 } from '../games/pupdoku/controller.js';
 import { regionColors } from '../games/pupdoku/colors.js';
 
@@ -65,7 +66,7 @@ afterEach(() => {
   }
 });
 const flush = () => new Promise((resolve) => setImmediate(resolve));
-async function mount(saved, { vibrate } = {}) {
+async function mount(saved, { vibrate, workerAvailable = true } = {}) {
   const requests = [],
     workers = [],
     timers = new Map();
@@ -90,6 +91,7 @@ async function mount(saved, { vibrate } = {}) {
     schedule,
     unschedule,
     createWorker() {
+      if (!workerAvailable) return null;
       const worker = {
         postMessage(data) {
           requests.push(data);
@@ -135,13 +137,22 @@ async function mount(saved, { vibrate } = {}) {
   }
   async function finish({ endCompletion = true } = {}) {
     await act(async () => {
-      workers.at(-1).onmessage({
-        data: { puzzle: puzzle.generateLevel(requests.at(-1).seed) },
+      workers.at(-1).onmessage?.({
+        data: {
+          id: requests.at(-1).id,
+          puzzle: puzzle.generateLevel(requests.at(-1).seed),
+        },
       });
       await flush();
     });
-    if (endCompletion && controller.getSnapshot().completion?.phase === 'exit')
-      advance(COMPLETION_TIMING.fadeOut);
+    if (endCompletion) {
+      if (controller.getSnapshot().transition === 'out') {
+        advance(LEVEL_TRANSITION_TIMING.fadeOut);
+        await act(flush);
+      }
+      if (controller.getSnapshot().transition === 'in')
+        advance(LEVEL_TRANSITION_TIMING.fadeIn);
+    }
   }
   function pointer(name, index, pointerId = 1, pointerType = 'mouse') {
     const size = Math.sqrt(el('board').children.length);
@@ -183,66 +194,87 @@ function complete(ui) {
   assert.equal(ui.el('result').hidden, true);
 }
 
-test('a solved board pops its pups before the overlay, then generates once at fade-out without a next button', async () => {
+test('completion prefetches during hold, fades out the old board, then mounts fresh cells without a spinner', async () => {
   const board = puzzle.generateLevel(7),
     game = puzzle.createGame(board);
   for (let row = 0; row < board.size - 1; row++)
     game.cells[row * board.size + board.solution[row]] = 2;
+  const cross = board.solution[0] === 0 ? 1 : 0;
+  game.cells[cross] = 3;
   const ui = await mount(JSON.stringify({ game, level: 17 }));
+  const oldBoard = ui.el('board');
   const last = (board.size - 1) * board.size + board.solution.at(-1);
   ui.tap(last);
   ui.tap(last);
   assert.equal(ui.controller.getSnapshot().completion.phase, 'pups');
-  assert.equal(ui.el('completion'), null, 'the solved board stays unobscured');
-  assert.ok(ui.el('board').classList.contains('celebrate'));
-  assert.equal(ui.el('board').querySelectorAll('.dog').length, board.size);
+  assert.equal(ui.el('completion'), null);
+  assert.ok(oldBoard.classList.contains('celebrate'));
   assert.equal(ui.el('restart').disabled, true);
   assert.equal(ui.el('hint').disabled, true);
   ui.click('hint');
   ui.click('restart');
-  assert.equal(
-    ui.requests.length,
-    0,
-    'celebration cannot start another level early',
-  );
   ui.advance(COMPLETION_TIMING.pups - 1);
   assert.equal(ui.el('completion'), null);
-  assert.ok(ui.el('board').classList.contains('celebrate'));
-  ui.advance(1);
-  assert.equal(ui.el('board').classList.contains('celebrate'), false);
-  assert.ok(ui.el('completion').classList.contains('enter'));
-  assert.equal(ui.el('result').hidden, true);
-  assert.equal(ui.el('restart').disabled, true);
   assert.equal(ui.requests.length, 0);
+  ui.advance(1);
+  assert.equal(oldBoard.classList.contains('celebrate'), false);
+  assert.ok(ui.el('completion').classList.contains('enter'));
   assert.equal(ui.el('completion').querySelector('button'), null);
-  assert.ok(ui.el('completion').textContent.includes('第 17 关完成'));
   ui.advance(COMPLETION_TIMING.fadeIn - 1);
   assert.equal(ui.requests.length, 0);
   ui.advance(1);
   assert.ok(ui.el('completion').classList.contains('hold'));
-  ui.advance(COMPLETION_TIMING.hold - 1);
-  assert.equal(ui.requests.length, 0);
-  ui.advance(1);
-  assert.ok(ui.el('completion').classList.contains('exit'));
   assert.equal(
     ui.requests.length,
     1,
-    'generation starts with fade-out, not after it',
+    'prefetch starts as soon as the overlay has entered',
   );
-  assert.equal(ui.el('loading').hidden, false);
   await ui.finish({ endCompletion: false });
+  assert.equal(
+    ui.state().level,
+    17,
+    'a prepared puzzle must not replace the visible board',
+  );
+  assert.equal(ui.el('board'), oldBoard);
+  assert.equal(ui.el('loading').dataset.visible, 'false');
+  ui.advance(COMPLETION_TIMING.hold - 1);
+  assert.ok(ui.el('completion').classList.contains('hold'));
+  ui.advance(1);
+  assert.ok(ui.el('completion').classList.contains('exit'));
+  assert.equal(ui.el('board-wrap').dataset.transition, 'out');
+  assert.equal(ui.el('loading').dataset.visible, 'false');
+  assert.equal(ui.controller.getSnapshot().game.cells[cross], 3);
+  ui.advance(LEVEL_TRANSITION_TIMING.fadeOut - 1);
+  assert.equal(ui.el('board'), oldBoard);
+  assert.equal(ui.controller.getSnapshot().game.cells[cross], 3);
+  const cleared = [];
+  const unsubscribe = ui.controller.subscribe((state) => {
+    if (state.transition === 'waiting') cleared.push([...state.game.cells]);
+  });
+  ui.advance(1);
+  await act(flush);
+  unsubscribe();
+  assert.ok(cleared.length);
+  assert.ok(cleared.every((cells) => cells.every((value) => value === 0)));
+  assert.equal(ui.el('completion'), null);
   assert.equal(ui.state().level, 18);
   assert.equal(ui.el('progress').textContent, '0/8');
-  assert.ok(ui.el('completion').textContent.includes('第 17 关完成'));
-  assert.equal(
-    ui.el('hint').disabled,
-    true,
-    'a fast worker must not enable the board beneath the overlay',
+  assert.notEqual(
+    ui.el('board'),
+    oldBoard,
+    'new puzzle must not reuse animated old cells',
   );
-  ui.advance(COMPLETION_TIMING.fadeOut - 1);
-  assert.ok(ui.el('completion'));
+  for (const cell of ui.el('board').children) {
+    assert.equal(cell.querySelector('.dog'), null);
+    assert.equal(cell.querySelector('.cross').dataset.visible, 'false');
+    assert.equal(cell.querySelector('.cross').dataset.error, 'false');
+  }
+  assert.equal(ui.el('board-wrap').dataset.transition, 'in');
+  assert.equal(ui.el('loading').dataset.visible, 'false');
+  assert.equal(ui.el('hint').disabled, true);
+  ui.advance(LEVEL_TRANSITION_TIMING.fadeIn - 1);
+  assert.equal(ui.el('hint').disabled, true);
   ui.advance(1);
-  assert.equal(ui.el('completion'), null);
   assert.equal(ui.el('hint').disabled, false);
   assert.equal(ui.requests.length, 1);
 });
@@ -265,10 +297,19 @@ test('completed saves resume auto-advance, slow generation keeps loading, and di
   );
   assert.equal(ui.requests.length, 1);
   assert.equal(ui.el('completion'), null);
-  assert.equal(ui.el('loading').hidden, false);
+  assert.equal(ui.el('loading').dataset.visible, 'true');
+  assert.ok(
+    ui.controller.getSnapshot().game.cells.every((value) => value === 0),
+  );
+  ui.controller.suspend();
+  assert.equal(
+    ui.storage.get('playweft:pupdoku:v1'),
+    saved,
+    'waiting must preserve the completed save, not the cleared old board',
+  );
   await ui.finish();
   assert.equal(ui.state().level, 6);
-  assert.equal(ui.el('loading').hidden, true);
+  assert.equal(ui.el('loading').dataset.visible, 'false');
   for (const elapsed of [
     0,
     COMPLETION_TIMING.pups,
@@ -277,13 +318,41 @@ test('completed saves resume auto-advance, slow generation keeps loading, and di
     const stopped = await mount(saved);
     stopped.advance(elapsed);
     stopped.controller.dispose();
+    const stored = stopped.storage.get('playweft:pupdoku:v1');
     stopped.advance(20000);
+    await act(flush);
+    assert.equal(stopped.storage.get('playweft:pupdoku:v1'), stored);
+    assert.ok(stopped.workers.every((worker) => worker.terminated));
     assert.equal(
       stopped.requests.length,
-      0,
-      'leaving during the pup animation, fade-in or hold cancels auto-advance',
+      elapsed >= COMPLETION_TIMING.pups + COMPLETION_TIMING.fadeIn ? 1 : 0,
+      'leaving cancels timers and never starts another generation',
     );
   }
+});
+
+test('a prefetch failure stays behind the completion sequence and retry advances only once', async () => {
+  const board = puzzle.generateLevel(7),
+    game = puzzle.createGame(board);
+  board.solution.forEach((column, row) => {
+    game.cells[row * board.size + column] = 2;
+  });
+  const ui = await mount(JSON.stringify({ game, level: 9 }));
+  ui.advance(COMPLETION_TIMING.pups + COMPLETION_TIMING.fadeIn);
+  ui.workers.at(-1).onerror();
+  await act(flush);
+  assert.equal(ui.controller.getSnapshot().generationError, false);
+  assert.equal(ui.el('result').hidden, true);
+  assert.equal(ui.el('loading').dataset.visible, 'false');
+  ui.advance(COMPLETION_TIMING.hold + LEVEL_TRANSITION_TIMING.fadeOut);
+  await act(flush);
+  ui.advance(LEVEL_TRANSITION_TIMING.fadeIn);
+  assert.equal(ui.el('result').hidden, false);
+  assert.equal(ui.state().level, 9);
+  ui.click('result-action');
+  await ui.finish();
+  assert.equal(ui.state().level, 10);
+  assert.equal(ui.requests.length, 2);
 });
 
 test('Preact preserves cell nodes across edits and shows keyboard focus only during keyboard input', async () => {
@@ -308,11 +377,30 @@ test('Preact preserves cell nodes across edits and shows keyboard focus only dur
 
 test('worker timeout can retry and disposal ignores late replies', async () => {
   const ui = await mount();
+  const oldWorker = ui.workers[0],
+    lateMessage = oldWorker.onmessage,
+    lateError = oldWorker.onerror;
   ui.advance(10000);
-  await flush();
-  assert.equal(ui.el('loading').hidden, true);
+  await act(flush);
+  ui.advance(LEVEL_TRANSITION_TIMING.fadeIn);
+  assert.equal(ui.el('loading').dataset.visible, 'false');
   assert.match(ui.el('result-action').getAttribute('aria-label'), /重试/);
+  assert.equal(oldWorker.terminated, true);
   ui.click('result-action');
+  assert.equal(ui.workers.length, 2);
+  await act(async () => {
+    lateMessage({
+      data: { id: ui.requests[1].id, puzzle: puzzle.generateLevel(0) },
+    });
+    lateError();
+    await flush();
+  });
+  assert.equal(
+    ui.controller.getSnapshot().game,
+    null,
+    'a terminated worker cannot satisfy a new request even with its id',
+  );
+  assert.equal(ui.workers[1].terminated, undefined);
   await ui.finish();
   assert.ok(ui.el('board').children.length);
   complete(ui);
@@ -328,17 +416,92 @@ test('worker timeout can retry and disposal ignores late replies', async () => {
   );
 });
 
+test('a reused worker ignores old request ids and idle failures are recreated lazily', async () => {
+  const ui = await mount();
+  await ui.finish();
+  const worker = ui.workers[0],
+    onmessage = worker.onmessage,
+    onerror = worker.onerror;
+  complete(ui);
+  ui.advance(COMPLETION_TIMING.fadeIn + COMPLETION_TIMING.hold);
+  assert.equal(ui.workers.length, 1);
+  assert.equal(worker.onmessage, onmessage, 'listeners are installed once');
+  const previous = ui.controller.getSnapshot().game.puzzle;
+  await act(async () => {
+    worker.onmessage({
+      data: { id: ui.requests[0].id, puzzle: puzzle.generateLevel(7) },
+    });
+    worker.onmessage({
+      data: { id: ui.requests[0].id, error: 'stale failure' },
+    });
+    await flush();
+  });
+  ui.advance(LEVEL_TRANSITION_TIMING.fadeOut);
+  await act(flush);
+  assert.equal(ui.controller.getSnapshot().transition, 'waiting');
+  assert.equal(ui.controller.getSnapshot().game.puzzle, previous);
+  assert.equal(worker.terminated, undefined);
+  await ui.finish();
+  assert.equal(ui.state().level, 2);
+  ui.advance(10000);
+  assert.equal(
+    worker.terminated,
+    undefined,
+    'successful requests cancel their timeouts',
+  );
+  onerror();
+  assert.equal(worker.terminated, true);
+  assert.equal(ui.controller.getSnapshot().generationError, false);
+  complete(ui);
+  ui.advance(COMPLETION_TIMING.fadeIn + COMPLETION_TIMING.hold);
+  assert.equal(ui.workers.length, 2);
+  await ui.finish();
+  assert.equal(ui.state().level, 3);
+});
+
+test('a matching generation error discards the worker and retries with a fresh instance', async () => {
+  const ui = await mount();
+  const worker = ui.workers[0];
+  await act(async () => {
+    worker.onmessage({
+      data: { id: ui.requests[0].id, error: 'test failure' },
+    });
+    await flush();
+  });
+  ui.advance(LEVEL_TRANSITION_TIMING.fadeIn);
+  assert.equal(worker.terminated, true);
+  assert.equal(ui.controller.getSnapshot().message, 'test failure');
+  ui.click('result-action');
+  assert.equal(ui.workers.length, 2);
+  await ui.finish();
+  assert.equal(ui.state().level, 1);
+});
+
+test('generation still works without Worker and leaving cancels scheduled fallback work', async () => {
+  const ui = await mount(undefined, { workerAvailable: false });
+  ui.advance(30);
+  await act(flush);
+  ui.advance(LEVEL_TRANSITION_TIMING.fadeIn);
+  assert.equal(ui.controller.canEdit(), true);
+  assert.equal(ui.workers.length, 0);
+  const stopped = await mount(undefined, { workerAvailable: false });
+  stopped.controller.dispose();
+  stopped.advance(10000);
+  await act(flush);
+  assert.equal(stopped.controller.getSnapshot().game, null);
+});
+
 test('random-size worker loading, save restoration and failure retry are wired without a size selector', async () => {
   const ui = await mount();
-  assert.deepEqual(Object.keys(ui.requests[0]), ['seed']);
+  assert.deepEqual(Object.keys(ui.requests[0]), ['id', 'seed']);
   assert.equal(ui.el('undo').disabled, true);
   assert.equal(ui.el('hint').disabled, true);
   ui.click('undo');
   await ui.finish();
-  assert.equal(ui.el('loading').hidden, true);
+  assert.equal(ui.el('loading').dataset.visible, 'false');
   assert.equal(ui.el('board').children.length, 64);
   assert.equal(ui.el('progress').textContent, '0/8');
-  assert.equal(ui.workers[0].terminated, true);
+  assert.equal(ui.workers[0].terminated, undefined);
   ui.tap(0);
   ui.advance(280);
   const restored = await mount(ui.storage.get('playweft:pupdoku:v1'));
@@ -371,7 +534,9 @@ test('random-size worker loading, save restoration and failure retry are wired w
   ui.workers.at(-1).onerror();
   await flush();
   ui.advance(COMPLETION_TIMING.fadeOut);
-  assert.equal(ui.el('loading').hidden, true);
+  await act(flush);
+  ui.advance(LEVEL_TRANSITION_TIMING.fadeIn);
+  assert.equal(ui.el('loading').dataset.visible, 'false');
   assert.equal(ui.el('result').hidden, false);
   assert.match(ui.el('result-action').getAttribute('aria-label'), /重试/);
   ui.click('result-action');
@@ -803,4 +968,20 @@ test('completing consecutive levels generates fresh random-size boards; restarti
     }
   }
   assert.equal(boards.size, 5);
+  assert.equal(
+    ui.workers.length,
+    1,
+    'all consecutive levels reuse the original worker',
+  );
+  assert.deepEqual(
+    ui.requests.map(({ id }) => id),
+    [1, 2, 3, 4, 5],
+  );
+  assert.equal(ui.workers[0].terminated, undefined);
+  ui.controller.dispose();
+  assert.equal(
+    ui.workers[0].terminated,
+    true,
+    'leaving also terminates an idle worker',
+  );
 });

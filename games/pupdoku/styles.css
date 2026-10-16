@@ -185,6 +185,26 @@ h1 {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  opacity: 1;
+  transition: opacity var(--level-fade, 240ms) ease;
+}
+
+.board-wrap[data-transition="out"] .board,
+.board-wrap[data-transition="waiting"] .board {
+  opacity: 0;
+}
+
+.board-wrap[data-transition="in"] .board {
+  animation: board-enter var(--level-fade, 240ms) ease both;
+}
+
+@keyframes board-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .cell {
@@ -307,6 +327,22 @@ h1 {
   place-items: center;
   background: #faf2e9e0;
   border-radius: var(--cell-radius);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--level-fade, 240ms) ease;
+}
+
+.loading[data-visible="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.loading .spinner {
+  animation-play-state: paused;
+}
+
+.loading[data-active="true"] .spinner {
+  animation-play-state: running;
 }
 
 .spinner {

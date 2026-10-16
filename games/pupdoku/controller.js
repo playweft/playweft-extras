@@ -18,6 +18,10 @@ export const COMPLETION_TIMING = {
   hold: 1000,
   fadeOut: 420,
 };
+export const LEVEL_TRANSITION_TIMING = {
+  fadeOut: COMPLETION_TIMING.fadeOut,
+  fadeIn: 240,
+};
 
 // Game actions are synchronous, so consecutive pointer events see the latest
 // position even when Preact batches rendering. Only snapshots reach the view.
@@ -54,12 +58,17 @@ export function createPupdokuController({
     preview: new Map(),
     highlight: null,
     completion: null,
+    transition: null,
   };
   const listeners = new Set();
   let worker,
     generationTimer,
     highlightTimer,
     completionTimer,
+    transitionTimer,
+    releaseOldBoard,
+    pendingGeneration,
+    generationId = 0,
     disposed = false,
     feedback;
   function publish(patch = {}) {
@@ -68,7 +77,15 @@ export function createPupdokuController({
     listeners.forEach((listener) => listener(state));
   }
   function save() {
-    if (!state.game) return;
+    // Keep the completed save until its replacement exists. A refresh during
+    // generation must not resume the cleared old partition as a new puzzle.
+    if (
+      !state.game ||
+      state.generationError ||
+      state.transition === 'out' ||
+      state.transition === 'waiting'
+    )
+      return;
     try {
       storage?.setItem(
         STORAGE_KEY,
@@ -101,10 +118,10 @@ export function createPupdokuController({
       publish({ completion: { phase: 'enter', level } });
       completionTimer = schedule(() => {
         publish({ completion: { phase: 'hold', level } });
+        const nextLevel = prepareLevel();
         completionTimer = schedule(() => {
-          // Start work at the fade-out boundary, not after the overlay vanishes.
           publish({ completion: { phase: 'exit', level } });
-          void newGame();
+          void newGame(nextLevel);
           completionTimer = schedule(
             () => publish({ completion: null }),
             COMPLETION_TIMING.fadeOut,
@@ -198,52 +215,133 @@ export function createPupdokuController({
     schedule,
     unschedule,
   });
-  async function newGame() {
-    if (state.busy || disposed) return;
-    gestures.cancel();
-    clearHighlights();
-    publish({ busy: true, generationError: false, message: '正在生成关卡。' });
+  function settleGeneration(error, puzzle) {
+    const pending = pendingGeneration;
+    if (!pending) return;
+    pendingGeneration = null;
+    unschedule(generationTimer);
+    generationTimer = null;
+    if (error) pending.reject(error);
+    else pending.resolve(puzzle);
+  }
+  function failGeneration(error) {
+    if (worker) {
+      worker.onmessage = null;
+      worker.onerror = null;
+      worker.terminate();
+      worker = null;
+    }
+    settleGeneration(error);
+  }
+  function generatorWorker() {
+    if (worker) return worker;
+    const instance = createWorker();
+    if (!instance) return null;
+    worker = instance;
+    instance.onmessage = ({ data }) => {
+      if (
+        worker !== instance ||
+        !pendingGeneration ||
+        data.id !== pendingGeneration.id
+      )
+        return;
+      if (data.puzzle) settleGeneration(null, data.puzzle);
+      else failGeneration(new Error(data.error || '新题生成失败，请重试。'));
+    };
+    instance.onerror = () => {
+      if (worker === instance) failGeneration(new Error('生成器暂时不可用。'));
+    };
+    return instance;
+  }
+  async function prepareLevel() {
     let seed = randomSeed();
     if (seed === state.game?.puzzle.seed) seed = (seed + 1) >>> 0;
     try {
       const puzzle = await new Promise((resolve, reject) => {
-        worker = createWorker();
-        if (!worker) {
-          generationTimer = schedule(() => {
-            try {
-              resolve(generateLevel(seed));
-            } catch (error) {
-              reject(error);
-            }
-          }, 30);
-          return;
+        const id = ++generationId;
+        pendingGeneration = { id, resolve, reject };
+        try {
+          const instance = generatorWorker();
+          if (!instance) {
+            generationTimer = schedule(() => {
+              try {
+                settleGeneration(null, generateLevel(seed));
+              } catch (error) {
+                failGeneration(error);
+              }
+            }, 30);
+            return;
+          }
+          generationTimer = schedule(
+            () => failGeneration(new Error('生成超时，请重试。')),
+            10000,
+          );
+          instance.postMessage({ id, seed });
+        } catch (error) {
+          failGeneration(error);
         }
-        generationTimer = schedule(() => {
-          worker?.terminate();
-          reject(new Error('生成超时，请重试。'));
-        }, 10000);
-        worker.onmessage = ({ data }) =>
-          data.puzzle ? resolve(data.puzzle) : reject(new Error(data.error));
-        worker.onerror = () => reject(new Error('生成器暂时不可用。'));
-        worker.postMessage({ seed });
       });
+      return { puzzle };
+    } catch (error) {
+      // A prefetched failure is displayed only after the old board fades away.
+      return { error };
+    }
+  }
+  async function newGame(prepared) {
+    if (state.busy || disposed) return;
+    gestures.cancel();
+    clearHighlights();
+    const previous = state.game,
+      fadeOldBoard = !!previous && !state.generationError;
+    publish({
+      busy: true,
+      transition: fadeOldBoard ? 'out' : 'waiting',
+      generationError: false,
+      message: '正在生成关卡。',
+    });
+    const oldBoardGone = fadeOldBoard
+      ? new Promise((resolve) => {
+          releaseOldBoard = resolve;
+          transitionTimer = schedule(() => {
+            releaseOldBoard = null;
+            if (!disposed)
+              publish({
+                game: createGame(previous.puzzle),
+                transition: 'waiting',
+              });
+            resolve();
+          }, LEVEL_TRANSITION_TIMING.fadeOut);
+        })
+      : Promise.resolve();
+    try {
+      const [result] = await Promise.all([
+        prepared ?? prepareLevel(),
+        oldBoardGone,
+      ]);
+      if (result.error) throw result.error;
       if (!disposed)
         publish({
-          game: createGame(puzzle),
-          level: state.game ? state.level + 1 : state.level,
+          game: createGame(result.puzzle),
+          level: previous ? state.level + 1 : state.level,
           selected: 0,
           message: DEFAULT_MESSAGE,
         });
     } catch (error) {
-      publish({
-        generationError: true,
-        message: error.message || '生成失败，请重试。',
-      });
+      await oldBoardGone;
+      if (!disposed)
+        publish({
+          generationError: true,
+          message: error.message || '生成失败，请重试。',
+        });
     } finally {
-      unschedule(generationTimer);
-      worker?.terminate();
-      worker = null;
-      if (!disposed) commit({ busy: false });
+      if (!disposed) {
+        publish({ transition: 'in' });
+        save();
+        transitionTimer = schedule(
+          () => commit({ busy: false, transition: null }),
+          LEVEL_TRANSITION_TIMING.fadeIn,
+        );
+      }
     }
   }
   function restart() {
@@ -318,7 +416,10 @@ export function createPupdokuController({
       unschedule(highlightTimer);
       unschedule(generationTimer);
       unschedule(completionTimer);
-      worker?.terminate();
+      unschedule(transitionTimer);
+      releaseOldBoard?.();
+      releaseOldBoard = null;
+      failGeneration(new Error('Generation cancelled'));
       listeners.clear();
       feedback = null;
     },

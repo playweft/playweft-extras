@@ -47,7 +47,7 @@ export function simulateTurn(
         : null;
     if (
       !wave &&
-      (finaleStarted || gameStatus({ ...next, board }, daily, config) !== "playing")
+      (finaleStarted || gameStatus({ ...next, board }, daily, config) === "won")
     ) {
       if (!finaleStarted) chain = 1;
       finaleStarted = true;

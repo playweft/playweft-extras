@@ -1,6 +1,7 @@
 {
   "generatedAt": "2026-10-18T13:05:48.542Z",
-  "status": "current",
+  "status": "historical",
+  "supersededReason": "Current gameplay only starts a finale after completion goals are met. These measurements include finales on exhausted moves and have not been rerun under the new rule.",
   "protocol": {
     "strategy": "strong",
     "denominator": "All games, including losses",

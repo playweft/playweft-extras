@@ -6,6 +6,8 @@ import {
   generateLevel,
   solve,
   analyzeLogic,
+  CHAIN_LIMITS,
+  withinChainBudget,
   smallRegionClustering,
   proofQuality,
   lockedSetSpread,
@@ -458,6 +460,10 @@ function verifyProof(puzzle, varied = true) {
   assert.equal(analysis.progressSubsets, progressSubsets);
   assert.equal(analysis.largestProgressSet, largestProgressSet);
   if (varied) {
+    assert.ok(
+      withinChainBudget(analysis),
+      'new puzzles must respect the player chain budget',
+    );
     assert.ok(mixedColorCommon >= 2, 'need two mixed-color line deductions');
     assert.ok(
       earlyBottlenecks.size >= 2,
@@ -1029,6 +1035,95 @@ test('joint pairs and five-link chains have checkable proofs and preserve every 
     assert.equal(undo(game), true);
     assert.deepEqual(game.cells, before);
   }
+});
+
+test('short chains prefer a three-link proof across starting cells over a five-link proof', () => {
+  const { shorterChain: fixture } = JSON.parse(
+    readFileSync(
+      new URL('./fixtures/pupdoku-chain-difficulty.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  const candidates = new Set(fixture.candidates);
+  const step = findDeduction(
+    fixture.puzzle.regions,
+    fixture.puzzle.size,
+    candidates,
+    new Set(fixture.placed),
+  );
+  assert.equal(step.type, 'chain');
+  assert.equal(
+    step.links.length,
+    3,
+    'a later starting cell has a shorter proof than the first five-link chain',
+  );
+  verifyAdvancedStep(step, fixture.puzzle, candidates);
+});
+
+test('new puzzles allow two short chains but reject repeated or overlong chains', () => {
+  const chain = (length) => ({ type: 'chain', links: Array(length).fill({}) });
+  assert.equal(CHAIN_LIMITS.maxStepsPerPuzzle, 2);
+  assert.equal(withinChainBudget({ steps: [] }), true);
+  assert.equal(withinChainBudget({ steps: [chain(3), chain(5)] }), true);
+  assert.equal(
+    withinChainBudget({ steps: [chain(3), chain(3), chain(3)] }),
+    false,
+  );
+  assert.equal(withinChainBudget({ steps: [chain(7)] }), false);
+});
+
+test('legacy boards exceeding the new chain budget still restore and solve with hints', () => {
+  const { legacyBoard: board } = JSON.parse(
+    readFileSync(
+      new URL('./fixtures/pupdoku-chain-difficulty.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  const analysis = analyzeLogic(board.regions, board.size);
+  assert.equal(analysis.solved, true);
+  assert.ok(analysis.techniques.chain > CHAIN_LIMITS.maxStepsPerPuzzle);
+  assert.equal(withinChainBudget(analysis), false);
+  const game = restoreGame(JSON.parse(JSON.stringify(createGame(board))));
+  assert.ok(game);
+  for (
+    let steps = 0;
+    steps < board.size ** 2 && !isComplete(game.puzzle, game.cells);
+    steps++
+  )
+    assert.ok(
+      hint(game),
+      'the new generation limit must not strand an old save',
+    );
+  assert.equal(isComplete(game.puzzle, game.cells), true);
+});
+
+test('generation scoring prefers fewer and shorter chains while retaining intermediate requirements', () => {
+  const { legacyBoard: board } = JSON.parse(
+    readFileSync(
+      new URL('./fixtures/pupdoku-chain-difficulty.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  const analysis = analyzeLogic(board.regions, board.size);
+  const without = {
+    ...analysis,
+    steps: analysis.steps.filter((step) => step.type !== 'chain'),
+    techniques: { ...analysis.techniques, chain: 0 },
+  };
+  const withChains = (...lengths) => ({
+    ...without,
+    steps: [
+      ...without.steps,
+      ...lengths.map((length) => ({
+        type: 'chain',
+        links: Array(length).fill({}),
+      })),
+    ],
+    techniques: { ...without.techniques, chain: lengths.length },
+  });
+  assert.ok(proofQuality(without) > proofQuality(withChains(3)));
+  assert.ok(proofQuality(withChains(3)) > proofQuality(withChains(5)));
+  assert.ok(proofQuality(withChains(5)) > proofQuality(withChains(5, 5)));
 });
 
 test('quality filtering handles a long-retry seed without returning an easier puzzle', () => {

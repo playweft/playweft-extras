@@ -79,8 +79,9 @@ test("strong AI can choose to finish the ice goal instead of an unrelated high-s
   assert.equal(iceLayers(next.board), 0);
 });
 
-test("AI turns drain deferred rainbow triggers before choosing the next move", () => {
+test("AI drains already triggered specials on the last move before deciding the outcome", () => {
   const game = createGame(1000, false, seededRandom(2));
+  game.moves = 1;
   game.board = game.board.map((piece, i) => ({
     ...piece,
     ice: 0,
@@ -94,7 +95,8 @@ test("AI turns drain deferred rainbow triggers before choosing the next move", (
   const ids = [game.board[18].id, game.board[22].id];
   const snapshot = structuredClone(game);
   const next = simulateTurn(game, [16, 17], { random: seededRandom(13) });
-  assert.equal(next.moves, game.moves - 1);
+  assert.equal(next.moves, 0);
+  assert.notEqual(next.status, "playing");
   assert.ok(next.board.every((piece) => !piece.pending));
   assert.ok(ids.every((id) => !next.board.some((piece) => piece.id === id)));
   assert.equal(findMatches(next.board).length, 0);
@@ -124,23 +126,25 @@ test("strong AI handles blocked empty cells and refills them once the surroundin
   assert.deepEqual(game, snapshot);
 });
 
-test("AI terminal turns drain all specials including newly generated ones, without spending extra moves", () => {
+test("AI successful last moves drain all specials including newly generated ones, without spending extra moves", () => {
   for (let seed = 1; seed <= 30; seed++) {
     const game = createGame(1, false, seededRandom(42));
     game.moves = 1;
+    game.score = levelConfig(1).target - 180;
+    game.collected = Array(6).fill(100);
     for (const index of [20, 21]) game.board[index].special = "row";
     game.board[50] = { ...game.board[50], type: null, special: "color" };
     const snapshot = structuredClone(game);
     const next = simulateTurn(game, findMove(game.board), { random: seededRandom(seed) });
     assert.equal(next.moves, 0);
-    assert.notEqual(next.status, "playing");
+    assert.equal(next.status, "won");
     assert.ok(next.board.every((tile) => !tile?.special), `seed ${seed} leaves no specials`);
     assert.ok(validGame(next));
     assert.deepEqual(game, snapshot);
   }
 });
 
-test("AI final clear can rescue a last move or still lose when its goals remain unmet", () => {
+test("AI does not start a finale on a failed last move, even when remaining specials could rescue it", () => {
   const game = createGame(1, false, seededRandom(42));
   game.board = game.board.map((tile, i) => ({ ...tile, type: (Math.floor(i / 8) * 2 + i % 8) % 6 }));
   for (const index of [0, 1, 10]) game.board[index].type = 5;
@@ -151,11 +155,17 @@ test("AI final clear can rescue a last move or still lose when its goals remain 
   game.collected[0] = levelConfig(1).count - 1;
   const first = resolveWave(swap(game.board, 10, 2), { exchange: [10, 2] });
   assert.equal(first.collected[0], 0);
-  const rescued = simulateTurn(game, [10, 2], { random: seededRandom(8) });
-  assert.equal(rescued.status, "won");
-  assert.ok(rescued.board.every((tile) => !tile?.special));
+  const failed = simulateTurn(game, [10, 2], { random: seededRandom(8) });
+  assert.equal(failed.status, "lost");
+  assert.equal(failed.moves, 0);
+  assert.equal(failed.collected[0], game.collected[0]);
+  assert.equal(failed.score, game.score + first.score);
+  for (const index of [48, 63]) {
+    const original = game.board[index];
+    assert.deepEqual(failed.board.find(tile => tile?.id === original.id), original);
+  }
   const config = { ...levelConfig(1), count: 1000 };
   const lost = simulateTurn(game, [10, 2], { config, random: seededRandom(8) });
   assert.equal(lost.status, "lost");
-  assert.ok(lost.board.every((tile) => !tile?.special));
+  assert.ok(lost.board.some((tile) => tile?.special));
 });

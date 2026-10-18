@@ -4,6 +4,7 @@ import {
   SIZES,
   generatePuzzle,
   analyzeLogic,
+  withinChainBudget,
 } from '../games/pupdoku/puzzle.js';
 
 function partitionGeometry({ regions, size }) {
@@ -122,6 +123,12 @@ for (const size of SIZES) {
   const setSizeHistogram = [...largestSetHistogram];
   let largestSet = 0,
     clustering = 0;
+  const chainDifficulty = {
+    maxSteps: 0,
+    maxLinks: 0,
+    threeLinkSteps: 0,
+    fiveLinkSteps: 0,
+  };
   const geometry = {
     smallestCentral: 0,
     smallestEdge: 0,
@@ -144,6 +151,7 @@ for (const size of SIZES) {
     clustering += analysis.smallRegionClustering;
     if (
       !analysis.solved ||
+      !withinChainBudget(analysis) ||
       analysis.techniques.mixedColorCommon < 2 ||
       analysis.earlyBottlenecks < 2 ||
       analysis.techniques.subset +
@@ -189,6 +197,20 @@ for (const size of SIZES) {
       coverage[key] += analysis.spatialScores[kind] > 0;
     }
     largestSetHistogram[analysis.techniques.largestSet]++;
+    const chains = analysis.steps.filter((step) => step.type === 'chain');
+    chainDifficulty.maxSteps = Math.max(
+      chainDifficulty.maxSteps,
+      chains.length,
+    );
+    for (const step of chains) {
+      chainDifficulty.maxLinks = Math.max(
+        chainDifficulty.maxLinks,
+        step.links.length,
+      );
+      chainDifficulty[
+        step.links.length === 3 ? 'threeLinkSteps' : 'fiveLinkSteps'
+      ]++;
+    }
     for (const step of analysis.steps)
       if (step.type === 'subset') setSizeHistogram[step.sourceIds.length]++;
     if (analysis.monochromeLines > 1)
@@ -207,6 +229,7 @@ for (const size of SIZES) {
         Object.entries(totals).map(([key, count]) => [key, count / samples]),
       ),
       largestSet,
+      chainDifficulty,
       meanSmallRegionClustering: clustering / samples,
       meanGeometry: Object.fromEntries(
         Object.entries(geometry).map(([key, total]) => [key, total / samples]),

@@ -360,7 +360,7 @@ export function FuzzyMatch3App() {
       if (
         !wave &&
         (finaleStarted ||
-          gameStatus({ ...next, board: nextBoard }, currentMode === "daily") !== "playing")
+          gameStatus({ ...next, board: nextBoard }, currentMode === "daily") === "won")
       ) {
         if (!finaleStarted) chain = 1;
         finaleStarted = true;
@@ -1129,7 +1129,7 @@ export function FuzzyMatch3App() {
                       {MOVE_BONUS} 分，计入最终星级。 本关二星{" "}
                       {format(config.starTargets[1])} 分，三星 {format(starMax)}{" "}
                       分。
-                      达成目标或步数耗尽后，条纹按原方向同时引爆，彩虹补盘后逐个引爆；新生成的道具继续清场，直到全部用尽，再结算最终得分与星级。
+                      达成通关目标后，条纹按原方向同时引爆，彩虹补盘后逐个引爆；新生成的道具继续清场，直到全部用尽，再结算最终得分与星级。
                     </p>
                   </div>
                 </div>

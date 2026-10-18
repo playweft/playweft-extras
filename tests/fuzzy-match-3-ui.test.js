@@ -907,7 +907,7 @@ test("a winning finale animates all stripes without rotating, queues rainbows, a
   }
 });
 
-test("the last-move finale can finish a missing collection goal before deciding win or loss", async () => {
+test("a failed last move settles its normal clear without detonating idle specials", async () => {
   const adventure = finaleGame({ moves: 1, win: false });
   const previousRandom = Math.random;
   Math.random = seededRandom(8);
@@ -918,10 +918,44 @@ test("the last-move finale can finish a missing collection goal before deciding 
     await settled();
     const next = saved().adventure;
     assert.equal(next.moves, 0);
+    assert.equal(next.status, "lost");
+    assert.equal(next.collected[0], adventure.collected[0]);
+    assert.equal(next.score, adventure.score + 180);
+    for (const index of [40, 48, 50, 51, 56, 63]) {
+      const original = adventure.board[index];
+      assert.deepEqual(next.board.find(tile => tile?.id === original.id), original);
+    }
+    assert.equal(root.querySelectorAll(".rainbow-armed").length, 0);
+    assert.equal(saved().stats.wins, 0);
+    const expected = simulateTurn(adventure, [10, 2], { random: seededRandom(8) });
+    assert.equal(next.score, expected.score);
+    assert.deepEqual(next.collected, expected.collected);
+    assert.deepEqual(
+      next.board.map(({ id, ...tile }) => tile),
+      expected.board.map(({ id, ...tile }) => tile),
+    );
+    assert.equal(root.querySelector("#dialog-title").textContent, "步数用完");
+  } finally {
+    Math.random = previousRandom;
+  }
+});
+
+test("meeting the goals on the last move still triggers the winning finale without a move bonus", async () => {
+  const adventure = finaleGame({ moves: 1 });
+  const previousRandom = Math.random;
+  Math.random = seededRandom(8);
+  try {
+    await mount({ adventure });
+    await click(piece(10));
+    await click(piece(2));
+    await settled();
+    const next = saved().adventure;
+    assert.equal(next.moves, 0);
     assert.equal(next.status, "won");
-    assert.ok(next.collected[0] >= levelConfig(1).count);
-    assert.ok(next.board.every((tile) => !tile?.special));
-    assert.match(root.querySelector("#dialog-title").textContent, /通关/);
+    assert.equal(next.score, 28160);
+    assert.equal(totalScore(next), next.score);
+    assert.ok(next.board.every(tile => !tile?.special));
+    assert.equal(root.querySelector("#dialog-title").textContent, "通关");
   } finally {
     Math.random = previousRandom;
   }

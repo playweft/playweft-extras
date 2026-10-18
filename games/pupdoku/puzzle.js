@@ -1,4 +1,9 @@
 export const SIZES = [8, 9, 10, 11, 12];
+export const CHAIN_LIMITS = Object.freeze({
+  maxLinks: 5,
+  maxStepsPerPuzzle: 2,
+  searchExpansions: 512,
+});
 
 export function seededRandom(seed) {
   let value = seed >>> 0;
@@ -272,12 +277,21 @@ function variedProof(analysis, size) {
   // the first half; consecutive eliminations at one position count only once.
   return (
     interestingProof(analysis, size) &&
+    withinChainBudget(analysis) &&
     analysis.techniques.mixedColorCommon >= 2 &&
     analysis.techniques.subset +
       analysis.techniques.joint +
       analysis.techniques.chain >=
       1 &&
     analysis.earlyBottlenecks >= 2
+  );
+}
+
+export function withinChainBudget(analysis) {
+  const chains = analysis.steps.filter((step) => step.type === 'chain');
+  return (
+    chains.length <= CHAIN_LIMITS.maxStepsPerPuzzle &&
+    chains.every((step) => step.links.length <= CHAIN_LIMITS.maxLinks)
   );
 }
 
@@ -306,7 +320,13 @@ export function proofQuality(analysis) {
     3 * (analysis.spatialScores?.subset ?? 0) +
     (analysis.spatialScores?.joint ?? 0) -
     analysis.monochromeLines * 12 -
-    analysis.smallRegionClustering * 6
+    analysis.smallRegionClustering * 6 -
+    // Advanced steps remain allowed, but extra memory load is not a reward.
+    (analysis.steps ?? []).reduce(
+      (cost, step) =>
+        cost + (step.type === 'chain' ? step.links.length - 1 : 0),
+      0,
+    )
   );
 }
 
@@ -1034,57 +1054,65 @@ function shortChain(candidates, families, context) {
       }
     }
   const linked = [...strong.keys()];
-  // Bounds apply to the proof search, never to the validity of a returned step.
-  let expansions = 0;
+  // Multi-source BFS checks all three-link proofs before any five-link proof.
+  // The search budget limits expansion, not checking proofs already queued.
+  const queue = [],
+    seen = new Map();
   for (const start of linked) {
-    const queue = strong.get(start).map((link) => ({
+    const first = strong.get(start).map((link) => ({
+      start,
       end: link.to,
       sources: [start, link.to],
       links: [link],
       depth: 1,
     }));
-    const seen = new Set(queue.map((item) => item.end));
-    for (let q = 0; q < queue.length; q++) {
-      const node = queue[q];
-      if (node.depth >= 2) {
-        const removed = [...candidates].filter(
-          (i) =>
-            i !== start &&
-            i !== node.end &&
-            peers[start * words + (i >>> 5)] & (1 << (i & 31)) &&
-            peers[node.end * words + (i >>> 5)] & (1 << (i & 31)),
-        );
-        if (removed.length)
-          return {
-            type: 'chain',
-            sources: node.sources,
-            links: node.links,
-            endpoints: [start, node.end],
-            removed,
-          };
-      }
-      if (node.depth >= 3) continue;
-      if (++expansions > 512) return null;
-      for (const middle of linked) {
-        if (
-          node.sources.includes(middle) ||
-          !(peers[node.end * words + (middle >>> 5)] & (1 << (middle & 31)))
-        )
+    seen.set(start, new Set(first.map((item) => item.end)));
+    queue.push(...first);
+  }
+  let expansions = 0;
+  for (let q = 0; q < queue.length; q++) {
+    const node = queue[q];
+    if (node.depth >= 2) {
+      const removed = [...candidates].filter(
+        (i) =>
+          i !== node.start &&
+          i !== node.end &&
+          peers[node.start * words + (i >>> 5)] & (1 << (i & 31)) &&
+          peers[node.end * words + (i >>> 5)] & (1 << (i & 31)),
+      );
+      if (removed.length)
+        return {
+          type: 'chain',
+          sources: node.sources,
+          links: node.links,
+          endpoints: [node.start, node.end],
+          removed,
+        };
+    }
+    if (node.links.length >= CHAIN_LIMITS.maxLinks) continue;
+    if (expansions >= CHAIN_LIMITS.searchExpansions) continue;
+    expansions++;
+    for (const middle of linked) {
+      if (
+        node.sources.includes(middle) ||
+        !(peers[node.end * words + (middle >>> 5)] & (1 << (middle & 31)))
+      )
+        continue;
+      for (const link of strong.get(middle)) {
+        if (seen.get(node.start).has(link.to) || node.sources.includes(link.to))
           continue;
-        for (const link of strong.get(middle)) {
-          if (seen.has(link.to) || node.sources.includes(link.to)) continue;
-          seen.add(link.to);
-          queue.push({
-            end: link.to,
-            depth: node.depth + 1,
-            sources: [...node.sources, middle, link.to],
-            links: [
-              ...node.links,
-              { kind: 'weak', from: node.end, to: middle },
-              link,
-            ],
-          });
-        }
+        seen.get(node.start).add(link.to);
+        queue.push({
+          start: node.start,
+          end: link.to,
+          depth: node.depth + 1,
+          sources: [...node.sources, middle, link.to],
+          links: [
+            ...node.links,
+            { kind: 'weak', from: node.end, to: middle },
+            link,
+          ],
+        });
       }
     }
   }
@@ -1191,7 +1219,12 @@ function logicalPosition(regions, size, cells) {
 
 // Separate from exact counting: this solver does not read a solution or guess.
 // Every returned step records the premise as well as the conclusion for hints.
-function analyzePosition(regions, size, openingLimit = Infinity) {
+function analyzePosition(
+  regions,
+  size,
+  openingLimit = Infinity,
+  chainLimit = Infinity,
+) {
   const placed = new Set(),
     candidates = new Set(regions.map((_, index) => index)),
     context = logicContext(regions, size);
@@ -1219,6 +1252,9 @@ function analyzePosition(regions, size, openingLimit = Infinity) {
   while (placed.size < size) {
     const step = nextDeduction(regions, size, candidates, placed, context);
     if (!step) break;
+    // Only generation has a per-puzzle budget. Old saves and public analysis
+    // retain the full solver; stop before exceeding the new-puzzle allowance.
+    if (step.type === 'chain' && techniques.chain >= chainLimit) break;
     techniques[step.type]++;
     if (step.type === 'single') {
       placed.add(step.index);
@@ -1327,7 +1363,12 @@ export function analyzeLogic(regions, size) {
 }
 
 function generationAnalysis(regions, size) {
-  return analyzePosition(regions, size, Math.floor(size / 4));
+  return analyzePosition(
+    regions,
+    size,
+    Math.floor(size / 4),
+    CHAIN_LIMITS.maxStepsPerPuzzle,
+  );
 }
 
 // Only grid symmetries preserve diagonal adjacency. Arbitrarily shuffling rows

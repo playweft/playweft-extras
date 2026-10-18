@@ -15,6 +15,8 @@ npm run dev
 
 小狗数独可以直接打开 `http://localhost:9140/pupdoku/` 游玩，也支持 Playweft 单人模式。每关随机生成 8 × 8～12 × 12 棋盘及连续色块，保证唯一解，通关后自动进入新关；单击或滑动标记 ×、双击放小狗，错误落子扣生命，支持整笔撤销、逻辑提示和本地进度保存。玩法见[小狗数独说明](../games/pupdoku/README.md)，实现与维护见[技术说明](pupdoku.md)。
 
+绒绒消消乐可以直接打开 `http://localhost:9140/fuzzy-match-3/` 游玩，也支持 Playweft 单人模式。桌面、平板和手机使用对应的应用式布局；提供闯关、每日挑战、特殊棋子、提示与本地存档，没有 PWA 安装或 Service Worker。玩法与实现见[游戏说明](../games/fuzzy-match-3/README.md)。
+
 不启动平台也可以联调光尾蛇：
 
 ```sh
@@ -58,6 +60,7 @@ BASE_PATH=/extras/
 | 推荐列表      | `/extras/featured-games.json`        |
 | 光尾蛇        | `/extras/light-trails/`              |
 | 小狗数独      | `/extras/pupdoku/`                   |
+| 绒绒消消乐      | `/extras/fuzzy-match-3/`                |
 | 游戏 Manifest | `/extras/light-trails/playweft.json` |
 
 ## 目录
@@ -65,6 +68,7 @@ BASE_PATH=/extras/
 ```text
 games/light-trails/       游戏页面、渲染、Lua 规则、Manifest、帮助
 games/pupdoku/            单人逻辑解谜、唯一解生成、Worker、Manifest、帮助
+games/fuzzy-match-3/         响应式三消、特殊棋子、闯关、每日挑战、本地进度
 src/playweft-client.js    共享 MessageChannel / JSON-RPC 客户端
 public/                  图标、featured-games.json、静态响应头
 build/vite/plugins/      游戏包输出、稳定 URL 映射

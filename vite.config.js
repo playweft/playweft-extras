@@ -4,7 +4,7 @@ import { defineConfig, loadEnv } from 'vite';
 import { emitGamePackages } from './build/vite/plugins/emit-game-packages.js';
 import { preserveGameUrls } from './build/vite/plugins/preserve-game-urls.js';
 
-const games = ['light-trails', 'pupdoku'];
+const games = ['light-trails', 'pupdoku', 'fuzzy-match-3'];
 const input = { index: resolve(import.meta.dirname, 'index.html') };
 for (const game of games) {
   input[game] = resolve(import.meta.dirname, `games/${game}/index.html`);

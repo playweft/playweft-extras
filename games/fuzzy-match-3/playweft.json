@@ -1,0 +1,27 @@
+{
+  "$schema": "https://play.longern.com/schemas/game-manifest-v1.json",
+  "manifest_version": 1,
+  "id": "/fuzzy-match-3/",
+  "version": "1.5.0",
+  "protocol": { "min": 1, "max": 1 },
+  "start_url": "./",
+  "name": "Fuzzy Match 3",
+  "name_localized": { "zh-CN": "绒绒消消乐" },
+  "description": "A cozy match-3 puzzle with six animal friends, colorful combos, and daily challenges.",
+  "description_localized": {
+    "zh-CN": "交换动物棋子、触发连消。与柴犬、虎、鸟、熊、牛、龙一起完成关卡目标和每日挑战。"
+  },
+  "categories": ["Puzzle"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "background_color": "#f8f7f2",
+  "theme_color": "#fbf8f1",
+  "help_url": "./help.html",
+  "modes": { "solo": {} }
+}

@@ -1,0 +1,4756 @@
+{
+  "generatedAt": "2026-10-18T13:05:48.542Z",
+  "status": "current",
+  "protocol": {
+    "strategy": "strong",
+    "denominator": "All games, including losses",
+    "tools": "No hints or manual shuffles",
+    "randomness": "Actual refills and AI predictions use independent seeded streams",
+    "mechanics": "Top-entry gravity, vertical supply takes priority even when temporarily empty, diagonals only when the cell above cannot be replenished, triangular holes under horizontal ice walls, alternating left/right diagonal supply persisted per ice barrier, waiting for reachable preferred sources and skipping sealed sources, persistent blocked holes, perpendicular stripe chains and deferred rainbows, reward cells chip adjacent ice and count toward base points and area, square-root area multiplier from 1 to 2, score rounded to tens, fixed stripe/rainbow pattern bonuses of 80/200, no multiple-match bonus, collection challenges from level 10 at every multiple of 5; challenge collection fixed at 36; rainbow-plus-stripe converted stripes fire in their randomly assigned directions without ray-induced rotation; replacement reward cells also count toward collection goals and cumulative eliminations using their original piece type; completion or zero moves starts a finale after normal settling, all stripes activate together without rotation, all rainbows queue one per refill ahead of matches, newly generated specials are drained until none remain, finale points and collection count before win/loss and unused-move bonus",
+    "engineSha256": "bd2749dba7984e3b3299175710f9ca7cea470141e7796070171b1453c61ef3d2",
+    "aiSha256": "9729afe141e90f0a6118e21e9b6365efe114485ce4c4b5f4ad01cca0e36a7b96",
+    "scoring": {
+      "basePerCell": 60,
+      "rewardCellsCountAsClearedForScoring": true,
+      "areaMultiplier": "1 + sqrt(clamp((scoredCells - 3) / 61, 0, 1))",
+      "roundTo": 10,
+      "stripePatternBonus": 80,
+      "rainbowPatternBonus": 200,
+      "multipleMatchBonus": 0,
+      "maxCascadeMultiplier": 5,
+      "unusedMoveBonus": 1500,
+      "rewardCellsCountAsCollected": true,
+      "finale": {
+        "trigger": "Completion goals met or no moves after normal cascades settle",
+        "initialCascadeMultiplier": 1,
+        "maximumCascadeMultiplier": 5,
+        "stripes": "Simultaneous, original direction, no rotation from mutual hits",
+        "rainbows": "One queued rainbow per refill, before natural matches",
+        "newRewards": "Continue until no specials remain",
+        "markingOnlyIncreasesCascade": false,
+        "spendsMoves": false,
+        "countsTowardGoals": true
+      }
+    },
+    "sampling": "5900 games: 1000 each at levels 4 and 1000; 300 each at levels 1, 2, 3, 5, 9, 10, 29, 30, 99, 100, 299, 300, 999; consecutive seeds starting 140001; no overrides; unchanged thresholds and collection quotas",
+    "auditSha256": "72008e3d5b86ce0f58f59b2f04a86b6c05f8eccdc85c84b744ba6144997d1404",
+    "failureDiagnosis": {
+      "generatedAt": "2026-10-18T13:14:07.885Z",
+      "sampling": "Replayed all 3400 games at the 9 checkpoints with losses, using the exact prior seeds, configs and strong strategy; all previous win/star counts and score quantiles reproduced. The 6 zero-loss checkpoints retain zero counts without replay.",
+      "evaluation": "Final losing state after special cleanup. Score means the one-star raw-score completion threshold, not a higher star threshold. Marginal unmet counts can overlap; exact goal combinations are disjoint."
+    },
+    "sourceRenameVerification": {
+      "verifiedAt": "2026-10-18T14:32:13.204Z",
+      "method": "Compared 100 strong-AI seeded games against preserved pre-rename engine, AI and audit sources; normalized metadata field names; all reported outcomes, scores, quantiles and failure reasons match exactly.",
+      "sampling": [
+        {
+          "level": 1,
+          "games": 20,
+          "seed": 140001,
+          "strategy": "strong"
+        },
+        {
+          "level": 4,
+          "games": 20,
+          "seed": 140001,
+          "strategy": "strong"
+        },
+        {
+          "level": 10,
+          "games": 20,
+          "seed": 140001,
+          "strategy": "strong"
+        },
+        {
+          "level": 30,
+          "games": 20,
+          "seed": 140001,
+          "strategy": "strong"
+        },
+        {
+          "level": 1000,
+          "games": 20,
+          "seed": 140001,
+          "strategy": "strong"
+        }
+      ],
+      "rulesChanged": false,
+      "numericTileTypesChanged": false,
+      "engineSha256": "94e495b7714491622b2955e9aceb2721538ac654b4f93ef5066cf1083398342f",
+      "aiSha256": "5c69bb1eabfd16be226a1b9815fd45f01ac3a455a30c36d49f8fbf33708f6f66",
+      "auditSha256": "b01ee6ef2d35f5e00d899605b66b7134a6d56712eca16a43c8edb8061e584059"
+    },
+    "sourceProvenance": "Top-level hashes identify the original measured sources. Current renamed sources are linked by sourceRenameVerification. Historical metadata labels were normalized while numerical results and original source hashes were preserved."
+  },
+  "curve": {
+    "intro": {
+      "firstLevel": 1,
+      "lastLevel": 4,
+      "threeStarScores": [
+        9800,
+        16000,
+        22300,
+        28500
+      ]
+    },
+    "progression": {
+      "firstLevel": 4,
+      "lastLevel": 1000,
+      "firstThreeStarScore": 28500,
+      "lastThreeStarScore": 35000,
+      "slowingConstant": 30
+    },
+    "rounding": 100,
+    "firstStar": "120% of the original score base, rounded up to 100; also the raw match-score completion requirement, before the unused-move bonus",
+    "secondStar": "Midpoint of one and three stars, rounded to nearest 100",
+    "daily": "3600 / 7300 / 11000",
+    "targetThreeRates": {
+      "level4": 0.95,
+      "level1000": 0.4
+    }
+  },
+  "collectionCurve": {
+    "condition": "Adventure level >= 10 and level % 5 === 0",
+    "quota": 36,
+    "normal": "min(24, 12 + (level - 1) * 2)",
+    "daily": 15
+  },
+  "calibration": [
+    {
+      "level": 1,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 28,
+        "iceCount": 0,
+        "doubleIce": 0,
+        "iceCells": [],
+        "icePairs": 0,
+        "target": 2200,
+        "targetType": 0,
+        "count": 12,
+        "starTargets": [
+          2200,
+          6000,
+          9800
+        ]
+      },
+      "wins": 300,
+      "threes": 300,
+      "winRate": 1,
+      "threeRate": 1,
+      "threeAmongWins": 1,
+      "threeRate95": [
+        0.9873565700022643,
+        0.9999999999999999
+      ],
+      "medianWinScore": 8600,
+      "winTotalScoreQuantiles": {
+        "p5": 32340,
+        "p25": 38010,
+        "p50": 41490,
+        "p60": 42440,
+        "p75": 46320,
+        "p95": 61300
+      },
+      "medianMovesLeft": 22,
+      "earlyThreeRate": 0.38,
+      "winRate95": [
+        0.9873565700022643,
+        0.9999999999999999
+      ],
+      "failureReasons": {
+        "losses": 0,
+        "unmet": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 2,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 28,
+        "iceCount": 0,
+        "doubleIce": 0,
+        "iceCells": [],
+        "icePairs": 0,
+        "target": 2700,
+        "targetType": 1,
+        "count": 14,
+        "starTargets": [
+          2700,
+          9400,
+          16000
+        ]
+      },
+      "wins": 300,
+      "threes": 300,
+      "winRate": 1,
+      "threeRate": 1,
+      "threeAmongWins": 1,
+      "threeRate95": [
+        0.9873565700022643,
+        0.9999999999999999
+      ],
+      "medianWinScore": 10550,
+      "winTotalScoreQuantiles": {
+        "p5": 32270,
+        "p25": 38110,
+        "p50": 42840,
+        "p60": 44460,
+        "p75": 49280,
+        "p95": 63910
+      },
+      "medianMovesLeft": 21,
+      "earlyThreeRate": 0.27666666666666667,
+      "winRate95": [
+        0.9873565700022643,
+        0.9999999999999999
+      ],
+      "failureReasons": {
+        "losses": 0,
+        "unmet": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 3,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 27,
+        "iceCount": 0,
+        "doubleIce": 0,
+        "iceCells": [],
+        "icePairs": 0,
+        "target": 3200,
+        "targetType": 2,
+        "count": 16,
+        "starTargets": [
+          3200,
+          12800,
+          22300
+        ]
+      },
+      "wins": 300,
+      "threes": 299,
+      "winRate": 1,
+      "threeRate": 0.9966666666666667,
+      "threeAmongWins": 0.9966666666666667,
+      "threeRate95": [
+        0.9813628354450568,
+        0.9994113574238592
+      ],
+      "medianWinScore": 11800,
+      "winTotalScoreQuantiles": {
+        "p5": 29990,
+        "p25": 36330,
+        "p50": 41060,
+        "p60": 42990,
+        "p75": 46180,
+        "p95": 69400
+      },
+      "medianMovesLeft": 19,
+      "earlyThreeRate": 0.14,
+      "winRate95": [
+        0.9873565700022643,
+        0.9999999999999999
+      ],
+      "failureReasons": {
+        "losses": 0,
+        "unmet": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 4,
+      "daily": false,
+      "strategy": "strong",
+      "games": 1000,
+      "seed": 140001,
+      "config": {
+        "moves": 28,
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          1,
+          62
+        ],
+        "icePairs": 0,
+        "target": 3600,
+        "targetType": 3,
+        "count": 18,
+        "starTargets": [
+          3600,
+          16100,
+          28500
+        ]
+      },
+      "wins": 1000,
+      "threes": 973,
+      "winRate": 1,
+      "threeRate": 0.973,
+      "threeAmongWins": 0.973,
+      "threeRate95": [
+        0.9610010105865644,
+        0.9813787433507103
+      ],
+      "medianWinScore": 13310,
+      "winTotalScoreQuantiles": {
+        "p5": 30300,
+        "p25": 36680,
+        "p50": 41860,
+        "p60": 43870,
+        "p75": 48400,
+        "p95": 67860
+      },
+      "medianMovesLeft": 19,
+      "earlyThreeRate": 0.082,
+      "winRate95": [
+        0.9961731014136095,
+        1
+      ],
+      "failureReasons": {
+        "losses": 0,
+        "unmet": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 5,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 28,
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          1,
+          62
+        ],
+        "icePairs": 0,
+        "target": 4100,
+        "targetType": 4,
+        "count": 20,
+        "starTargets": [
+          4100,
+          16400,
+          28700
+        ]
+      },
+      "wins": 300,
+      "threes": 286,
+      "winRate": 1,
+      "threeRate": 0.9533333333333334,
+      "threeAmongWins": 0.9533333333333334,
+      "threeRate95": [
+        0.9232019646862172,
+        0.9720013254491692
+      ],
+      "medianWinScore": 14940,
+      "winTotalScoreQuantiles": {
+        "p5": 28730,
+        "p25": 36550,
+        "p50": 41950,
+        "p60": 43750,
+        "p75": 48530,
+        "p95": 63200
+      },
+      "medianMovesLeft": 18,
+      "earlyThreeRate": 0.07,
+      "winRate95": [
+        0.9873565700022643,
+        0.9999999999999999
+      ],
+      "failureReasons": {
+        "losses": 0,
+        "unmet": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 9,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 27,
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          9,
+          54
+        ],
+        "icePairs": 0,
+        "target": 5700,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          5700,
+          17600,
+          29500
+        ]
+      },
+      "wins": 299,
+      "threes": 280,
+      "winRate": 0.9966666666666667,
+      "threeRate": 0.9333333333333333,
+      "threeAmongWins": 0.9364548494983278,
+      "threeRate95": [
+        0.8992762041322797,
+        0.9564328232030161
+      ],
+      "medianWinScore": 18640,
+      "winTotalScoreQuantiles": {
+        "p5": 27610,
+        "p25": 35530,
+        "p50": 41550,
+        "p60": 44500,
+        "p75": 48990,
+        "p95": 82390
+      },
+      "medianMovesLeft": 15,
+      "earlyThreeRate": 0.12666666666666668,
+      "winRate95": [
+        0.9813628354450568,
+        0.9994113574238592
+      ],
+      "failureReasons": {
+        "losses": 1,
+        "unmet": {
+          "score": 0,
+          "collection": 1,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 1,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 10,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 27,
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          9,
+          54
+        ],
+        "icePairs": 0,
+        "target": 5900,
+        "targetType": 3,
+        "count": 36,
+        "starTargets": [
+          5900,
+          17800,
+          29600
+        ]
+      },
+      "wins": 288,
+      "threes": 261,
+      "winRate": 0.96,
+      "threeRate": 0.87,
+      "threeAmongWins": 0.90625,
+      "threeRate95": [
+        0.8272186992368379,
+        0.9034251625648376
+      ],
+      "medianWinScore": 28210,
+      "winTotalScoreQuantiles": {
+        "p5": 27510,
+        "p25": 36500,
+        "p50": 44040,
+        "p60": 47000,
+        "p75": 52270,
+        "p95": 73950
+      },
+      "medianMovesLeft": 11,
+      "earlyThreeRate": 0.14,
+      "winRate95": [
+        0.9313951365400219,
+        0.9769729078620613
+      ],
+      "failureReasons": {
+        "losses": 12,
+        "unmet": {
+          "score": 0,
+          "collection": 12,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 12,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 29,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 26,
+        "iceCount": 5,
+        "doubleIce": 1,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6
+        ],
+        "icePairs": 0,
+        "target": 10100,
+        "targetType": 4,
+        "count": 24,
+        "starTargets": [
+          10100,
+          20800,
+          31500
+        ]
+      },
+      "wins": 300,
+      "threes": 233,
+      "winRate": 1,
+      "threeRate": 0.7766666666666666,
+      "threeAmongWins": 0.7766666666666666,
+      "threeRate95": [
+        0.726207930343667,
+        0.8201293717242524
+      ],
+      "medianWinScore": 18640,
+      "winTotalScoreQuantiles": {
+        "p5": 21890,
+        "p25": 31970,
+        "p50": 40060,
+        "p60": 43430,
+        "p75": 48280,
+        "p95": 63560
+      },
+      "medianMovesLeft": 13,
+      "earlyThreeRate": 0.06666666666666667,
+      "winRate95": [
+        0.9873565700022643,
+        0.9999999999999999
+      ],
+      "failureReasons": {
+        "losses": 0,
+        "unmet": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 0,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 30,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 25,
+        "iceCount": 5,
+        "doubleIce": 1,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6
+        ],
+        "icePairs": 0,
+        "target": 10200,
+        "targetType": 5,
+        "count": 36,
+        "starTargets": [
+          10200,
+          20900,
+          31600
+        ]
+      },
+      "wins": 267,
+      "threes": 220,
+      "winRate": 0.89,
+      "threeRate": 0.7333333333333333,
+      "threeAmongWins": 0.8239700374531835,
+      "threeRate95": [
+        0.6805715919237879,
+        0.7801948074106021
+      ],
+      "medianWinScore": 29740,
+      "winTotalScoreQuantiles": {
+        "p5": 23150,
+        "p25": 34760,
+        "p50": 40390,
+        "p60": 43660,
+        "p75": 48510,
+        "p95": 78530
+      },
+      "medianMovesLeft": 7,
+      "earlyThreeRate": 0.08333333333333333,
+      "winRate95": [
+        0.8495429318702987,
+        0.9205951927314675
+      ],
+      "failureReasons": {
+        "losses": 33,
+        "unmet": {
+          "score": 2,
+          "collection": 33,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 31,
+          "ice": 0,
+          "score+collection": 2,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 99,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 27,
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          18,
+          45,
+          21,
+          42,
+          26,
+          37,
+          29,
+          34
+        ],
+        "icePairs": 6,
+        "target": 14700,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          14700,
+          24200,
+          33600
+        ]
+      },
+      "wins": 299,
+      "threes": 236,
+      "winRate": 0.9966666666666667,
+      "threeRate": 0.7866666666666666,
+      "threeAmongWins": 0.7892976588628763,
+      "threeRate95": [
+        0.7368363171534565,
+        0.8292481163145083
+      ],
+      "medianWinScore": 21150,
+      "winTotalScoreQuantiles": {
+        "p5": 24700,
+        "p25": 34630,
+        "p50": 40870,
+        "p60": 43250,
+        "p75": 47790,
+        "p95": 69490
+      },
+      "medianMovesLeft": 12,
+      "earlyThreeRate": 0.07,
+      "winRate95": [
+        0.9813628354450568,
+        0.9994113574238592
+      ],
+      "failureReasons": {
+        "losses": 1,
+        "unmet": {
+          "score": 1,
+          "collection": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 1,
+          "collection": 0,
+          "ice": 0,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 100,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 25,
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6,
+          57,
+          15,
+          48
+        ],
+        "icePairs": 0,
+        "target": 14700,
+        "targetType": 3,
+        "count": 36,
+        "starTargets": [
+          14700,
+          24200,
+          33600
+        ]
+      },
+      "wins": 270,
+      "threes": 188,
+      "winRate": 0.9,
+      "threeRate": 0.6266666666666667,
+      "threeAmongWins": 0.6962962962962963,
+      "threeRate95": [
+        0.5706540867432932,
+        0.6794762443239473
+      ],
+      "medianWinScore": 28030,
+      "winTotalScoreQuantiles": {
+        "p5": 23630,
+        "p25": 31230,
+        "p50": 40050,
+        "p60": 42980,
+        "p75": 48980,
+        "p95": 73760
+      },
+      "medianMovesLeft": 7,
+      "earlyThreeRate": 0.04666666666666667,
+      "winRate95": [
+        0.8608327216490343,
+        0.9290525343527771
+      ],
+      "failureReasons": {
+        "losses": 30,
+        "unmet": {
+          "score": 2,
+          "collection": 30,
+          "ice": 2
+        },
+        "combinations": {
+          "score": 0,
+          "collection": 26,
+          "ice": 0,
+          "score+collection": 2,
+          "score+ice": 0,
+          "collection+ice": 2,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 299,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 25,
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 17100,
+        "targetType": 4,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "wins": 292,
+      "threes": 201,
+      "winRate": 0.9733333333333334,
+      "threeRate": 0.67,
+      "threeAmongWins": 0.6883561643835616,
+      "threeRate95": [
+        0.6149348137768542,
+        0.7207664200239157
+      ],
+      "medianWinScore": 22180,
+      "winTotalScoreQuantiles": {
+        "p5": 23100,
+        "p25": 33110,
+        "p50": 39180,
+        "p60": 42160,
+        "p75": 48090,
+        "p95": 74040
+      },
+      "medianMovesLeft": 11,
+      "earlyThreeRate": 0.05,
+      "winRate95": [
+        0.9482704597024538,
+        0.9864270932330232
+      ],
+      "failureReasons": {
+        "losses": 8,
+        "unmet": {
+          "score": 8,
+          "collection": 3,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 5,
+          "collection": 0,
+          "ice": 0,
+          "score+collection": 3,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 300,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 25,
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          10,
+          53,
+          24,
+          39,
+          13,
+          50,
+          31,
+          32
+        ],
+        "icePairs": 2,
+        "target": 17100,
+        "targetType": 5,
+        "count": 36,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "wins": 258,
+      "threes": 176,
+      "winRate": 0.86,
+      "threeRate": 0.5866666666666667,
+      "threeAmongWins": 0.6821705426356589,
+      "threeRate95": [
+        0.5301895702243481,
+        0.6409522352427112
+      ],
+      "medianWinScore": 28250,
+      "winTotalScoreQuantiles": {
+        "p5": 26140,
+        "p25": 32380,
+        "p50": 39850,
+        "p60": 42800,
+        "p75": 48900,
+        "p95": 65220
+      },
+      "medianMovesLeft": 8,
+      "earlyThreeRate": 0.03333333333333333,
+      "winRate95": [
+        0.8161675002526941,
+        0.8947292301489361
+      ],
+      "failureReasons": {
+        "losses": 42,
+        "unmet": {
+          "score": 6,
+          "collection": 40,
+          "ice": 1
+        },
+        "combinations": {
+          "score": 1,
+          "collection": 36,
+          "ice": 0,
+          "score+collection": 4,
+          "score+ice": 1,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 999,
+      "daily": false,
+      "strategy": "strong",
+      "games": 300,
+      "seed": 140001,
+      "config": {
+        "moves": 24,
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          10,
+          53,
+          24,
+          39,
+          13,
+          50,
+          31,
+          32
+        ],
+        "icePairs": 2,
+        "target": 18000,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          18000,
+          26500,
+          35000
+        ]
+      },
+      "wins": 293,
+      "threes": 184,
+      "winRate": 0.9766666666666667,
+      "threeRate": 0.6133333333333333,
+      "threeAmongWins": 0.6279863481228669,
+      "threeRate95": [
+        0.5571234733195609,
+        0.6666773492142857
+      ],
+      "medianWinScore": 23000,
+      "winTotalScoreQuantiles": {
+        "p5": 23170,
+        "p25": 31390,
+        "p50": 39100,
+        "p60": 41230,
+        "p75": 44900,
+        "p95": 68300
+      },
+      "medianMovesLeft": 9,
+      "earlyThreeRate": 0.06,
+      "winRate95": [
+        0.952627445667121,
+        0.9886524844017043
+      ],
+      "failureReasons": {
+        "losses": 7,
+        "unmet": {
+          "score": 5,
+          "collection": 1,
+          "ice": 1
+        },
+        "combinations": {
+          "score": 5,
+          "collection": 1,
+          "ice": 1,
+          "score+collection": 0,
+          "score+ice": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0
+        }
+      }
+    },
+    {
+      "level": 1000,
+      "daily": false,
+      "strategy": "strong",
+      "games": 1000,
+      "seed": 140001,
+      "config": {
+        "moves": 23,
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          2,
+          61,
+          16,
+          47,
+          5,
+          58,
+          23,
+          40
+        ],
+        "icePairs": 0,
+        "target": 18000,
+        "targetType": 3,
+        "count": 36,
+        "starTargets": [
+          18000,
+          26500,
+          35000
+        ]
+      },
+      "wins": 820,
+      "threes": 498,
+      "winRate": 0.82,
+      "threeRate": 0.498,
+      "threeAmongWins": 0.6073170731707317,
+      "threeRate95": [
+        0.4670769344782838,
+        0.5289383731160618
+      ],
+      "medianWinScore": 28450,
+      "winTotalScoreQuantiles": {
+        "p5": 23380,
+        "p25": 31160,
+        "p50": 37900,
+        "p60": 41030,
+        "p75": 47070,
+        "p95": 67850
+      },
+      "medianMovesLeft": 6,
+      "earlyThreeRate": 0.046,
+      "winRate95": [
+        0.7949772854898887,
+        0.8425734994148213
+      ],
+      "failureReasons": {
+        "losses": 180,
+        "unmet": {
+          "score": 71,
+          "collection": 168,
+          "ice": 17
+        },
+        "combinations": {
+          "score": 10,
+          "collection": 102,
+          "ice": 2,
+          "score+collection": 51,
+          "score+ice": 0,
+          "collection+ice": 5,
+          "score+collection+ice": 10
+        }
+      }
+    }
+  ],
+  "previousTierCalibration": {
+    "generatedAt": "2026-10-18T06:50:44.299Z",
+    "protocol": {
+      "strategy": "strong",
+      "denominator": "All games, including losses",
+      "tools": "No hints or manual shuffles",
+      "randomness": "Actual refills and AI predictions use independent seeded streams",
+      "mechanics": "Top-entry gravity, vertical supply takes priority even when temporarily empty, diagonals only when the cell above cannot be replenished, triangular holes under horizontal ice walls, alternating left/right diagonal supply persisted per ice barrier, waiting for reachable preferred sources and skipping sealed sources, persistent blocked holes, perpendicular stripe chains and deferred rainbows, reward cells chip adjacent ice and count toward base points and area, square-root area multiplier from 1 to 2, score rounded to tens, fixed stripe/rainbow pattern bonuses of 80/200, no multiple-match bonus, collection challenges from level 10 at every multiple of 5; challenge collection fixed at 36; rainbow-plus-stripe converted stripes fire in their randomly assigned directions without ray-induced rotation",
+      "engineSha256": "885e5325fb054371bb07ff30b15676a636ae8d9822b020a4cda9483fa3319883",
+      "aiSha256": "5ae618fc188d99865c9e868af6dd04cd0c15eba59bb9d9a17cc52654f86efa7a",
+      "scoring": {
+        "basePerCell": 60,
+        "rewardCellsCountAsClearedForScoring": true,
+        "areaMultiplier": "1 + sqrt(clamp((scoredCells - 3) / 61, 0, 1))",
+        "roundTo": 10,
+        "stripePatternBonus": 80,
+        "rainbowPatternBonus": 200,
+        "multipleMatchBonus": 0,
+        "maxCascadeMultiplier": 5,
+        "unusedMoveBonus": 1500
+      },
+      "sampling": "1000 consecutive seeds 120001–121000 per level plus independent level-1000 validation seeds 130001–131000, pooled to 2000 games at level 1000; no parameter overrides; actual AI decisions use the new star thresholds"
+    },
+    "curve": {
+      "intro": {
+        "firstLevel": 1,
+        "lastLevel": 4,
+        "threeStarScores": [
+          9800,
+          16000,
+          22300,
+          28500
+        ]
+      },
+      "progression": {
+        "firstLevel": 4,
+        "lastLevel": 1000,
+        "firstThreeStarScore": 28500,
+        "lastThreeStarScore": 35000,
+        "slowingConstant": 30
+      },
+      "rounding": 100,
+      "firstStar": "Preserved: 64% of the original score base, rounded up to 100",
+      "secondStar": "Preserved",
+      "daily": "Preserved: 2000 / 7000 / 11000",
+      "targetThreeRates": {
+        "level4": 0.95,
+        "level1000": 0.4
+      }
+    },
+    "calibration": [
+      {
+        "level": 1,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 28,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 1200,
+          "targetType": 0,
+          "count": 12,
+          "starTargets": [
+            1200,
+            5800,
+            9800
+          ]
+        },
+        "wins": 1000,
+        "threes": 1000,
+        "winRate": 1,
+        "threeRate": 1,
+        "threeAmongWins": 1,
+        "winRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "threeRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "earlyThreeRate": 0.218
+      },
+      {
+        "level": 2,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 28,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 1500,
+          "targetType": 1,
+          "count": 14,
+          "starTargets": [
+            1500,
+            6200,
+            16000
+          ]
+        },
+        "wins": 1000,
+        "threes": 1000,
+        "winRate": 1,
+        "threeRate": 1,
+        "threeAmongWins": 1,
+        "winRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "threeRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "earlyThreeRate": 0.079
+      },
+      {
+        "level": 3,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 27,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 1700,
+          "targetType": 2,
+          "count": 16,
+          "starTargets": [
+            1700,
+            6600,
+            22300
+          ]
+        },
+        "wins": 1000,
+        "threes": 998,
+        "winRate": 1,
+        "threeRate": 0.998,
+        "threeAmongWins": 0.998,
+        "winRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "threeRate95": [
+          0.9927370411104123,
+          0.9994513678975429
+        ],
+        "earlyThreeRate": 0.032
+      },
+      {
+        "level": 4,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 28,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            1,
+            62
+          ],
+          "icePairs": 0,
+          "target": 2000,
+          "targetType": 3,
+          "count": 18,
+          "starTargets": [
+            2000,
+            7000,
+            28500
+          ]
+        },
+        "wins": 999,
+        "threes": 951,
+        "winRate": 0.999,
+        "threeRate": 0.951,
+        "threeAmongWins": 0.9519519519519519,
+        "winRate95": [
+          0.9943572970398398,
+          0.9998234581709429
+        ],
+        "threeRate95": [
+          0.9358089847812472,
+          0.9627391526938285
+        ],
+        "earlyThreeRate": 0.007
+      },
+      {
+        "level": 10,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 27,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            9,
+            54
+          ],
+          "icePairs": 0,
+          "target": 3200,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            3200,
+            8900,
+            29600
+          ]
+        },
+        "wins": 947,
+        "threes": 820,
+        "winRate": 0.947,
+        "threeRate": 0.82,
+        "threeAmongWins": 0.8658922914466737,
+        "winRate95": [
+          0.9313250610861062,
+          0.9592536915776607
+        ],
+        "threeRate95": [
+          0.7949772854898887,
+          0.8425734994148213
+        ],
+        "earlyThreeRate": 0.097
+      },
+      {
+        "level": 30,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 25,
+          "iceCount": 5,
+          "doubleIce": 1,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6
+          ],
+          "icePairs": 0,
+          "target": 5500,
+          "targetType": 5,
+          "count": 36,
+          "starTargets": [
+            5500,
+            12500,
+            31600
+          ]
+        },
+        "wins": 885,
+        "threes": 637,
+        "winRate": 0.885,
+        "threeRate": 0.637,
+        "threeAmongWins": 0.7197740112994351,
+        "winRate95": [
+          0.8637364095483508,
+          0.9033168785401287
+        ],
+        "threeRate95": [
+          0.606723866851864,
+          0.666227562935465
+        ],
+        "earlyThreeRate": 0.048
+      },
+      {
+        "level": 99,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 27,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            18,
+            45,
+            21,
+            42,
+            26,
+            37,
+            29,
+            34
+          ],
+          "icePairs": 6,
+          "target": 7900,
+          "targetType": 2,
+          "count": 24,
+          "starTargets": [
+            7900,
+            16200,
+            33600
+          ]
+        },
+        "wins": 997,
+        "threes": 631,
+        "winRate": 0.997,
+        "threeRate": 0.631,
+        "threeAmongWins": 0.6328986960882648,
+        "winRate95": [
+          0.9912168282105721,
+          0.9989792345945557
+        ],
+        "threeRate95": [
+          0.6006439854406335,
+          0.6603533671297322
+        ],
+        "earlyThreeRate": 0.004
+      },
+      {
+        "level": 100,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6,
+            57,
+            15,
+            48
+          ],
+          "icePairs": 0,
+          "target": 7900,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            7900,
+            16200,
+            33600
+          ]
+        },
+        "wins": 859,
+        "threes": 528,
+        "winRate": 0.859,
+        "threeRate": 0.528,
+        "threeAmongWins": 0.6146682188591386,
+        "winRate95": [
+          0.8360530673212659,
+          0.8791992194937056
+        ],
+        "threeRate95": [
+          0.49701023296209834,
+          0.5587754607170637
+        ],
+        "earlyThreeRate": 0.028
+      },
+      {
+        "level": 300,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 9100,
+          "targetType": 5,
+          "count": 36,
+          "starTargets": [
+            9100,
+            18200,
+            34600
+          ]
+        },
+        "wins": 878,
+        "threes": 533,
+        "winRate": 0.878,
+        "threeRate": 0.533,
+        "threeAmongWins": 0.6070615034168565,
+        "winRate95": [
+          0.8562552888972927,
+          0.8968515757713962
+        ],
+        "threeRate95": [
+          0.5020099293217437,
+          0.5637374953715546
+        ],
+        "earlyThreeRate": 0.036
+      },
+      {
+        "level": 999,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 24,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 9600,
+          "targetType": 2,
+          "count": 24,
+          "starTargets": [
+            9600,
+            19000,
+            35000
+          ]
+        },
+        "wins": 984,
+        "threes": 414,
+        "winRate": 0.984,
+        "threeRate": 0.414,
+        "threeAmongWins": 0.42073170731707316,
+        "winRate95": [
+          0.9741677180358003,
+          0.9901278441325737
+        ],
+        "threeRate95": [
+          0.38385733584089365,
+          0.4448008907159655
+        ],
+        "earlyThreeRate": 0.005
+      },
+      {
+        "level": 1000,
+        "daily": false,
+        "strategy": "strong",
+        "games": 2000,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 9600,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            9600,
+            19000,
+            35000
+          ]
+        },
+        "wins": 1511,
+        "threes": 749,
+        "winRate": 0.7555,
+        "threeRate": 0.3745,
+        "threeAmongWins": 0.4956982131039047,
+        "winRate95": [
+          0.7361854743041775,
+          0.7738348786019603
+        ],
+        "threeRate95": [
+          0.35354762286221647,
+          0.39593357365551224
+        ],
+        "earlyThreeRate": 0.0125,
+        "seeds": [
+          120001,
+          130001
+        ]
+      }
+    ],
+    "validation": [
+      {
+        "level": 1000,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 120001,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 9600,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            9600,
+            19000,
+            35000
+          ]
+        },
+        "wins": 766,
+        "threes": 378,
+        "winRate": 0.766,
+        "threeRate": 0.378,
+        "threeAmongWins": 0.4934725848563969,
+        "winRate95": [
+          0.7387716492779421,
+          0.7911924406740982
+        ],
+        "threeRate95": [
+          0.3484671638540017,
+          0.4084665994010776
+        ],
+        "earlyThreeRate": 0.015
+      },
+      {
+        "level": 1000,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 130001,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 9600,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            9600,
+            19000,
+            35000
+          ]
+        },
+        "wins": 745,
+        "threes": 371,
+        "winRate": 0.745,
+        "threeRate": 0.371,
+        "threeAmongWins": 0.49798657718120803,
+        "threeRate95": [
+          0.3416057971728489,
+          0.40138154266243997
+        ],
+        "medianWinScore": 25780,
+        "winTotalScoreQuantiles": {
+          "p5": 21720,
+          "p25": 28650,
+          "p50": 34940,
+          "p60": 37410,
+          "p75": 41970,
+          "p95": 51640
+        },
+        "medianMovesLeft": 6,
+        "earlyThreeRate": 0.01
+      }
+    ],
+    "note": "Historical: before raising one-star/completion scores and interpolating two-star thresholds"
+  },
+  "previousCurveCalibration": {
+    "generatedAt": "2026-10-18T06:41:02.814Z",
+    "status": "historical",
+    "protocol": {
+      "strategy": "strong",
+      "denominator": "All games, including losses",
+      "tools": "No hints or manual shuffles",
+      "randomness": "Actual refills and AI predictions use independent seeded streams",
+      "mechanics": "Top-entry gravity, vertical supply takes priority even when temporarily empty, diagonals only when the cell above cannot be replenished, triangular holes under horizontal ice walls, alternating left/right diagonal supply persisted per ice barrier, waiting for reachable preferred sources and skipping sealed sources, persistent blocked holes, perpendicular stripe chains and deferred rainbows, reward cells chip adjacent ice and count toward base points and area, square-root area multiplier from 1 to 2, score rounded to tens, fixed stripe/rainbow pattern bonuses of 80/200, no multiple-match bonus, collection challenges from level 10 at every multiple of 5; only piece quantity changes; challenge collection fixed at 36; rainbow-plus-stripe converted stripes fire in their randomly assigned directions without ray-induced rotation",
+      "engineSha256": "4f4ee3eecc714484c9fbb32009adf4bf40292b6afa7f5a174d8265e83e7aab13",
+      "aiSha256": "5ae618fc188d99865c9e868af6dd04cd0c15eba59bb9d9a17cc52654f86efa7a",
+      "scoring": {
+        "basePerCell": 60,
+        "rewardCellsCountAsClearedForScoring": true,
+        "areaMultiplier": "1 + sqrt(clamp((scoredCells - 3) / 61, 0, 1))",
+        "roundTo": 10,
+        "stripePatternBonus": 80,
+        "rainbowPatternBonus": 200,
+        "multipleMatchBonus": 0,
+        "maxCascadeMultiplier": 5,
+        "unusedMoveBonus": 1500
+      },
+      "sampling": "1000 consecutive seeds 110001–111000 per level, processed in 100-game batches; no parameter overrides"
+    },
+    "curve": {
+      "intro": {
+        "firstLevel": 1,
+        "lastLevel": 4,
+        "threeStarScores": [
+          9800,
+          13000,
+          16100,
+          19300
+        ]
+      },
+      "progression": {
+        "firstLevel": 4,
+        "lastLevel": 1000,
+        "firstThreeStarScore": 19300,
+        "lastThreeStarScore": 25600,
+        "slowingConstant": 30
+      },
+      "rounding": 100,
+      "firstStar": "Preserved: 64% of the original score base, rounded up to 100",
+      "secondStar": "Preserved",
+      "daily": "Preserved: 2000 / 7000 / 11000"
+    },
+    "collectionCurve": {
+      "condition": "Adventure level >= 10 and level % 5 === 0",
+      "quota": 36,
+      "normal": "min(24, 12 + (level - 1) * 2)",
+      "daily": 15
+    },
+    "calibration": [
+      {
+        "level": 1,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 28,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 1200,
+          "targetType": 0,
+          "count": 12,
+          "starTargets": [
+            1200,
+            5800,
+            9800
+          ]
+        },
+        "wins": 1000,
+        "threes": 1000,
+        "winRate": 1,
+        "threeRate": 1,
+        "threeAmongWins": 1,
+        "winRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "threeRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "earlyThreeRate": 0.243
+      },
+      {
+        "level": 2,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 28,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 1500,
+          "targetType": 1,
+          "count": 14,
+          "starTargets": [
+            1500,
+            6200,
+            13000
+          ]
+        },
+        "wins": 1000,
+        "threes": 1000,
+        "winRate": 1,
+        "threeRate": 1,
+        "threeAmongWins": 1,
+        "winRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "threeRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "earlyThreeRate": 0.183
+      },
+      {
+        "level": 3,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 27,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 1700,
+          "targetType": 2,
+          "count": 16,
+          "starTargets": [
+            1700,
+            6600,
+            16100
+          ]
+        },
+        "wins": 1000,
+        "threes": 1000,
+        "winRate": 1,
+        "threeRate": 1,
+        "threeAmongWins": 1,
+        "winRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "threeRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "earlyThreeRate": 0.118
+      },
+      {
+        "level": 4,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 28,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            1,
+            62
+          ],
+          "icePairs": 0,
+          "target": 2000,
+          "targetType": 3,
+          "count": 18,
+          "starTargets": [
+            2000,
+            7000,
+            19300
+          ]
+        },
+        "wins": 1000,
+        "threes": 999,
+        "winRate": 1,
+        "threeRate": 0.999,
+        "threeAmongWins": 0.999,
+        "winRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "threeRate95": [
+          0.9943572970398398,
+          0.9998234581709429
+        ],
+        "earlyThreeRate": 0.081
+      },
+      {
+        "level": 10,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 27,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            9,
+            54
+          ],
+          "icePairs": 0,
+          "target": 3200,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            3200,
+            8900,
+            20400
+          ]
+        },
+        "wins": 953,
+        "threes": 944,
+        "winRate": 0.953,
+        "threeRate": 0.944,
+        "threeAmongWins": 0.9905561385099685,
+        "winRate95": [
+          0.9380597525405758,
+          0.9644730773401544
+        ],
+        "threeRate95": [
+          0.9279763237468875,
+          0.9566253903083978
+        ],
+        "earlyThreeRate": 0.345
+      },
+      {
+        "level": 30,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 25,
+          "iceCount": 5,
+          "doubleIce": 1,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6
+          ],
+          "icePairs": 0,
+          "target": 5500,
+          "targetType": 5,
+          "count": 36,
+          "starTargets": [
+            5500,
+            12500,
+            22300
+          ]
+        },
+        "wins": 860,
+        "threes": 841,
+        "winRate": 0.86,
+        "threeRate": 0.841,
+        "threeAmongWins": 0.977906976744186,
+        "winRate95": [
+          0.8371128627361262,
+          0.8801317702816727
+        ],
+        "threeRate95": [
+          0.817035989537914,
+          0.8623540656261677
+        ],
+        "earlyThreeRate": 0.215
+      },
+      {
+        "level": 99,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 27,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            18,
+            45,
+            21,
+            42,
+            26,
+            37,
+            29,
+            34
+          ],
+          "icePairs": 6,
+          "target": 7900,
+          "targetType": 2,
+          "count": 24,
+          "starTargets": [
+            7900,
+            16200,
+            24200
+          ]
+        },
+        "wins": 997,
+        "threes": 938,
+        "winRate": 0.997,
+        "threeRate": 0.938,
+        "threeAmongWins": 0.9408224674022067,
+        "winRate95": [
+          0.9912168282105721,
+          0.9989792345945557
+        ],
+        "threeRate95": [
+          0.9213116000993365,
+          0.9513360367389853
+        ],
+        "earlyThreeRate": 0.078
+      },
+      {
+        "level": 100,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6,
+            57,
+            15,
+            48
+          ],
+          "icePairs": 0,
+          "target": 7900,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            7900,
+            16200,
+            24200
+          ]
+        },
+        "wins": 839,
+        "threes": 783,
+        "winRate": 0.839,
+        "threeRate": 0.783,
+        "threeAmongWins": 0.933253873659118,
+        "winRate95": [
+          0.8149295245985896,
+          0.8604758381598377
+        ],
+        "threeRate95": [
+          0.7563943490951964,
+          0.8074396263049067
+        ],
+        "earlyThreeRate": 0.166
+      },
+      {
+        "level": 300,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 9100,
+          "targetType": 5,
+          "count": 36,
+          "starTargets": [
+            9100,
+            18200,
+            25200
+          ]
+        },
+        "wins": 851,
+        "threes": 781,
+        "winRate": 0.851,
+        "threeRate": 0.781,
+        "threeAmongWins": 0.917743830787309,
+        "winRate95": [
+          0.8275875218326485,
+          0.8717259953597054
+        ],
+        "threeRate95": [
+          0.7543178981817001,
+          0.8055313848127484
+        ],
+        "earlyThreeRate": 0.134
+      },
+      {
+        "level": 999,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 24,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 9600,
+          "targetType": 2,
+          "count": 24,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 982,
+        "threes": 790,
+        "winRate": 0.982,
+        "threeRate": 0.79,
+        "threeAmongWins": 0.8044806517311609,
+        "winRate95": [
+          0.9717265156214581,
+          0.9885843541412616
+        ],
+        "threeRate95": [
+          0.763668896255037,
+          0.8141115025648568
+        ],
+        "earlyThreeRate": 0.048
+      },
+      {
+        "level": 1000,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 110001,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 9600,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 778,
+        "threes": 655,
+        "winRate": 0.778,
+        "threeRate": 0.655,
+        "threeAmongWins": 0.8419023136246787,
+        "winRate95": [
+          0.7512048483761805,
+          0.8026673960097864
+        ],
+        "threeRate95": [
+          0.6249936490167607,
+          0.6838200124214584
+        ],
+        "earlyThreeRate": 0.093
+      }
+    ],
+    "note": "Recorded with the same 1500-point unused-move bonus and fixed-36 challenges, but before recalibrating the three-star score curve"
+  },
+  "historicalCalibration": {
+    "generatedAt": "2026-10-18T06:20:14.506Z",
+    "status": "historical",
+    "note": "Recorded before challenge collection requirements were unified at 36 and the unused-move bonus increased from 800 to 1500. These probabilities describe the historical version identified by protocol.engineSha256, not the current game; current rules have not been resampled.",
+    "supersededBy": {
+      "condition": "Adventure level >= 10 and level % 5 === 0",
+      "collectionRequirement": 36,
+      "unusedMoveBonus": 1500,
+      "starThresholdsChanged": false,
+      "dailyChanged": false,
+      "normalLevelCountsChanged": false
+    },
+    "protocol": {
+      "strategy": "strong",
+      "denominator": "All games, including losses",
+      "tools": "No hints or manual shuffles",
+      "randomness": "Actual refills and AI predictions use independent seeded streams",
+      "mechanics": "Top-entry gravity, vertical supply takes priority even when temporarily empty, diagonals only when the cell above cannot be replenished, triangular holes under horizontal ice walls, alternating left/right diagonal supply persisted per ice barrier, waiting for reachable preferred sources and skipping sealed sources, persistent blocked holes, perpendicular stripe chains and deferred rainbows, reward cells chip adjacent ice and count toward base points and area, square-root area multiplier from 1 to 2, score rounded to tens, fixed stripe/rainbow pattern bonuses of 80/200, no multiple-match bonus, collection challenges from level 10 at every multiple of 5; only piece quantity changes",
+      "engineSha256": "803c1bb53e7b7d2ca3e501d7921ed5bbab3e913cde7415cae61d623154db7117",
+      "aiSha256": "5ae618fc188d99865c9e868af6dd04cd0c15eba59bb9d9a17cc52654f86efa7a",
+      "scoring": {
+        "basePerCell": 60,
+        "rewardCellsCountAsClearedForScoring": true,
+        "areaMultiplier": "1 + sqrt(clamp((scoredCells - 3) / 61, 0, 1))",
+        "roundTo": 10,
+        "stripePatternBonus": 80,
+        "rainbowPatternBonus": 200,
+        "multipleMatchBonus": 0,
+        "maxCascadeMultiplier": 5,
+        "unusedMoveBonus": 800
+      },
+      "quotaCalibration": "Candidate requirements tested with overrides; recorded configurations verified against levelConfig at the historical engine version"
+    },
+    "curve": {
+      "intro": {
+        "firstLevel": 1,
+        "lastLevel": 4,
+        "threeStarScores": [
+          9800,
+          13000,
+          16100,
+          19300
+        ]
+      },
+      "progression": {
+        "firstLevel": 4,
+        "lastLevel": 1000,
+        "firstThreeStarScore": 19300,
+        "lastThreeStarScore": 25600,
+        "slowingConstant": 30
+      },
+      "rounding": 100,
+      "firstStar": "Preserved: 64% of the original score base, rounded up to 100",
+      "secondStar": "Preserved",
+      "daily": "Preserved: 2000 / 7000 / 11000"
+    },
+    "collectionCurve": {
+      "condition": "Adventure level >= 10 and level % 5 === 0",
+      "targetWinRates": {
+        "level10": 0.7,
+        "level1000": 0.6
+      },
+      "progress": "stage = clamp(level - 10, 0, 990); progress = stage * 1020 / ((stage + 30) * 990)",
+      "quota": "round(2 * moves - 7 + 2 * progress) + frozenLayoutAdjustment",
+      "starThresholdsChanged": false,
+      "dailyChanged": false,
+      "normalLevelCountsChanged": false
+    },
+    "calibration": [
+      {
+        "level": 10,
+        "daily": false,
+        "strategy": "strong",
+        "games": 500,
+        "seed": 90001,
+        "config": {
+          "moves": 27,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            9,
+            54
+          ],
+          "icePairs": 0,
+          "target": 3200,
+          "targetType": 3,
+          "count": 50,
+          "starTargets": [
+            3200,
+            8900,
+            20400
+          ]
+        },
+        "wins": 358,
+        "threes": 358,
+        "winRate": 0.716,
+        "threeRate": 0.716,
+        "threeAmongWins": 1,
+        "threeRate95": [
+          0.6749432769152115,
+          0.7537628878794382
+        ],
+        "medianWinScore": 39200,
+        "winTotalScoreQuantiles": {
+          "p5": 30360,
+          "p25": 37290,
+          "p50": 43010,
+          "p60": 46140,
+          "p75": 49910,
+          "p95": 63470
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.382,
+        "winRate95": [
+          0.6749432769152115,
+          0.7537628878794382
+        ]
+      },
+      {
+        "level": 100,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 80001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6,
+            57,
+            15,
+            48
+          ],
+          "icePairs": 0,
+          "target": 7900,
+          "targetType": 3,
+          "count": 44,
+          "starTargets": [
+            7900,
+            16200,
+            24200
+          ]
+        },
+        "wins": 644,
+        "threes": 626,
+        "winRate": 0.644,
+        "threeRate": 0.626,
+        "threeAmongWins": 0.9720496894409938,
+        "threeRate95": [
+          0.5955811892071059,
+          0.6554544323491238
+        ],
+        "medianWinScore": 33450,
+        "winTotalScoreQuantiles": {
+          "p5": 25700,
+          "p25": 32960,
+          "p50": 37810,
+          "p60": 39880,
+          "p75": 44230,
+          "p95": 55380
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.187,
+        "winRate95": [
+          0.6138233673784835,
+          0.673074485828636
+        ]
+      },
+      {
+        "level": 300,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 90001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 9100,
+          "targetType": 5,
+          "count": 45,
+          "starTargets": [
+            9100,
+            18200,
+            25200
+          ]
+        },
+        "wins": 616,
+        "threes": 606,
+        "winRate": 0.616,
+        "threeRate": 0.606,
+        "threeAmongWins": 0.9837662337662337,
+        "threeRate95": [
+          0.5753637323648315,
+          0.6358249651348538
+        ],
+        "medianWinScore": 34590,
+        "winTotalScoreQuantiles": {
+          "p5": 28010,
+          "p25": 33500,
+          "p50": 38980,
+          "p60": 40820,
+          "p75": 45310,
+          "p95": 55960
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.146,
+        "winRate95": [
+          0.5854657662994249,
+          0.6456463932285326
+        ]
+      },
+      {
+        "level": 1000,
+        "daily": false,
+        "strategy": "strong",
+        "games": 500,
+        "seed": 90001,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 9600,
+          "targetType": 3,
+          "count": 42,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 313,
+        "threes": 287,
+        "winRate": 0.626,
+        "threeRate": 0.574,
+        "threeAmongWins": 0.9169329073482428,
+        "threeRate95": [
+          0.5302533678298271,
+          0.616618188627599
+        ],
+        "medianWinScore": 31990,
+        "winTotalScoreQuantiles": {
+          "p5": 23070,
+          "p25": 30540,
+          "p50": 35210,
+          "p60": 37060,
+          "p75": 41140,
+          "p95": 50620
+        },
+        "medianMovesLeft": 4,
+        "earlyThreeRate": 0.1,
+        "winRate95": [
+          0.582777860120605,
+          0.6673007360096074
+        ]
+      }
+    ],
+    "checkpoints": [
+      {
+        "level": 15,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 90001,
+        "config": {
+          "moves": 26,
+          "iceCount": 3,
+          "doubleIce": 0,
+          "iceCells": [
+            10,
+            53,
+            24
+          ],
+          "icePairs": 0,
+          "target": 4000,
+          "targetType": 2,
+          "count": 48,
+          "starTargets": [
+            4000,
+            10100,
+            21000
+          ]
+        },
+        "wins": 199,
+        "threes": 198,
+        "winRate": 0.6633333333333333,
+        "threeRate": 0.66,
+        "threeAmongWins": 0.9949748743718593,
+        "threeRate95": [
+          0.6046734114246599,
+          0.7112806909760647
+        ],
+        "medianWinScore": 36710,
+        "winTotalScoreQuantiles": {
+          "p5": 28340,
+          "p25": 34680,
+          "p50": 41280,
+          "p60": 43070,
+          "p75": 45770,
+          "p95": 59440
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.3333333333333333,
+        "winRate95": [
+          0.6080909561297259,
+          0.7144455234043472
+        ]
+      },
+      {
+        "level": 20,
+        "daily": false,
+        "strategy": "strong",
+        "games": 200,
+        "seed": 71001,
+        "config": {
+          "moves": 26,
+          "iceCount": 4,
+          "doubleIce": 0,
+          "iceCells": [
+            11,
+            52,
+            25,
+            38
+          ],
+          "icePairs": 0,
+          "target": 4600,
+          "targetType": 1,
+          "count": 47,
+          "starTargets": [
+            4600,
+            11100,
+            21600
+          ]
+        },
+        "wins": 131,
+        "threes": 131,
+        "winRate": 0.655,
+        "threeRate": 0.655,
+        "threeAmongWins": 1,
+        "threeRate95": [
+          0.5867546071792236,
+          0.7174031309860971
+        ],
+        "medianWinScore": 37460,
+        "winTotalScoreQuantiles": {
+          "p5": 28950,
+          "p25": 35050,
+          "p50": 42500,
+          "p60": 44420,
+          "p75": 47560,
+          "p95": 53220
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.315,
+        "winRate95": [
+          0.5867546071792236,
+          0.7174031309860971
+        ]
+      },
+      {
+        "level": 25,
+        "daily": false,
+        "strategy": "strong",
+        "games": 200,
+        "seed": 71001,
+        "config": {
+          "moves": 26,
+          "iceCount": 4,
+          "doubleIce": 1,
+          "iceCells": [
+            18,
+            45,
+            21,
+            42
+          ],
+          "icePairs": 0,
+          "target": 5000,
+          "targetType": 0,
+          "count": 47,
+          "starTargets": [
+            5000,
+            11800,
+            22000
+          ]
+        },
+        "wins": 133,
+        "threes": 133,
+        "winRate": 0.665,
+        "threeRate": 0.665,
+        "threeAmongWins": 1,
+        "threeRate95": [
+          0.5970206277343806,
+          0.7267601903125736
+        ],
+        "medianWinScore": 36420,
+        "winTotalScoreQuantiles": {
+          "p5": 27710,
+          "p25": 35900,
+          "p50": 41760,
+          "p60": 44560,
+          "p75": 48440,
+          "p95": 57050
+        },
+        "medianMovesLeft": 6,
+        "earlyThreeRate": 0.345,
+        "winRate95": [
+          0.5970206277343806,
+          0.7267601903125736
+        ]
+      },
+      {
+        "level": 30,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 90001,
+        "config": {
+          "moves": 25,
+          "iceCount": 5,
+          "doubleIce": 1,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6
+          ],
+          "icePairs": 0,
+          "target": 5500,
+          "targetType": 5,
+          "count": 45,
+          "starTargets": [
+            5500,
+            12500,
+            22300
+          ]
+        },
+        "wins": 204,
+        "threes": 202,
+        "winRate": 0.68,
+        "threeRate": 0.6733333333333333,
+        "threeAmongWins": 0.9901960784313726,
+        "threeRate95": [
+          0.6183611701576165,
+          0.7239224407765018
+        ],
+        "medianWinScore": 34830,
+        "winTotalScoreQuantiles": {
+          "p5": 26410,
+          "p25": 33870,
+          "p50": 39050,
+          "p60": 41110,
+          "p75": 44330,
+          "p95": 53500
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.24666666666666667,
+        "winRate95": [
+          0.6252228520235207,
+          0.7302255131772947
+        ]
+      },
+      {
+        "level": 40,
+        "daily": false,
+        "strategy": "strong",
+        "games": 200,
+        "seed": 71001,
+        "config": {
+          "moves": 26,
+          "iceCount": 6,
+          "doubleIce": 1,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58
+          ],
+          "icePairs": 0,
+          "target": 6100,
+          "targetType": 3,
+          "count": 46,
+          "starTargets": [
+            6100,
+            13500,
+            22800
+          ]
+        },
+        "wins": 134,
+        "threes": 134,
+        "winRate": 0.67,
+        "threeRate": 0.67,
+        "threeAmongWins": 1,
+        "threeRate95": [
+          0.602165564130804,
+          0.7314267938569671
+        ],
+        "medianWinScore": 34850,
+        "winTotalScoreQuantiles": {
+          "p5": 28670,
+          "p25": 34340,
+          "p50": 39370,
+          "p60": 41170,
+          "p75": 44540,
+          "p95": 58060
+        },
+        "medianMovesLeft": 6,
+        "earlyThreeRate": 0.305,
+        "winRate95": [
+          0.602165564130804,
+          0.7314267938569671
+        ]
+      },
+      {
+        "level": 50,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 90001,
+        "config": {
+          "moves": 27,
+          "iceCount": 7,
+          "doubleIce": 2,
+          "iceCells": [
+            18,
+            45,
+            21,
+            42,
+            26,
+            37,
+            29
+          ],
+          "icePairs": 4,
+          "target": 6600,
+          "targetType": 1,
+          "count": 49,
+          "starTargets": [
+            6600,
+            14200,
+            23200
+          ]
+        },
+        "wins": 197,
+        "threes": 197,
+        "winRate": 0.6566666666666666,
+        "threeRate": 0.6566666666666666,
+        "threeAmongWins": 1,
+        "threeRate95": [
+          0.60125876165596,
+          0.708112963611416
+        ],
+        "medianWinScore": 38150,
+        "winTotalScoreQuantiles": {
+          "p5": 29590,
+          "p25": 37330,
+          "p50": 41870,
+          "p60": 44410,
+          "p75": 47530,
+          "p95": 59620
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.24333333333333335,
+        "winRate95": [
+          0.60125876165596,
+          0.708112963611416
+        ]
+      },
+      {
+        "level": 60,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 80001,
+        "config": {
+          "moves": 26,
+          "iceCount": 8,
+          "doubleIce": 2,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 7000,
+          "targetType": 5,
+          "count": 47,
+          "starTargets": [
+            7000,
+            14800,
+            23500
+          ]
+        },
+        "wins": 196,
+        "threes": 193,
+        "winRate": 0.6533333333333333,
+        "threeRate": 0.6433333333333333,
+        "threeAmongWins": 0.9846938775510204,
+        "threeRate95": [
+          0.5876287210234448,
+          0.6954134957105376
+        ],
+        "medianWinScore": 35870,
+        "winTotalScoreQuantiles": {
+          "p5": 25570,
+          "p25": 33770,
+          "p50": 40620,
+          "p60": 42690,
+          "p75": 47500,
+          "p95": 57490
+        },
+        "medianMovesLeft": 6,
+        "earlyThreeRate": 0.23333333333333334,
+        "winRate95": [
+          0.5978469867996586,
+          0.7049423613343692
+        ]
+      },
+      {
+        "level": 600,
+        "daily": false,
+        "strategy": "strong",
+        "games": 200,
+        "seed": 71001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            18,
+            45,
+            21,
+            42,
+            26,
+            37,
+            29,
+            34
+          ],
+          "icePairs": 6,
+          "target": 9500,
+          "targetType": 5,
+          "count": 46,
+          "starTargets": [
+            9500,
+            18700,
+            25500
+          ]
+        },
+        "wins": 125,
+        "threes": 121,
+        "winRate": 0.625,
+        "threeRate": 0.605,
+        "threeAmongWins": 0.968,
+        "threeRate95": [
+          0.5358822087449843,
+          0.6701601300121683
+        ],
+        "medianWinScore": 34460,
+        "winTotalScoreQuantiles": {
+          "p5": 27190,
+          "p25": 33670,
+          "p50": 38370,
+          "p60": 39980,
+          "p75": 44180,
+          "p95": 50940
+        },
+        "medianMovesLeft": 4,
+        "earlyThreeRate": 0.075,
+        "winRate95": [
+          0.5561417515728713,
+          0.6891467469475485
+        ]
+      }
+    ],
+    "validation": [
+      {
+        "level": 10,
+        "daily": false,
+        "strategy": "strong",
+        "games": 500,
+        "seed": 97001,
+        "config": {
+          "moves": 27,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            9,
+            54
+          ],
+          "icePairs": 0,
+          "target": 3200,
+          "targetType": 3,
+          "count": 50,
+          "starTargets": [
+            3200,
+            8900,
+            20400
+          ]
+        },
+        "wins": 328,
+        "threes": 328,
+        "winRate": 0.656,
+        "threeRate": 0.656,
+        "threeAmongWins": 1,
+        "threeRate95": [
+          0.6133133706304251,
+          0.6963077483879331
+        ],
+        "medianWinScore": 38890,
+        "winTotalScoreQuantiles": {
+          "p5": 31070,
+          "p25": 38710,
+          "p50": 44550,
+          "p60": 47150,
+          "p75": 51230,
+          "p95": 60220
+        },
+        "medianMovesLeft": 6,
+        "earlyThreeRate": 0.396,
+        "winRate95": [
+          0.6133133706304251,
+          0.6963077483879331
+        ]
+      },
+      {
+        "level": 1000,
+        "daily": false,
+        "strategy": "strong",
+        "games": 500,
+        "seed": 97001,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 9600,
+          "targetType": 3,
+          "count": 42,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 301,
+        "threes": 278,
+        "winRate": 0.602,
+        "threeRate": 0.556,
+        "threeAmongWins": 0.9235880398671097,
+        "threeRate95": [
+          0.5121860862346299,
+          0.5989599564899091
+        ],
+        "medianWinScore": 31880,
+        "winTotalScoreQuantiles": {
+          "p5": 23940,
+          "p25": 30600,
+          "p50": 36090,
+          "p60": 38130,
+          "p75": 41660,
+          "p95": 50360
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.1,
+        "winRate95": [
+          0.5584738043043082,
+          0.6439707735153876
+        ]
+      },
+      {
+        "level": 980,
+        "daily": false,
+        "strategy": "strong",
+        "games": 200,
+        "seed": 91001,
+        "config": {
+          "moves": 24,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            11,
+            52,
+            25,
+            38,
+            12,
+            51,
+            30,
+            33
+          ],
+          "icePairs": 4,
+          "target": 9600,
+          "targetType": 1,
+          "count": 42,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 127,
+        "threes": 120,
+        "winRate": 0.635,
+        "threeRate": 0.6,
+        "threeAmongWins": 0.9448818897637795,
+        "threeRate95": [
+          0.5308354385001253,
+          0.6653953603162106
+        ],
+        "medianWinScore": 31660,
+        "winTotalScoreQuantiles": {
+          "p5": 24710,
+          "p25": 30750,
+          "p50": 36380,
+          "p60": 38080,
+          "p75": 40730,
+          "p95": 52110
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.145,
+        "winRate95": [
+          0.5663157405897017,
+          0.6985958378123518
+        ]
+      },
+      {
+        "level": 985,
+        "daily": false,
+        "strategy": "strong",
+        "games": 200,
+        "seed": 91001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            18,
+            45,
+            21,
+            42,
+            26,
+            37,
+            29,
+            34
+          ],
+          "icePairs": 6,
+          "target": 9600,
+          "targetType": 0,
+          "count": 46,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 121,
+        "threes": 115,
+        "winRate": 0.605,
+        "threeRate": 0.575,
+        "threeAmongWins": 0.9504132231404959,
+        "threeRate95": [
+          0.5057080512046821,
+          0.6414650479075696
+        ],
+        "medianWinScore": 33320,
+        "winTotalScoreQuantiles": {
+          "p5": 25680,
+          "p25": 32360,
+          "p50": 37780,
+          "p60": 38740,
+          "p75": 43160,
+          "p95": 55140
+        },
+        "medianMovesLeft": 4,
+        "earlyThreeRate": 0.135,
+        "winRate95": [
+          0.5358822087449843,
+          0.6701601300121683
+        ]
+      },
+      {
+        "level": 990,
+        "daily": false,
+        "strategy": "strong",
+        "games": 500,
+        "seed": 92001,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6,
+            57,
+            15,
+            48
+          ],
+          "icePairs": 0,
+          "target": 9600,
+          "targetType": 5,
+          "count": 39,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 340,
+        "threes": 279,
+        "winRate": 0.68,
+        "threeRate": 0.558,
+        "threeAmongWins": 0.8205882352941176,
+        "threeRate95": [
+          0.5141907226350576,
+          0.6009248216153577
+        ],
+        "medianWinScore": 28330,
+        "winTotalScoreQuantiles": {
+          "p5": 20940,
+          "p25": 27540,
+          "p50": 33500,
+          "p60": 35390,
+          "p75": 40010,
+          "p95": 51630
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.098,
+        "winRate95": [
+          0.6378721940483771,
+          0.7193829432804977
+        ]
+      },
+      {
+        "level": 995,
+        "daily": false,
+        "strategy": "strong",
+        "games": 200,
+        "seed": 91001,
+        "config": {
+          "moves": 24,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            9,
+            54,
+            14,
+            49,
+            17,
+            46,
+            22,
+            41
+          ],
+          "icePairs": 4,
+          "target": 9600,
+          "targetType": 4,
+          "count": 44,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 122,
+        "threes": 116,
+        "winRate": 0.61,
+        "threeRate": 0.58,
+        "threeAmongWins": 0.9508196721311475,
+        "threeRate95": [
+          0.5107194625547862,
+          0.6462651764982825
+        ],
+        "medianWinScore": 33280,
+        "winTotalScoreQuantiles": {
+          "p5": 25640,
+          "p25": 32180,
+          "p50": 37690,
+          "p60": 39730,
+          "p75": 43050,
+          "p95": 52110
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.135,
+        "winRate95": [
+          0.5409361758928832,
+          0.6749177028050861
+        ]
+      },
+      {
+        "level": 1020,
+        "daily": false,
+        "strategy": "strong",
+        "games": 200,
+        "seed": 91001,
+        "config": {
+          "moves": 24,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 9600,
+          "targetType": 5,
+          "count": 43,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "wins": 123,
+        "threes": 117,
+        "winRate": 0.615,
+        "threeRate": 0.585,
+        "threeAmongWins": 0.9512195121951219,
+        "threeRate95": [
+          0.5157378707263818,
+          0.6510583082675037
+        ],
+        "medianWinScore": 33580,
+        "winTotalScoreQuantiles": {
+          "p5": 25980,
+          "p25": 32730,
+          "p50": 39080,
+          "p60": 40650,
+          "p75": 45070,
+          "p95": 57310
+        },
+        "medianMovesLeft": 5,
+        "earlyThreeRate": 0.205,
+        "winRate95": [
+          0.5459973878179245,
+          0.6796680308208618
+        ]
+      }
+    ],
+    "summary": [
+      {
+        "level": 10,
+        "config": {
+          "moves": 27,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            9,
+            54
+          ],
+          "icePairs": 0,
+          "target": 3200,
+          "targetType": 3,
+          "count": 50,
+          "starTargets": [
+            3200,
+            8900,
+            20400
+          ]
+        },
+        "games": 1000,
+        "wins": 686,
+        "threes": 686,
+        "winRate": 0.686,
+        "threeRate": 0.686,
+        "winRate95": [
+          0.6565682399199134,
+          0.7140081538059494
+        ],
+        "threeRate95": [
+          0.6565682399199134,
+          0.7140081538059494
+        ]
+      },
+      {
+        "level": 100,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6,
+            57,
+            15,
+            48
+          ],
+          "icePairs": 0,
+          "target": 7900,
+          "targetType": 3,
+          "count": 44,
+          "starTargets": [
+            7900,
+            16200,
+            24200
+          ]
+        },
+        "games": 1000,
+        "wins": 644,
+        "threes": 626,
+        "winRate": 0.644,
+        "threeRate": 0.626,
+        "winRate95": [
+          0.6138233673784835,
+          0.673074485828636
+        ],
+        "threeRate95": [
+          0.5955811892071059,
+          0.6554544323491238
+        ]
+      },
+      {
+        "level": 300,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 9100,
+          "targetType": 5,
+          "count": 45,
+          "starTargets": [
+            9100,
+            18200,
+            25200
+          ]
+        },
+        "games": 1000,
+        "wins": 616,
+        "threes": 606,
+        "winRate": 0.616,
+        "threeRate": 0.606,
+        "winRate95": [
+          0.5854657662994249,
+          0.6456463932285326
+        ],
+        "threeRate95": [
+          0.5753637323648315,
+          0.6358249651348538
+        ]
+      },
+      {
+        "level": 1000,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 9600,
+          "targetType": 3,
+          "count": 42,
+          "starTargets": [
+            9600,
+            19000,
+            25600
+          ]
+        },
+        "games": 1000,
+        "wins": 614,
+        "threes": 565,
+        "winRate": 0.614,
+        "threeRate": 0.565,
+        "winRate95": [
+          0.5834442946391768,
+          0.6436831724831261
+        ],
+        "threeRate95": [
+          0.5340817573697643,
+          0.5954207458140048
+        ]
+      }
+    ],
+    "previousStarCalibration": {
+      "generatedAt": "2026-10-18T05:54:05.983Z",
+      "protocol": {
+        "strategy": "strong",
+        "denominator": "All games, including losses",
+        "tools": "No hints or manual shuffles",
+        "randomness": "Actual refills and AI predictions use independent seeded streams",
+        "mechanics": "Top-entry gravity, vertical supply takes priority even when temporarily empty, diagonals only when the cell above cannot be replenished, triangular holes under horizontal ice walls, alternating left/right diagonal supply persisted per ice barrier, waiting for reachable preferred sources and skipping sealed sources, persistent blocked holes, perpendicular stripe chains and deferred rainbows, reward cells chip adjacent ice and count toward base points and area, square-root area multiplier from 1 to 2, score rounded to tens, fixed stripe/rainbow pattern bonuses of 80/200, no multiple-match bonus",
+        "engineSha256": "0313d3dfa3552b81094d77a2de4a1d437f97306754ccdc34e45bce146cbad710",
+        "aiSha256": "5ae618fc188d99865c9e868af6dd04cd0c15eba59bb9d9a17cc52654f86efa7a",
+        "scoring": {
+          "basePerCell": 60,
+          "rewardCellsCountAsClearedForScoring": true,
+          "areaMultiplier": "1 + sqrt(clamp((scoredCells - 3) / 61, 0, 1))",
+          "roundTo": 10,
+          "stripePatternBonus": 80,
+          "rainbowPatternBonus": 200,
+          "multipleMatchBonus": 0,
+          "maxCascadeMultiplier": 5,
+          "unusedMoveBonus": 800
+        }
+      },
+      "curve": {
+        "intro": {
+          "firstLevel": 1,
+          "lastLevel": 4,
+          "threeStarScores": [
+            9800,
+            13000,
+            16100,
+            19300
+          ]
+        },
+        "progression": {
+          "firstLevel": 4,
+          "lastLevel": 1000,
+          "firstThreeStarScore": 19300,
+          "lastThreeStarScore": 25600,
+          "slowingConstant": 30
+        },
+        "rounding": 100,
+        "firstStar": "Preserved: 64% of the original score base, rounded up to 100",
+        "secondStar": "Preserved",
+        "daily": "Preserved: 2000 / 7000 / 11000"
+      },
+      "calibration": [
+        {
+          "level": 4,
+          "daily": false,
+          "strategy": "strong",
+          "games": 1000,
+          "seed": 50001,
+          "config": {
+            "moves": 28,
+            "iceCount": 2,
+            "doubleIce": 0,
+            "iceCells": [
+              1,
+              62
+            ],
+            "icePairs": 0,
+            "target": 2000,
+            "targetType": 3,
+            "count": 18,
+            "starTargets": [
+              2000,
+              7000,
+              19300
+            ]
+          },
+          "wins": 999,
+          "threes": 950,
+          "winRate": 0.999,
+          "threeRate": 0.95,
+          "threeAmongWins": 0.950950950950951,
+          "threeRate95": [
+            0.9346858639155304,
+            0.9618699273567182
+          ],
+          "medianWinScore": 11470,
+          "winTotalScoreQuantiles": {
+            "p5": 19300,
+            "p25": 22970,
+            "p50": 26430,
+            "p60": 27640,
+            "p75": 30350,
+            "p95": 38200
+          },
+          "medianMovesLeft": 19,
+          "earlyThreeRate": 0.099
+        },
+        {
+          "level": 1000,
+          "daily": false,
+          "strategy": "strong",
+          "games": 1000,
+          "seed": 50001,
+          "config": {
+            "moves": 23,
+            "iceCount": 8,
+            "doubleIce": 3,
+            "iceCells": [
+              2,
+              61,
+              16,
+              47,
+              5,
+              58,
+              23,
+              40
+            ],
+            "icePairs": 0,
+            "target": 9600,
+            "targetType": 3,
+            "count": 24,
+            "starTargets": [
+              9600,
+              19000,
+              25600
+            ]
+          },
+          "wins": 961,
+          "threes": 400,
+          "winRate": 0.961,
+          "threeRate": 0.4,
+          "threeAmongWins": 0.4162330905306972,
+          "threeRate95": [
+            0.37007424033937747,
+            0.43069113937790077
+          ],
+          "medianWinScore": 16410,
+          "winTotalScoreQuantiles": {
+            "p5": 15800,
+            "p25": 20140,
+            "p50": 24190,
+            "p60": 25860,
+            "p75": 28950,
+            "p95": 36840
+          },
+          "medianMovesLeft": 9,
+          "earlyThreeRate": 0.035
+        }
+      ],
+      "validation": [
+        {
+          "level": 4,
+          "daily": false,
+          "strategy": "strong",
+          "games": 1000,
+          "seed": 60001,
+          "config": {
+            "moves": 28,
+            "iceCount": 2,
+            "doubleIce": 0,
+            "iceCells": [
+              1,
+              62
+            ],
+            "icePairs": 0,
+            "target": 2000,
+            "targetType": 3,
+            "count": 18,
+            "starTargets": [
+              2000,
+              7000,
+              19300
+            ]
+          },
+          "wins": 1000,
+          "threes": 956,
+          "winRate": 1,
+          "threeRate": 0.956,
+          "threeAmongWins": 0.956,
+          "threeRate95": [
+            0.9414479081796453,
+            0.9670619603095666
+          ],
+          "medianWinScore": 11880,
+          "winTotalScoreQuantiles": {
+            "p5": 19380,
+            "p25": 23170,
+            "p50": 26500,
+            "p60": 28070,
+            "p75": 30630,
+            "p95": 37930
+          },
+          "medianMovesLeft": 19,
+          "earlyThreeRate": 0.096
+        },
+        {
+          "level": 1000,
+          "daily": false,
+          "strategy": "strong",
+          "games": 1000,
+          "seed": 60001,
+          "config": {
+            "moves": 23,
+            "iceCount": 8,
+            "doubleIce": 3,
+            "iceCells": [
+              2,
+              61,
+              16,
+              47,
+              5,
+              58,
+              23,
+              40
+            ],
+            "icePairs": 0,
+            "target": 9600,
+            "targetType": 3,
+            "count": 24,
+            "starTargets": [
+              9600,
+              19000,
+              25600
+            ]
+          },
+          "wins": 961,
+          "threes": 402,
+          "winRate": 0.961,
+          "threeRate": 0.402,
+          "threeAmongWins": 0.4183142559833507,
+          "threeRate95": [
+            0.37204169195598835,
+            0.43270838016694435
+          ],
+          "medianWinScore": 17010,
+          "winTotalScoreQuantiles": {
+            "p5": 15770,
+            "p25": 20770,
+            "p50": 24520,
+            "p60": 26000,
+            "p75": 28940,
+            "p95": 37560
+          },
+          "medianMovesLeft": 9,
+          "earlyThreeRate": 0.036
+        }
+      ],
+      "checkpoints": [
+        {
+          "level": 1,
+          "daily": false,
+          "strategy": "strong",
+          "games": 300,
+          "seed": 50001,
+          "config": {
+            "moves": 28,
+            "iceCount": 0,
+            "doubleIce": 0,
+            "iceCells": [],
+            "icePairs": 0,
+            "target": 1200,
+            "targetType": 0,
+            "count": 12,
+            "starTargets": [
+              1200,
+              5800,
+              9800
+            ]
+          },
+          "wins": 300,
+          "threes": 300,
+          "winRate": 1,
+          "threeRate": 1,
+          "threeAmongWins": 1,
+          "threeRate95": [
+            0.9873565700022643,
+            0.9999999999999999
+          ],
+          "medianWinScore": 6420,
+          "winTotalScoreQuantiles": {
+            "p5": 19400,
+            "p25": 22140,
+            "p50": 24050,
+            "p60": 24900,
+            "p75": 26940,
+            "p95": 34030
+          },
+          "medianMovesLeft": 22,
+          "earlyThreeRate": 0.25
+        },
+        {
+          "level": 2,
+          "daily": false,
+          "strategy": "strong",
+          "games": 300,
+          "seed": 50001,
+          "config": {
+            "moves": 28,
+            "iceCount": 0,
+            "doubleIce": 0,
+            "iceCells": [],
+            "icePairs": 0,
+            "target": 1500,
+            "targetType": 1,
+            "count": 14,
+            "starTargets": [
+              1500,
+              6200,
+              13000
+            ]
+          },
+          "wins": 300,
+          "threes": 300,
+          "winRate": 1,
+          "threeRate": 1,
+          "threeAmongWins": 1,
+          "threeRate95": [
+            0.9873565700022643,
+            0.9999999999999999
+          ],
+          "medianWinScore": 8200,
+          "winTotalScoreQuantiles": {
+            "p5": 18700,
+            "p25": 22420,
+            "p50": 24720,
+            "p60": 26280,
+            "p75": 28850,
+            "p95": 34100
+          },
+          "medianMovesLeft": 21,
+          "earlyThreeRate": 0.15666666666666668
+        },
+        {
+          "level": 3,
+          "daily": false,
+          "strategy": "strong",
+          "games": 300,
+          "seed": 50001,
+          "config": {
+            "moves": 27,
+            "iceCount": 0,
+            "doubleIce": 0,
+            "iceCells": [],
+            "icePairs": 0,
+            "target": 1700,
+            "targetType": 2,
+            "count": 16,
+            "starTargets": [
+              1700,
+              6600,
+              16100
+            ]
+          },
+          "wins": 300,
+          "threes": 298,
+          "winRate": 1,
+          "threeRate": 0.9933333333333333,
+          "threeAmongWins": 0.9933333333333333,
+          "threeRate95": [
+            0.9760219257685385,
+            0.9981698899670288
+          ],
+          "medianWinScore": 9570,
+          "winTotalScoreQuantiles": {
+            "p5": 18370,
+            "p25": 22110,
+            "p50": 24530,
+            "p60": 25640,
+            "p75": 28020,
+            "p95": 34530
+          },
+          "medianMovesLeft": 19,
+          "earlyThreeRate": 0.12666666666666668
+        },
+        {
+          "level": 30,
+          "daily": false,
+          "strategy": "strong",
+          "games": 300,
+          "seed": 50001,
+          "config": {
+            "moves": 25,
+            "iceCount": 5,
+            "doubleIce": 1,
+            "iceCells": [
+              1,
+              62,
+              8,
+              55,
+              6
+            ],
+            "icePairs": 0,
+            "target": 5500,
+            "targetType": 5,
+            "count": 24,
+            "starTargets": [
+              5500,
+              12500,
+              22300
+            ]
+          },
+          "wins": 296,
+          "threes": 224,
+          "winRate": 0.9866666666666667,
+          "threeRate": 0.7466666666666667,
+          "threeAmongWins": 0.7567567567567568,
+          "threeRate95": [
+            0.6945448785767366,
+            0.7925510292910473
+          ],
+          "medianWinScore": 16450,
+          "winTotalScoreQuantiles": {
+            "p5": 16930,
+            "p25": 22360,
+            "p50": 26490,
+            "p60": 27890,
+            "p75": 31400,
+            "p95": 38350
+          },
+          "medianMovesLeft": 12,
+          "earlyThreeRate": 0.09666666666666666
+        },
+        {
+          "level": 100,
+          "daily": false,
+          "strategy": "strong",
+          "games": 300,
+          "seed": 50001,
+          "config": {
+            "moves": 25,
+            "iceCount": 8,
+            "doubleIce": 3,
+            "iceCells": [
+              1,
+              62,
+              8,
+              55,
+              6,
+              57,
+              15,
+              48
+            ],
+            "icePairs": 0,
+            "target": 7900,
+            "targetType": 3,
+            "count": 24,
+            "starTargets": [
+              7900,
+              16200,
+              24200
+            ]
+          },
+          "wins": 293,
+          "threes": 176,
+          "winRate": 0.9766666666666667,
+          "threeRate": 0.5866666666666667,
+          "threeAmongWins": 0.6006825938566553,
+          "threeRate95": [
+            0.5301895702243481,
+            0.6409522352427112
+          ],
+          "medianWinScore": 16570,
+          "winTotalScoreQuantiles": {
+            "p5": 17460,
+            "p25": 21670,
+            "p50": 25730,
+            "p60": 27070,
+            "p75": 30120,
+            "p95": 40100
+          },
+          "medianMovesLeft": 11,
+          "earlyThreeRate": 0.06333333333333334
+        },
+        {
+          "level": 300,
+          "daily": false,
+          "strategy": "strong",
+          "games": 300,
+          "seed": 50001,
+          "config": {
+            "moves": 25,
+            "iceCount": 8,
+            "doubleIce": 3,
+            "iceCells": [
+              10,
+              53,
+              24,
+              39,
+              13,
+              50,
+              31,
+              32
+            ],
+            "icePairs": 2,
+            "target": 9100,
+            "targetType": 5,
+            "count": 24,
+            "starTargets": [
+              9100,
+              18200,
+              25200
+            ]
+          },
+          "wins": 293,
+          "threes": 155,
+          "winRate": 0.9766666666666667,
+          "threeRate": 0.5166666666666667,
+          "threeAmongWins": 0.5290102389078498,
+          "threeRate95": [
+            0.46026528666991656,
+            0.5726465989968257
+          ],
+          "medianWinScore": 16770,
+          "winTotalScoreQuantiles": {
+            "p5": 16300,
+            "p25": 21940,
+            "p50": 26120,
+            "p60": 27380,
+            "p75": 30880,
+            "p95": 38400
+          },
+          "medianMovesLeft": 12,
+          "earlyThreeRate": 0.05333333333333334
+        }
+      ],
+      "note": "Recorded before collection challenges, when post-intro collection requirements were 24; not current challenge probabilities"
+    },
+    "moveValueStudy": {
+      "games": 180,
+      "moves": 3174,
+      "meanMatchPointsPerMove": 1349.2060491493385,
+      "perLevel": [
+        {
+          "level": 9,
+          "games": 30,
+          "moves": 423,
+          "wins": 30,
+          "mean": 1194.4208037825058,
+          "median": 540,
+          "p75": 1340,
+          "p90": 2640
+        },
+        {
+          "level": 10,
+          "games": 30,
+          "moves": 634,
+          "wins": 24,
+          "mean": 1563.7381703470032,
+          "median": 620,
+          "p75": 1800,
+          "p90": 3610
+        },
+        {
+          "level": 99,
+          "games": 30,
+          "moves": 408,
+          "wins": 30,
+          "mean": 1284.950980392157,
+          "median": 550,
+          "p75": 1680,
+          "p90": 3360
+        },
+        {
+          "level": 100,
+          "games": 30,
+          "moves": 655,
+          "wins": 19,
+          "mean": 1279.648854961832,
+          "median": 550,
+          "p75": 1430,
+          "p90": 3320
+        },
+        {
+          "level": 999,
+          "games": 30,
+          "moves": 422,
+          "wins": 30,
+          "mean": 1402.654028436019,
+          "median": 550,
+          "p75": 1450,
+          "p90": 3340
+        },
+        {
+          "level": 1000,
+          "games": 30,
+          "moves": 632,
+          "wins": 16,
+          "mean": 1315.4746835443038,
+          "median": 550,
+          "p75": 1340,
+          "p90": 3240
+        }
+      ],
+      "note": "Scoring unchanged; candidate challenge quotas were 48 at level 10 and 44 at levels 100/1000 when this diagnostic ran. Excludes unused-move rewards."
+    }
+  },
+  "assessment": {
+    "thresholdsChanged": false,
+    "collectionRequirementsChanged": false,
+    "targetChecks": [
+      {
+        "level": 4,
+        "target": 0.95,
+        "observed": 0.973,
+        "observed95": [
+          0.9610010105865644,
+          0.9813787433507103
+        ],
+        "targetWithin95": false
+      },
+      {
+        "level": 1000,
+        "target": 0.4,
+        "observed": 0.498,
+        "observed95": [
+          0.4670769344782838,
+          0.5289383731160618
+        ],
+        "targetWithin95": false
+      }
+    ],
+    "comparison": [
+      {
+        "level": 1,
+        "previousWinRate": 1,
+        "winRate": 1,
+        "winRateDelta": 0,
+        "previousThreeRate": 1,
+        "threeRate": 1,
+        "threeRateDelta": 0
+      },
+      {
+        "level": 2,
+        "previousWinRate": 1,
+        "winRate": 1,
+        "winRateDelta": 0,
+        "previousThreeRate": 1,
+        "threeRate": 1,
+        "threeRateDelta": 0
+      },
+      {
+        "level": 3,
+        "previousWinRate": 1,
+        "winRate": 1,
+        "winRateDelta": 0,
+        "previousThreeRate": 1,
+        "threeRate": 0.9966666666666667,
+        "threeRateDelta": -0.0033333333333332993
+      },
+      {
+        "level": 4,
+        "previousWinRate": 1,
+        "winRate": 1,
+        "winRateDelta": 0,
+        "previousThreeRate": 0.954,
+        "threeRate": 0.973,
+        "threeRateDelta": 0.019000000000000017
+      },
+      {
+        "level": 10,
+        "previousWinRate": 0.94,
+        "winRate": 0.96,
+        "winRateDelta": 0.020000000000000018,
+        "previousThreeRate": 0.8466666666666667,
+        "threeRate": 0.87,
+        "threeRateDelta": 0.023333333333333317
+      },
+      {
+        "level": 30,
+        "previousWinRate": 0.8566666666666667,
+        "winRate": 0.89,
+        "winRateDelta": 0.033333333333333326,
+        "previousThreeRate": 0.6233333333333333,
+        "threeRate": 0.7333333333333333,
+        "threeRateDelta": 0.10999999999999999
+      },
+      {
+        "level": 100,
+        "previousWinRate": 0.84,
+        "winRate": 0.9,
+        "winRateDelta": 0.06000000000000005,
+        "previousThreeRate": 0.54,
+        "threeRate": 0.6266666666666667,
+        "threeRateDelta": 0.08666666666666667
+      },
+      {
+        "level": 300,
+        "previousWinRate": 0.83,
+        "winRate": 0.86,
+        "winRateDelta": 0.030000000000000027,
+        "previousThreeRate": 0.53,
+        "threeRate": 0.5866666666666667,
+        "threeRateDelta": 0.05666666666666664
+      },
+      {
+        "level": 1000,
+        "previousWinRate": 0.775,
+        "winRate": 0.82,
+        "winRateDelta": 0.04499999999999993,
+        "previousThreeRate": 0.414,
+        "threeRate": 0.498,
+        "threeRateDelta": 0.08400000000000002
+      }
+    ],
+    "challengePairs": [
+      {
+        "normalLevel": 9,
+        "challengeLevel": 10,
+        "normalMoves": 27,
+        "challengeMoves": 27,
+        "normalCollection": 24,
+        "challengeCollection": 36,
+        "normalWinRate": 0.9966666666666667,
+        "challengeWinRate": 0.96,
+        "normalThreeRate": 0.9333333333333333,
+        "challengeThreeRate": 0.87,
+        "note": "Adjacent levels also differ in target animal and may differ in ice layout or move compensation; this is a curve comparison, not a controlled quota-only experiment."
+      },
+      {
+        "normalLevel": 29,
+        "challengeLevel": 30,
+        "normalMoves": 26,
+        "challengeMoves": 25,
+        "normalCollection": 24,
+        "challengeCollection": 36,
+        "normalWinRate": 1,
+        "challengeWinRate": 0.89,
+        "normalThreeRate": 0.7766666666666666,
+        "challengeThreeRate": 0.7333333333333333,
+        "note": "Adjacent levels also differ in target animal and may differ in ice layout or move compensation; this is a curve comparison, not a controlled quota-only experiment."
+      },
+      {
+        "normalLevel": 99,
+        "challengeLevel": 100,
+        "normalMoves": 27,
+        "challengeMoves": 25,
+        "normalCollection": 24,
+        "challengeCollection": 36,
+        "normalWinRate": 0.9966666666666667,
+        "challengeWinRate": 0.9,
+        "normalThreeRate": 0.7866666666666666,
+        "challengeThreeRate": 0.6266666666666667,
+        "note": "Adjacent levels also differ in target animal and may differ in ice layout or move compensation; this is a curve comparison, not a controlled quota-only experiment."
+      },
+      {
+        "normalLevel": 299,
+        "challengeLevel": 300,
+        "normalMoves": 25,
+        "challengeMoves": 25,
+        "normalCollection": 24,
+        "challengeCollection": 36,
+        "normalWinRate": 0.9733333333333334,
+        "challengeWinRate": 0.86,
+        "normalThreeRate": 0.67,
+        "challengeThreeRate": 0.5866666666666667,
+        "note": "Adjacent levels also differ in target animal and may differ in ice layout or move compensation; this is a curve comparison, not a controlled quota-only experiment."
+      },
+      {
+        "normalLevel": 999,
+        "challengeLevel": 1000,
+        "normalMoves": 24,
+        "challengeMoves": 23,
+        "normalCollection": 24,
+        "challengeCollection": 36,
+        "normalWinRate": 0.9766666666666667,
+        "challengeWinRate": 0.82,
+        "normalThreeRate": 0.6133333333333333,
+        "challengeThreeRate": 0.498,
+        "note": "Adjacent levels also differ in target animal and may differ in ice layout or move compensation; this is a curve comparison, not a controlled quota-only experiment."
+      }
+    ],
+    "failureReasons": {
+      "losses": 314,
+      "unmet": {
+        "score": 95,
+        "collection": 288,
+        "ice": 21
+      },
+      "combinations": {
+        "score": 22,
+        "collection": 209,
+        "ice": 3,
+        "score+collection": 62,
+        "score+ice": 1,
+        "collection+ice": 7,
+        "score+collection+ice": 10
+      },
+      "unmetRateAmongLosses": {
+        "score": 0.30254777070063693,
+        "collection": 0.9171974522292994,
+        "ice": 0.06687898089171974
+      },
+      "note": "Unmet-goal counts may overlap; combination counts are mutually exclusive. All goals are evaluated after the final special cleanup, before any unused-move bonus.",
+      "cohorts": {
+        "normal": {
+          "games": 3700,
+          "losses": 17,
+          "unmet": {
+            "score": 14,
+            "collection": 5,
+            "ice": 1
+          },
+          "combinations": {
+            "score": 11,
+            "collection": 2,
+            "ice": 1,
+            "score+collection": 3,
+            "score+ice": 0,
+            "collection+ice": 0,
+            "score+collection+ice": 0
+          }
+        },
+        "challenge": {
+          "games": 2200,
+          "losses": 297,
+          "unmet": {
+            "score": 81,
+            "collection": 283,
+            "ice": 20
+          },
+          "combinations": {
+            "score": 11,
+            "collection": 207,
+            "ice": 2,
+            "score+collection": 59,
+            "score+ice": 1,
+            "collection+ice": 7,
+            "score+collection+ice": 10
+          }
+        }
+      }
+    }
+  },
+  "previousRulesCalibration": {
+    "generatedAt": "2026-10-18T08:35:01.563Z",
+    "status": "historical",
+    "note": "Measured before terminal special cleanup and before reward replacements counted toward collection and cumulative eliminations.",
+    "protocol": {
+      "strategy": "strong",
+      "denominator": "All games, including losses",
+      "tools": "No hints or manual shuffles",
+      "randomness": "Actual refills and AI predictions use independent seeded streams",
+      "mechanics": "Top-entry gravity, vertical supply takes priority even when temporarily empty, diagonals only when the cell above cannot be replenished, triangular holes under horizontal ice walls, alternating left/right diagonal supply persisted per ice barrier, waiting for reachable preferred sources and skipping sealed sources, persistent blocked holes, perpendicular stripe chains and deferred rainbows, reward cells chip adjacent ice and count toward base points and area, square-root area multiplier from 1 to 2, score rounded to tens, fixed stripe/rainbow pattern bonuses of 80/200, no multiple-match bonus, collection challenges from level 10 at every multiple of 5; challenge collection fixed at 36; rainbow-plus-stripe converted stripes fire in their randomly assigned directions without ray-induced rotation",
+      "engineSha256": "43ce210c00441b8c9de7c3faf14e6c0b7cf90d8e4cffa451a48f0bc394d100d4",
+      "aiSha256": "5ae618fc188d99865c9e868af6dd04cd0c15eba59bb9d9a17cc52654f86efa7a",
+      "scoring": {
+        "basePerCell": 60,
+        "rewardCellsCountAsClearedForScoring": true,
+        "areaMultiplier": "1 + sqrt(clamp((scoredCells - 3) / 61, 0, 1))",
+        "roundTo": 10,
+        "stripePatternBonus": 80,
+        "rainbowPatternBonus": 200,
+        "multipleMatchBonus": 0,
+        "maxCascadeMultiplier": 5,
+        "unusedMoveBonus": 1500
+      },
+      "sampling": "1000 games each at levels 4 and 1000; 300 games each at levels 1, 2, 3, 10, 30, 100, 300; consecutive seeds starting 140001; no overrides; actual AI decisions use all updated thresholds"
+    },
+    "curve": {
+      "intro": {
+        "firstLevel": 1,
+        "lastLevel": 4,
+        "threeStarScores": [
+          9800,
+          16000,
+          22300,
+          28500
+        ]
+      },
+      "progression": {
+        "firstLevel": 4,
+        "lastLevel": 1000,
+        "firstThreeStarScore": 28500,
+        "lastThreeStarScore": 35000,
+        "slowingConstant": 30
+      },
+      "rounding": 100,
+      "firstStar": "120% of the original score base, rounded up to 100; also the raw match-score completion requirement, before the unused-move bonus",
+      "secondStar": "Midpoint of one and three stars, rounded to nearest 100",
+      "daily": "3600 / 7300 / 11000",
+      "targetThreeRates": {
+        "level4": 0.95,
+        "level1000": 0.4
+      }
+    },
+    "collectionCurve": {
+      "condition": "Adventure level >= 10 and level % 5 === 0",
+      "quota": 36,
+      "normal": "min(24, 12 + (level - 1) * 2)",
+      "daily": 15
+    },
+    "calibration": [
+      {
+        "level": 1,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 140001,
+        "config": {
+          "moves": 28,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 2200,
+          "targetType": 0,
+          "count": 12,
+          "starTargets": [
+            2200,
+            6000,
+            9800
+          ]
+        },
+        "wins": 300,
+        "threes": 300,
+        "winRate": 1,
+        "threeRate": 1,
+        "threeAmongWins": 1,
+        "winRate95": [
+          0.9873565700022643,
+          0.9999999999999999
+        ],
+        "threeRate95": [
+          0.9873565700022643,
+          0.9999999999999999
+        ],
+        "earlyThreeRate": 0.23666666666666666
+      },
+      {
+        "level": 2,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 140001,
+        "config": {
+          "moves": 28,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 2700,
+          "targetType": 1,
+          "count": 14,
+          "starTargets": [
+            2700,
+            9400,
+            16000
+          ]
+        },
+        "wins": 300,
+        "threes": 300,
+        "winRate": 1,
+        "threeRate": 1,
+        "threeAmongWins": 1,
+        "winRate95": [
+          0.9873565700022643,
+          0.9999999999999999
+        ],
+        "threeRate95": [
+          0.9873565700022643,
+          0.9999999999999999
+        ],
+        "earlyThreeRate": 0.11666666666666667
+      },
+      {
+        "level": 3,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 140001,
+        "config": {
+          "moves": 27,
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 3200,
+          "targetType": 2,
+          "count": 16,
+          "starTargets": [
+            3200,
+            12800,
+            22300
+          ]
+        },
+        "wins": 300,
+        "threes": 300,
+        "winRate": 1,
+        "threeRate": 1,
+        "threeAmongWins": 1,
+        "winRate95": [
+          0.9873565700022643,
+          0.9999999999999999
+        ],
+        "threeRate95": [
+          0.9873565700022643,
+          0.9999999999999999
+        ],
+        "earlyThreeRate": 0.043333333333333335
+      },
+      {
+        "level": 4,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 140001,
+        "config": {
+          "moves": 28,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            1,
+            62
+          ],
+          "icePairs": 0,
+          "target": 3600,
+          "targetType": 3,
+          "count": 18,
+          "starTargets": [
+            3600,
+            16100,
+            28500
+          ]
+        },
+        "wins": 1000,
+        "threes": 954,
+        "winRate": 1,
+        "threeRate": 0.954,
+        "threeAmongWins": 0.954,
+        "winRate95": [
+          0.9961731014136095,
+          1
+        ],
+        "threeRate95": [
+          0.9391874888881304,
+          0.9653376871954269
+        ],
+        "earlyThreeRate": 0.01
+      },
+      {
+        "level": 10,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 140001,
+        "config": {
+          "moves": 27,
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            9,
+            54
+          ],
+          "icePairs": 0,
+          "target": 5900,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            5900,
+            17800,
+            29600
+          ]
+        },
+        "wins": 282,
+        "threes": 254,
+        "winRate": 0.94,
+        "threeRate": 0.8466666666666667,
+        "threeAmongWins": 0.900709219858156,
+        "winRate95": [
+          0.90715983751747,
+          0.9617139440845225
+        ],
+        "threeRate95": [
+          0.8015330360133669,
+          0.8830341858548697
+        ],
+        "earlyThreeRate": 0.13
+      },
+      {
+        "level": 30,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 140001,
+        "config": {
+          "moves": 25,
+          "iceCount": 5,
+          "doubleIce": 1,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6
+          ],
+          "icePairs": 0,
+          "target": 10200,
+          "targetType": 5,
+          "count": 36,
+          "starTargets": [
+            10200,
+            20900,
+            31600
+          ]
+        },
+        "wins": 257,
+        "threes": 187,
+        "winRate": 0.8566666666666667,
+        "threeRate": 0.6233333333333333,
+        "threeAmongWins": 0.7276264591439688,
+        "winRate95": [
+          0.8124985303950185,
+          0.8918158228732633
+        ],
+        "threeRate95": [
+          0.5672673858683439,
+          0.6762805680655479
+        ],
+        "earlyThreeRate": 0.05333333333333334
+      },
+      {
+        "level": 100,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 140001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6,
+            57,
+            15,
+            48
+          ],
+          "icePairs": 0,
+          "target": 14700,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            14700,
+            24200,
+            33600
+          ]
+        },
+        "wins": 252,
+        "threes": 162,
+        "winRate": 0.84,
+        "threeRate": 0.54,
+        "threeAmongWins": 0.6428571428571429,
+        "winRate95": [
+          0.7942554091313135,
+          0.8771470584702262
+        ],
+        "threeRate95": [
+          0.4834506745713475,
+          0.5955378510288337
+        ],
+        "earlyThreeRate": 0.023333333333333334
+      },
+      {
+        "level": 300,
+        "daily": false,
+        "strategy": "strong",
+        "games": 300,
+        "seed": 140001,
+        "config": {
+          "moves": 25,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            10,
+            53,
+            24,
+            39,
+            13,
+            50,
+            31,
+            32
+          ],
+          "icePairs": 2,
+          "target": 17100,
+          "targetType": 5,
+          "count": 36,
+          "starTargets": [
+            17100,
+            25900,
+            34600
+          ]
+        },
+        "wins": 249,
+        "threes": 159,
+        "winRate": 0.83,
+        "threeRate": 0.53,
+        "threeAmongWins": 0.6385542168674698,
+        "winRate95": [
+          0.7833848085580865,
+          0.8682705276434078
+        ],
+        "threeRate95": [
+          0.47349920136870094,
+          0.585742192831435
+        ],
+        "earlyThreeRate": 0.016666666666666666
+      },
+      {
+        "level": 1000,
+        "daily": false,
+        "strategy": "strong",
+        "games": 1000,
+        "seed": 140001,
+        "config": {
+          "moves": 23,
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 18000,
+          "targetType": 3,
+          "count": 36,
+          "starTargets": [
+            18000,
+            26500,
+            35000
+          ]
+        },
+        "wins": 775,
+        "threes": 414,
+        "winRate": 0.775,
+        "threeRate": 0.414,
+        "threeAmongWins": 0.5341935483870968,
+        "winRate95": [
+          0.7480937254100813,
+          0.799801480367404
+        ],
+        "threeRate95": [
+          0.38385733584089365,
+          0.4448008907159655
+        ],
+        "earlyThreeRate": 0.024
+      }
+    ]
+  }
+}

@@ -28,15 +28,22 @@ test('Vite emits independent game package at /light-trails/ with resolvable asse
     assert.deepEqual(list, [
       { manifestUrl: './light-trails/playweft.json' },
       { manifestUrl: './pupdoku/playweft.json' },
+      { manifestUrl: './fuzzy-match-3/playweft.json' },
     ]);
     const solo = JSON.parse(
       await readFile(join(outDir, 'pupdoku/playweft.json'), 'utf8'),
     );
     assert.equal(solo.id, '/pupdoku/');
     assert.deepEqual(solo.modes, { solo: {} });
+    const piece = JSON.parse(await readFile(join(outDir, 'fuzzy-match-3/playweft.json'), 'utf8'));
+    assert.equal(piece.id, '/fuzzy-match-3/');
+    assert.equal(piece.name, 'Fuzzy Match 3');
+    assert.equal(piece.name_localized['zh-CN'], '绒绒消消乐');
+    assert.deepEqual(piece.modes, { solo: {} });
     for (const [game, metadata] of [
       ['light-trails', manifest],
       ['pupdoku', solo],
+      ['fuzzy-match-3', piece],
     ]) {
       assert.equal(metadata.icons[0].src, './icon.svg');
       assert.equal(
@@ -67,6 +74,8 @@ test('Vite emits independent game package at /light-trails/ with resolvable asse
       'light-trails/index.html',
       'pupdoku/index.html',
       'pupdoku/help.html',
+      'fuzzy-match-3/index.html',
+      'fuzzy-match-3/help.html',
     ]) {
       const html = await readFile(join(outDir, page), 'utf8');
       for (const [, url] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
@@ -117,10 +126,18 @@ test('Vite serves stable game URLs, raw Lua and cross-origin manifests during de
       '/pupdoku/styles.css',
       '/pupdoku/help.html',
       '/pupdoku/icon.svg',
+      '/fuzzy-match-3/',
+      '/fuzzy-match-3/main.js',
+      '/fuzzy-match-3/app.jsx',
+      '/fuzzy-match-3/game.js',
+      '/fuzzy-match-3/art.jsx',
+      '/fuzzy-match-3/styles.css',
+      '/fuzzy-match-3/help.html',
+      '/fuzzy-match-3/icon.svg',
     ]) {
       assert.equal((await fetch(base + path)).status, 200, path);
     }
-    for (const game of ['light-trails', 'pupdoku']) {
+    for (const game of ['light-trails', 'pupdoku', 'fuzzy-match-3']) {
       const response = await fetch(base + `/${game}/icon.svg?v=1`);
       assert.match(response.headers.get('content-type'), /image\/svg\+xml/);
       assert.equal(
@@ -175,9 +192,13 @@ test('BASE_PATH builds root or nested static sites and removes output from the p
         await readFile(join(dir, 'pupdoku/playweft.json'), 'utf8'),
       );
       assert.equal(solo.id, base + 'pupdoku/');
+      const piece = JSON.parse(await readFile(join(dir, 'fuzzy-match-3/playweft.json'), 'utf8'));
+      assert.equal(piece.id, base + 'fuzzy-match-3/');
+      assert.deepEqual(piece.modes, { solo: {} });
       for (const [game, metadata] of [
         ['light-trails', manifest],
         ['pupdoku', solo],
+        ['fuzzy-match-3', piece],
       ]) {
         const iconPath = new URL(
           metadata.icons[0].src,
@@ -208,6 +229,8 @@ test('BASE_PATH builds root or nested static sites and removes output from the p
         'light-trails/help.html',
         'pupdoku/index.html',
         'pupdoku/help.html',
+        'fuzzy-match-3/index.html',
+        'fuzzy-match-3/help.html',
       ]) {
         const html = await readFile(join(dir, page), 'utf8');
         for (const [, url] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {

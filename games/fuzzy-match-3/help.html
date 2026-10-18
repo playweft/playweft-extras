@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#fbf8f1" />
+    <title>绒绒消消乐 · 玩法说明</title>
+    <link rel="icon" href="/fuzzy-match-3/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./help.js"></script>
+  </head>
+  <body>
+    <main style="max-width: 600px; margin: 0 auto; padding: 50px 25px">
+      <a href="./" class="help-back"><span id="help-back-icon" aria-hidden="true"></span>回到绒绒消消乐</a>
+      <h1>玩法说明</h1>
+      <div class="help-rules">
+        <div>
+          <span>01</span>
+          <p>
+            <strong>交换相邻棋子</strong
+            >点选两个相邻棋子，或在棋子上滑动。三个及以上同色棋子排成横线或竖线，即可消除。无效交换不扣步数。
+          </p>
+        </div>
+        <div>
+          <span>02</span>
+          <p>
+            <strong>特殊棋子</strong
+            >横向四连生成纵向条纹，纵向四连生成横向条纹；与普通棋子交换须形成消除。同向条纹命中时转为垂直方向消除，每颗每轮只触发一次。双条纹交换不分方向，横向交换清除一行两列，纵向交换清除两行一列。
+            五连或交叉消除生成彩虹道具：与普通棋子交换消除所有同色棋子，与条纹交换将全部同色棋子变成随机方向的条纹再引爆；两个彩虹交换清除其他棋子，保留未参与交换的彩虹。彩虹交换若同时形成四连、五连或交叉图案，仍会在换入棋子处生成相应道具，新道具保留到本轮消除结束。
+            条纹扫中的彩虹会标记保留，补充棋盘后自动消除数量最多的棋子，优先于普通三消；每次补充只触发一颗，其余彩虹等待下一次补充。
+          </p>
+        </div>
+        <div>
+          <span>03</span>
+          <p>
+            <strong>冰封格子</strong>
+            冰封棋子不能交换或下落。上下左右有棋子消除，或道具直接命中，每个消除波次减少一层冰。需要解冻全部冰层才能过关，开局步数已按冰层数量和布局配置。
+            优先等待正上方补入，只有上方补充通路被封住时才斜落；两侧可用时左右轮流，单侧封住则只用另一侧。封闭处保留空位，新棋子只从顶行进入。
+          </p>
+        </div>
+        <div>
+          <span>04</span>
+          <p>
+            <strong>完成本关目标</strong
+            >在步数用完前达到目标分数并收集指定数量的棋子。第 10 关起，每逢 5 的倍数需收集 36 个目标棋子。每颗棋子基础 60
+            分，连续掉落消除的倍率最高为 5 倍。同轮消除 3 格到 64 格，面积倍率先快后慢地从 1 倍提升到 2 倍；消除分四舍五入到十位，生成道具的格子也计入基础分和面积。四连每组额外奖励 80 分，五连或交叉图案每组额外奖励 200 分，同组只取最高一档；后续连消可再次获得，图案奖励不乘倍率。消除后掉落的棋子自动结算，不额外扣步数。通关后每剩余一步奖励
+            1,500
+            分，计入最终星级；最终总分达到星级门槛即可，不限制剩余步数或连消次数。
+            达成目标或步数耗尽后，条纹按原方向同时引爆，彩虹补盘后逐个引爆；新生成的道具继续清场，直到全部用尽，再结算最终得分与星级。
+          </p>
+        </div>
+        <div>
+          <span>05</span>
+          <p>
+            <strong>提示与换一换</strong>每局有 3 次提示、2
+            次换一换。棋盘没有可消除的交换时自动重排，不消耗道具。
+          </p>
+        </div>
+        <div>
+          <span>06</span>
+          <p>
+            <strong>闯关与每日挑战</strong
+            >闯关成功后可进入下一关。每日挑战每天更新，同一天的起始棋盘一致，后续掉落随机。两种模式分别保存进度；进度和记录仅保存在当前浏览器。
+          </p>
+        </div>
+      </div>
+      <p class="keyboard-note">
+        键盘：方向键移动焦点，回车选择或确认；Shift + 方向键交换。Escape
+        暂停或关闭弹窗。
+      </p>
+      <a class="primary-button" href="./">返回游戏</a>
+    </main>
+  </body>
+</html>

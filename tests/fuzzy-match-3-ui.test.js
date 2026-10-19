@@ -455,7 +455,7 @@ test("collection challenge progress displays its higher target and survives relo
   assert.deepEqual(saved().adventure, snapshot.adventure);
 });
 
-test("hints have a finite budget and restarting requires a concrete dialog action", async () => {
+test("the toolbar only offers hints and shuffle, and restarting requires the pause menu and confirmation", async () => {
   await mount();
   const hintButton = [...root.querySelectorAll(".tools button")][0];
   await click(hintButton);
@@ -464,6 +464,10 @@ test("hints have a finite budget and restarting requires a concrete dialog actio
   await click(hintButton);
   assert.equal(saved().adventure.hints, 0);
   assert.equal(hintButton.disabled, true);
+  assert.equal(root.querySelectorAll(".tools button").length, 2);
+  assert.equal(root.querySelectorAll(".tools .tool-divider").length, 1);
+  assert.equal(button("重新开始"), undefined);
+  await click(root.querySelector('[aria-label="暂停游戏"]'));
   await click(button("重新开始"));
   assert.equal(
     root.querySelector('[role="dialog"]').getAttribute("aria-labelledby"),
@@ -471,6 +475,7 @@ test("hints have a finite budget and restarting requires a concrete dialog actio
   );
   await click(button("取消"));
   assert.equal(saved().adventure.hints, 0);
+  await click(root.querySelector('[aria-label="暂停游戏"]'));
   await click(button("重新开始"));
   await click(root.querySelector(".modal .primary-button"));
   assert.equal(saved().adventure.hints, 3);

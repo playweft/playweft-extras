@@ -954,13 +954,6 @@ export function FuzzyMatch3App() {
                   <span>重排</span>
                   <b>{active.shuffles}</b>
                 </button>
-                <span class="tool-divider" />
-                <button onClick={() => setView("restart")} disabled={busy}>
-                  <span class="tool-icon">
-                    <Icon name="restart" size={21} />
-                  </span>
-                  <span>重新开始</span>
-                </button>
               </div>
             </section>
             <aside class="game-details">

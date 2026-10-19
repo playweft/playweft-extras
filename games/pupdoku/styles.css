@@ -72,6 +72,21 @@ a:focus-visible {
   place-items: center;
   flex: none;
   color: #c683a7;
+  transition: background-color 160ms ease-out;
+}
+
+.round-button:focus,
+.actions button:focus {
+  outline: none;
+}
+
+.round-button:not(:disabled):focus-visible {
+  background-color: #e9e1e3;
+}
+
+.round-button:not(:disabled):active {
+  background-color: #dfd4d8;
+  transition-duration: 80ms;
 }
 
 .round-button svg {
@@ -491,12 +506,14 @@ h1 {
   inset: 0;
   border-radius: 50%;
   backface-visibility: hidden;
-  transition: transform 100ms ease-out;
+  transition:
+    transform 100ms ease-out,
+    background-color 160ms ease-out;
 }
 
 .actions button:enabled:active .action-rim,
 .actions button:enabled:active .action-face {
-  transition-duration: 60ms;
+  transition-duration: 60ms, 160ms;
 }
 
 .action-rim {
@@ -515,6 +532,36 @@ h1 {
   place-items: center;
   background: #ffd23c;
   transform: translateZ(var(--press-depth));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .round-button:not(:disabled):hover {
+    background-color: #f2ecee;
+  }
+
+  .actions button:enabled:hover .action-face {
+    background-color: #ffdc65;
+  }
+
+  .actions button:enabled:hover .action-rim {
+    background-color: #f5c64c;
+  }
+
+  .round-button:not(:disabled):hover:focus-visible {
+    background-color: #e9e1e3;
+  }
+
+  .round-button:not(:disabled):hover:active {
+    background-color: #dfd4d8;
+  }
+}
+
+.actions button:enabled:focus-visible .action-face {
+  background-color: #ffe58c;
+}
+
+.actions button:enabled:focus-visible .action-rim {
+  background-color: #f8d16d;
 }
 
 .action-icon svg {

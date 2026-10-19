@@ -101,6 +101,21 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
       });
     };
   }, [controller]);
+  useLayoutEffect(() => {
+    const release = (event) => {
+      if (event.key.toLowerCase() === 'x') controller.endKeyboardStroke();
+    };
+    const stop = () => controller.endKeyboardStroke();
+    window.addEventListener('keyup', release);
+    window.addEventListener('blur', stop);
+    document.addEventListener('visibilitychange', stop);
+    return () => {
+      window.removeEventListener('keyup', release);
+      window.removeEventListener('blur', stop);
+      document.removeEventListener('visibilitychange', stop);
+      stop();
+    };
+  }, [controller]);
   function indexAt(event) {
     const rect = boardRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left,
@@ -112,6 +127,7 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
     );
   }
   function pointerDown(event) {
+    controller.endKeyboardStroke();
     setKeyboardFocus(false);
     if (event.button !== 0 || !controller.canEdit()) return;
     const index = indexAt(event);
@@ -148,8 +164,15 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
       controller.gestures.cancel();
   }
   function keyDown(event) {
-    if (!controller.canEdit() || event.altKey || event.ctrlKey || event.metaKey)
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing) {
+      controller.endKeyboardStroke();
       return;
+    }
+    if (event.key === 'Tab' || event.key === 'Escape')
+      controller.endKeyboardStroke();
+    if (!controller.canEdit()) return;
+    const selected = controller.getSnapshot().selected;
     const row = Math.floor(selected / size),
       column = selected % size;
     const next = {
@@ -163,14 +186,16 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
     if (next !== undefined) {
       event.preventDefault();
       controller.gestures.cancel();
+      if (!event.key.startsWith('Arrow')) controller.endKeyboardStroke();
       cells.current[next].focus();
-    } else if (
-      ['x', 'd', 'Delete', 'Backspace'].includes(event.key) &&
-      !event.repeat
-    ) {
+      if (event.key.startsWith('Arrow')) controller.extendKeyboardStroke(next);
+    } else if (key === 'x') {
+      event.preventDefault();
+      if (!event.repeat) controller.startKeyboardStroke(selected);
+    } else if (['d', 'Delete', 'Backspace'].includes(key) && !event.repeat) {
       event.preventDefault();
       animateCell(selected);
-      controller.keyboardAction(selected, event.key);
+      controller.keyboardAction(selected, key);
     }
   }
   return (
@@ -192,6 +217,10 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
       onLostPointerCapture={pointerCancel}
       onDblClick={(event) => event.preventDefault()}
       onKeyDown={keyDown}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          controller.endKeyboardStroke();
+      }}
     >
       {game?.cells.map((stored, index) => {
         const value = preview.has(index) ? preview.get(index) : stored;

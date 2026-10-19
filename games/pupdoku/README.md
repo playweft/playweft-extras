@@ -24,7 +24,7 @@ Each puzzle has a randomly generated board from 8 × 8 to 12 × 12, with a uniqu
 
 Each puzzle starts with three lives. An incorrect pup placement costs one life; × marks do not. Undo does not restore lives. If you run out of lives, restart the same puzzle to try again.
 
-Use the arrow keys to move focus, Enter or Space to toggle a mark, X to mark a cell, D to place a pup, and Delete or Backspace to clear a cell.
+Use the arrow keys to move focus, Enter or Space to toggle a mark, X to toggle a mark, D to place a pup, and Delete or Backspace to clear a mark. Hold X while moving with the arrow keys to paint a continuous stroke: start on an empty cell to mark, or on an existing × to erase. Release X to finish; the whole stroke counts as one Undo action. Pups are skipped, and painting marks preserves red crosses.
 
 ## Running locally
 

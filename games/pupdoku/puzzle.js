@@ -1538,7 +1538,8 @@ export function move(game, index, tool) {
 }
 
 // A whole drag is one reversible action. Pups are never overwritten by marks.
-export function markCells(game, indices, value) {
+// Continuing a keyboard stroke reuses its first edit's history snapshot.
+export function markCells(game, indices, value, recordHistory = true) {
   if (
     !game.hearts ||
     isComplete(game.puzzle, game.cells) ||
@@ -1556,8 +1557,10 @@ export function markCells(game, indices, value) {
       game.cells[index] !== value,
   );
   if (!targets.length) return false;
-  game.history.push([...game.cells]);
-  if (game.history.length > 150) game.history.shift();
+  if (recordHistory) {
+    game.history.push([...game.cells]);
+    if (game.history.length > 150) game.history.shift();
+  }
   targets.forEach((index) => {
     game.cells[index] = value;
   });

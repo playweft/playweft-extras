@@ -69,6 +69,7 @@ export function createPupdokuController({
     releaseOldBoard,
     pendingGeneration,
     generationId = 0,
+    keyboardStroke,
     disposed = false,
     feedback;
   function publish(patch = {}) {
@@ -108,9 +109,34 @@ export function createPupdokuController({
     )
       complete();
   }
+  function endKeyboardStroke() {
+    keyboardStroke = null;
+  }
+  function cancelInput() {
+    endKeyboardStroke();
+    gestures.cancel();
+  }
+  function extendKeyboardStroke(index) {
+    const stroke = keyboardStroke;
+    if (!stroke) return;
+    if (!canEdit() || state.game !== stroke.game) return endKeyboardStroke();
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= stroke.game.cells.length ||
+      stroke.visited.has(index)
+    )
+      return;
+    stroke.visited.add(index);
+    feedback?.([index]);
+    if (markCells(stroke.game, [index], stroke.value, !stroke.changed)) {
+      stroke.changed = true;
+      commit({ message: DEFAULT_MESSAGE });
+    }
+  }
   function complete() {
     if (disposed || state.completion) return;
-    gestures.cancel();
+    cancelInput();
     clearHighlights();
     const level = state.level;
     publish({ completion: { phase: 'pups', level }, message: '本关完成。' });
@@ -132,6 +158,7 @@ export function createPupdokuController({
   }
   function canEdit() {
     return (
+      !disposed &&
       state.game &&
       !state.busy &&
       !state.completion &&
@@ -155,6 +182,7 @@ export function createPupdokuController({
     highlightTimer = schedule(clearHighlights, error ? 1600 : 6000);
   }
   function marks(indices, value) {
+    endKeyboardStroke();
     if (!canEdit()) return;
     clearHighlights();
     const game = state.game,
@@ -203,7 +231,10 @@ export function createPupdokuController({
     getValue: (index) => state.game?.cells[index],
     onMarks: marks,
     onPup: pup,
-    onVisit: (indices) => feedback?.(indices),
+    onVisit: (indices) => {
+      endKeyboardStroke();
+      feedback?.(indices);
+    },
     onPreview: (indices, value) =>
       publish({
         preview: new Map(
@@ -289,7 +320,7 @@ export function createPupdokuController({
   }
   async function newGame(prepared) {
     if (state.busy || disposed) return;
-    gestures.cancel();
+    cancelInput();
     clearHighlights();
     const previous = state.game,
       fadeOldBoard = !!previous && !state.generationError;
@@ -346,7 +377,7 @@ export function createPupdokuController({
   }
   function restart() {
     if (state.busy || state.completion) return;
-    gestures.cancel();
+    cancelInput();
     clearHighlights();
     if (!state.game || state.generationError) return newGame();
     commit({ game: createGame(state.game.puzzle), message: DEFAULT_MESSAGE });
@@ -369,17 +400,31 @@ export function createPupdokuController({
     },
     canEdit,
     gestures,
+    endKeyboardStroke,
+    extendKeyboardStroke,
+    startKeyboardStroke(index) {
+      cancelInput();
+      if (!canEdit()) return;
+      clearHighlights();
+      keyboardStroke = {
+        game: state.game,
+        value: [1, 3].includes(state.game.cells[index]) ? 0 : 1,
+        visited: new Set(),
+        changed: false,
+      };
+      extendKeyboardStroke(index);
+    },
     newGame,
     restart,
     select(index) {
       if (state.selected !== index) publish({ selected: index });
     },
     toggleMark(index) {
-      gestures.cancel();
+      cancelInput();
       return marks([index], [1, 3].includes(state.game.cells[index]) ? 0 : 1);
     },
     keyboardAction(index, key) {
-      gestures.cancel();
+      cancelInput();
       if (!canEdit()) return;
       if (key === 'd') return pup(index);
       if (key === 'x')
@@ -389,14 +434,14 @@ export function createPupdokuController({
       commit();
     },
     undo() {
-      gestures.cancel();
+      cancelInput();
       if (canEdit() && undo(state.game)) {
         clearHighlights();
         commit({ message: '已撤销。' });
       }
     },
     hint() {
-      gestures.cancel();
+      cancelInput();
       if (!canEdit()) return;
       const result = hint(state.game);
       if (result) {
@@ -406,12 +451,12 @@ export function createPupdokuController({
       }
     },
     suspend() {
-      gestures.cancel();
+      cancelInput();
       save();
     },
     dispose() {
       disposed = true;
-      gestures.cancel();
+      cancelInput();
       save();
       unschedule(highlightTimer);
       unschedule(generationTimer);

@@ -375,6 +375,177 @@ test('Preact preserves cell nodes across edits and shows keyboard focus only dur
   assert.equal(ui.el('board').classList.contains('keyboard-focus'), false);
 });
 
+test('holding X paints repeated arrows and turns as one reversible stroke without changing pups or red notes', async () => {
+  const board = puzzle.generateLevel(7),
+    game = puzzle.createGame(board);
+  const pup = board.solution[0],
+    red = (pup + 1) % board.size;
+  game.cells[pup] = 2;
+  game.cells[red] = 3;
+  game.cells[(pup + 2) % board.size] = 1;
+  const before = [...game.cells],
+    pulses = [];
+  const ui = await mount(JSON.stringify({ game, level: 3 }), {
+    vibrate: (duration) => pulses.push(duration),
+  });
+  const focus = (index) => act(() => ui.el('board').children[index].focus());
+  const key = (key, repeat = false) =>
+    ui.dispatch(document.activeElement, 'keydown', { key, repeat });
+  focus(board.size);
+  key('X');
+  assert.equal(
+    ui.state().game.cells[board.size],
+    1,
+    'the initial mark appears immediately',
+  );
+  key('X', true);
+  assert.equal(
+    ui.state().game.cells[board.size],
+    1,
+    'autorepeat never toggles the starting cell',
+  );
+  for (let col = 1; col < board.size; col++) key('ArrowRight', true);
+  key('ArrowUp');
+  for (let col = 1; col < board.size; col++) key('ArrowLeft', true);
+  key('ArrowLeft', true);
+  key('ArrowRight');
+  key('ArrowLeft');
+  for (let i = 0; i < board.size * 2; i++)
+    assert.equal(ui.state().game.cells[i], i === pup ? 2 : i === red ? 3 : 1);
+  assert.equal(ui.state().game.history.length, 1);
+  assert.equal(ui.state().game.hearts, 3);
+  assert.deepEqual(pulses, []);
+  ui.dispatch(window, 'keyup', { key: 'x' });
+  key('ArrowDown');
+  key('ArrowDown');
+  assert.equal(
+    ui.state().game.cells[board.size * 2],
+    0,
+    'arrows stop painting after keyup',
+  );
+  ui.click('undo');
+  assert.deepEqual(ui.state().game.cells, before);
+});
+
+test('holding X from a red note erases a whole row with one history entry even at the undo limit', async () => {
+  const board = puzzle.generateLevel(7),
+    game = puzzle.createGame(board);
+  const pup = board.solution[0],
+    red = (pup + 1) % board.size;
+  game.cells.fill(1, 0, board.size);
+  game.cells[pup] = 2;
+  game.cells[red] = 3;
+  game.history = Array.from({ length: 150 }, (_, i) => {
+    const cells = Array(board.size ** 2).fill(0);
+    cells[i % cells.length] = 1;
+    return cells;
+  });
+  const before = [...game.cells],
+    history = [...game.history];
+  const ui = await mount(JSON.stringify({ game, level: 1 }));
+  act(() => ui.el('board').children[red].focus());
+  const key = (key) => ui.dispatch(document.activeElement, 'keydown', { key });
+  key('x');
+  for (let i = red; i < board.size - 1; i++) key('ArrowRight');
+  for (let i = 1; i < board.size; i++) key('ArrowLeft');
+  ui.dispatch(window, 'keyup', { key: 'X' });
+  assert.deepEqual(
+    ui.state().game.cells.slice(0, board.size),
+    Array.from({ length: board.size }, (_, i) => (i === pup ? 2 : 0)),
+  );
+  assert.deepEqual(
+    ui.state().game.history,
+    [...history.slice(1), before],
+    'only the first changed cell consumes a history slot',
+  );
+  ui.click('undo');
+  assert.deepEqual(
+    ui.state().game.cells,
+    before,
+    'Undo also restores the original red cross',
+  );
+});
+
+test('keyboard strokes end on lost focus, navigation, suspension and other game actions', async () => {
+  for (const reason of [
+    'window blur',
+    'board blur',
+    'Tab',
+    'Escape',
+    'Home',
+    'End',
+    'visibility',
+    'modifier',
+    'suspend',
+    'restart',
+    'undo',
+    'hint',
+    'pointer',
+    'new level',
+    'dispose',
+  ]) {
+    const ui = await mount();
+    await ui.finish();
+    const focus = (index) => act(() => ui.el('board').children[index].focus());
+    const key = (key, fields = {}) =>
+      ui.dispatch(document.activeElement, 'keydown', { key, ...fields });
+    focus(0);
+    key('x');
+    key('ArrowRight');
+    if (reason === 'window blur') ui.dispatch(window, 'blur');
+    else if (reason === 'board blur') act(() => ui.el('hint').focus());
+    else if (['Tab', 'Escape', 'Home', 'End'].includes(reason)) key(reason);
+    else if (reason === 'visibility') ui.dispatch(document, 'visibilitychange');
+    else if (reason === 'modifier') key('ArrowRight', { ctrlKey: true });
+    else if (reason === 'suspend') act(() => ui.controller.suspend());
+    else if (reason === 'dispose') act(() => ui.controller.dispose());
+    else if (reason === 'pointer') ui.tap(4);
+    else if (reason === 'new level') {
+      act(() => {
+        void ui.controller.newGame();
+      });
+      await ui.finish();
+    } else ui.click(reason);
+    const size = ui.controller.getSnapshot().game.puzzle.size;
+    const target = ui
+      .state()
+      .game.cells.findIndex((value, i) => value === 0 && i % size > 0);
+    assert.ok(target >= 0);
+    focus(target - 1);
+    // The held key can still repeat after focus returns, but must not re-arm.
+    key('x', { repeat: true });
+    key('ArrowRight');
+    assert.equal(ui.state().game.cells[target], 0, reason);
+  }
+});
+
+test('a stroke starting on a pup records its first actual edit and later key presses start separate strokes', async () => {
+  const board = puzzle.generateLevel(7),
+    game = puzzle.createGame(board);
+  const pup = board.solution[0];
+  game.cells[pup] = 2;
+  const ui = await mount(JSON.stringify({ game, level: 1 }));
+  act(() => ui.el('board').children[pup].focus());
+  const key = (key) => ui.dispatch(document.activeElement, 'keydown', { key });
+  key('x');
+  assert.equal(ui.state().game.history.length, 0);
+  key('ArrowDown');
+  assert.equal(ui.state().game.cells[pup + board.size], 1);
+  assert.equal(ui.state().game.history.length, 1);
+  ui.dispatch(window, 'keyup', { key: 'x' });
+  key('x');
+  key('ArrowDown');
+  assert.equal(ui.state().game.cells[pup + board.size], 0);
+  assert.equal(ui.state().game.cells[pup + 2 * board.size], 0);
+  ui.dispatch(window, 'keyup', { key: 'x' });
+  assert.equal(ui.state().game.history.length, 2);
+  ui.click('undo');
+  assert.equal(ui.state().game.cells[pup + board.size], 1);
+  ui.click('undo');
+  assert.equal(ui.state().game.cells[pup + board.size], 0);
+  assert.equal(ui.state().game.cells[pup], 2);
+});
+
 test('worker timeout can retry and disposal ignores late replies', async () => {
   const ui = await mount();
   const oldWorker = ui.workers[0],

@@ -1,105 +1,125 @@
-# 小狗数独技术说明
+# Pupdoku technical notes
 
-本文记录 `games/pupdoku/` 的生成器、求解器、配色模型与维护方法。玩法和本地运行见[游戏说明](../games/pupdoku/README.md)。以下命令均在仓库根目录执行。
+This document covers the generator, solver, color model, and maintenance tools in `games/pupdoku/`. See the [game README](../games/pupdoku/README.md) for rules and local setup. Run all commands below from the repository root.
 
-界面使用 Preact 与 JSX，棋盘、状态栏和操作按钮由状态声明式渲染。`controller.js` 管理游戏动作、手势、Worker 和存档，`puzzle.js` 独立提供生成器与求解器。组件只通过 ref 操作焦点、指针捕获和回弹动画；不手工增删棋盘 DOM。交互测试挂载真实 Preact 组件并派发 DOM 事件。
+The interface uses Preact and JSX to render the board, status, and controls declaratively. `controller.js` manages game actions, gestures, the Worker, and saved progress; `puzzle.js` provides the independent generator and solver. Components use refs only for focus, pointer capture, and bounce animations, without manually adding or removing board nodes. Interaction tests mount the actual Preact components and dispatch DOM events.
 
-## 随机关卡与生成器
+## Procedural levels and generation
 
-每次新关用独立种子随机选择 8～12 阶棋盘，然后生成新的连续区域分区；没有手动大小选择、难度档位或固定关卡表。通关后先让棋盘内所有小狗同步放大至 1.28 倍再恢复，整个动画 240 ms，期间不显示遮罩；之后全屏提示淡入 360 ms、停留 1000 ms，再淡出 420 ms；全屏提示淡入完成后立即在后台生成下一关。提示淡出时，旧棋盘同步淡出 420 ms，完全透明后才清除标记；接着用新节点渲染下一关并淡入 240 ms，避免继承旧标记的消失动画。提前准备完成时不显示转圈；只有旧棋盘已淡出而生成仍未完成时才显示等待动画，新棋盘淡入时同步淡出等待动画。全程无需点击，关卡编号在新棋盘就绪时递增。重试保持本题的尺寸和分区；已有存档可以继续完成，之后采用新生成器。
+Each new level uses an independent seed to randomly select a board size from 8 to 12, then generates a new partition of connected regions. There is no size selector, difficulty selector, or fixed level list.
 
-生成流程：
+On completion, all pups on the board briefly scale to 1.28 times their size and return within 240 ms, with no overlay during that animation. The full-screen completion message then fades in over 360 ms, holds for 1000 ms, and fades out over 420 ms. Background generation starts as soon as the message has fully faded in. The old board fades out alongside the message for 420 ms; marks are cleared only after it becomes fully transparent. The next board mounts fresh nodes and fades in over 240 ms, preventing outgoing mark animations from carrying over. No spinner appears when generation finishes in advance. If generation is still running after the old board disappears, a loading overlay appears and fades out as the new board fades in. No button press is needed. The level number advances when the next board is ready. Restarting preserves the current size and partition. Existing saves remain playable and use the current generator for subsequent levels.
 
-1. 直接在选定的 8～12 阶完整棋盘上随机回溯生成合法答案排列，满足每行、每列一个且小狗互不相邻；以每只小狗所在格为一个颜色的根，同时随机生长四连通分区。最多尝试 64 次生长，选取符合面积上限和小区域总量限制的初始分区。不生成 4 阶内核、不逐层扩展，也没有预设外围长条或固定题库。
-2. 用反例引导边界修改以获得唯一解：每轮最多枚举 8 个答案，记录除预埋答案之外的其他答案。只移动非答案的边界格，保持供体连通、所有根不变及面积限制；令其他答案中“选中的格子总数减去不同颜色数”为冲突数 d，以 `exp(-1.7d)` 作为损失，优先让仍成立的其他答案产生颜色重复，同时避免复活已排除的答案。缓存各反例的颜色计数和经过每格的反例索引，移动评分不重新调用求解器；附加小幅随机扰动允许跨过局部平台。旧反例全部排除后才再次调用计数器，确认没有其他解或补充新反例。每个分区最多 400 次移动，未成功则重建。其他答案只用于构造唯一性，之后另用不读取答案的技巧求解器验证逻辑可解性和实际技巧路径。
-3. 对最终棋盘最多尝试 `3 × 尺寸²` 次随机边界转移，优先把大区域的格子分给较小邻区，也允许少量非均衡变形。再最多尝试 `4 × 尺寸` 次相邻二至四色合并后的重新生长，打散仅靠单格转移难以改变的细长条带，并优先选择残留纯色整线所在的区域。每次改造都保持答案格、区域连通和唯一解，并用逻辑求解器检查可解性。改造时按前半局独立卡点、混色排除与联合／链式推理评分，另对途中出现的锁定集合或混色公共排除、较高阶的有效集合加分，对纯色整线扣分。途中指已经放置至少两只、尚余至少三只小狗；同一放置数量下的连续排除只计一个位置，避免拆分步骤刷分。这些新增偏好不设每题硬门槛。优先接受不降低评分的改造，也以 20% 概率允许探索较低分状态；阶段结束返回保留的最佳分区。
-4. 用总量约束控制小区域，而不是统一要求最小三格：单格与双格区域合计不超过 `floor(尺寸 / 4)` 个，单格最多一个；最大区域不超过棋盘四分之一（向上取整）。其他区域面积自然变化。
-5. 小区域提供解题入口，但不接受长串自动确定的开局：首次使用排除之前，最多直接确定 `floor(尺寸 / 4)` 只小狗。边界改造阶段保留至少两步排除的宽松门槛，以便随机分区继续变化；最终出题必须至少两次不同颜色的行／列公共冲突格排除，以及至少一次锁定集合、双单元联合排除或短链推理；在放完一半小狗之前至少出现两处独立的中级卡点。同一已放置数量下的连续中级排除只算一处，不因消除被拆成多步而增加卡点数。全部推理都在更简单技巧已穷尽时计数，不能靠换求解顺序凑技巧。这是质量门槛，不是难度分档，也不代表人类难度评级。
-6. 整张棋盘的纯色整行与纯色整列合计最多一条（同一 L 形区域占满一行与一列也算两条）。优先对多余纯色线做定向边界转移，每次严格减少纯色线数量，同时保持面积、连通、唯一解和逻辑质量；无法修复时重建随机分区。仅剩一条时仍尝试拆除，但不因此拒绝合格题；出现合格的纯色整线题后，最多再尝试六个候选并保留评分最佳的备选，不承诺每题都没有纯色线。拓扑和最终推理门槛共用最多 256 次候选尝试，达不到要求则明确失败，不返回降低门槛的题目。
-7. 最后再随机对称变换和重标颜色，并重新验证唯一答案和最终显示方向下的逻辑轨迹、技巧门槛。不能任意打乱行列，因为会破坏相邻关系。
+The generation pipeline is:
 
-直接生成仍是带质量筛选的启发式采样，不是所有合法分区的均匀采样。移除逐层扩展后，按种子 0～49、每尺寸 50 题抽检，共 250 题全部通过唯一解及原有逻辑门槛。相同种子下，最小色块重心位于中央宽高各半区域的比例从 76.3% 降至 8.9%，接触边缘从 9.0% 升至 74.3%；最小面积并列时平均计入。因此消除了内核造成的中央集中，但仍存在偏向边缘的残余倾向，不能宣称布局已经均匀。按下文 `compactLarge` 的形状口径，存在厚实大色块的题目从 38.0% 升至 60.4%。这些指标只用于分布审计，没有增加中央／边缘硬性配额或整题拒绝条件。
+1. Generate a legal solution permutation directly on the selected full-size 8–12 board using randomized backtracking, with one pup per row and column and no touching pups. Use each solution cell as a region root and grow four-connected regions randomly. Try up to 64 growth attempts to find an initial partition satisfying the area and small-region limits. There is no 4 × 4 core, outward expansion, predefined outer strip, or fixed puzzle bank.
+2. Enforce uniqueness through counterexample-guided boundary edits. Enumerate up to eight solutions per round and record alternatives to the planted solution. Move only non-solution boundary cells, preserving donor connectivity, all roots, and area limits. For each alternative, define its conflict count `d` as its number of selected cells minus its number of distinct colors. Minimize `exp(-1.7d)` to make surviving alternatives repeat colors while avoiding the revival of eliminated alternatives. Cache each counterexample's color counts and a per-cell counterexample index so move scoring does not rerun the solver. Small random perturbations help escape local plateaus. Call the solution counter again only after all recorded alternatives have been eliminated, either confirming uniqueness or collecting more alternatives. Allow at most 400 moves per partition, then rebuild on failure. Counterexamples are used only to establish uniqueness; a separate technique solver that does not read the answer verifies logical solvability and the actual deduction path.
+3. Try up to `3 × size²` random boundary transfers, favoring transfers from larger regions to smaller neighbors while permitting some uneven changes. Then try up to `4 × size` regrowth operations, merging and regrowing two to four neighboring regions to break thin strips that individual transfers cannot easily reshape. Prioritize regions containing remaining monochrome lines. Every change preserves solution cells, connectivity, and uniqueness and checks logical solvability. Score independent first-half bottlenecks, mixed-color exclusions, joint reasoning, and chains; reward midgame locked sets or mixed-color common exclusions and higher effective set ranks; penalize monochrome lines. “Midgame” means at least two pups have been placed and at least three remain. Consecutive eliminations at the same placement count count as one position, preventing split steps from inflating the score. These preferences add no per-puzzle hard minimum. Accept non-decreasing scores preferentially, allow a 20% chance of exploring lower-scoring states, and return the best partition retained.
+4. Limit small regions by their total count rather than imposing a three-cell minimum: one- and two-cell regions together may number at most `floor(size / 4)`, with at most one single-cell region. No region may exceed one quarter of the board, rounded up. Other region areas vary naturally.
+5. Permit small regions as entry points, but reject long automatic openings: before the first elimination, at most `floor(size / 4)` pups may be placed through singles. Boundary reshaping retains a looser requirement of at least two elimination steps to allow exploration. Final puzzles require at least two mixed-color row/column common-conflict exclusions, at least one locked set, joint exclusion, or short chain, and at least two independent intermediate bottlenecks before more than half the pups have been placed. Consecutive intermediate eliminations at one placement count count as one bottleneck. Count techniques only after simpler rules are exhausted, without changing solver order to inflate coverage. These are quality gates, not difficulty tiers or validated human difficulty ratings.
+6. Allow at most one monochrome full row or column across the entire board. An L-shaped region filling one row and one column counts as two lines. Repair excess lines with targeted boundary transfers, each strictly reducing their number while preserving area, connectivity, uniqueness, and logical quality. Rebuild when repair fails. Also attempt to remove the last monochrome line, but do not reject an otherwise valid puzzle solely for retaining it. After finding a valid puzzle with a monochrome line, examine at most six additional candidates and retain the best-scoring fallback; not every puzzle is guaranteed to have zero such lines. Topology and final proof requirements share a limit of 256 candidate attempts. Failure is explicit rather than returning a puzzle with weaker requirements.
+7. Apply a random grid symmetry and relabel colors. Recheck the unique answer, logical trace, and quality gates in the final display orientation. Arbitrary row or column permutations are invalid because they can change adjacency.
 
-本批题目实际最简单路径中，途中中级技巧覆盖为 94.4%，三元及以上集合覆盖为 61.2%。以下耗时为开发机单独运行的纯生成结果，排除渲染和显示配色，不保证手机端同样耗时。唯一性边界搜索固定为最多 400 次移动，避免在局部平台上长时间消耗；失败后改用新的完整分区，没有逐层扩展回退路径。
+Direct generation is heuristic sampling with quality filters, not uniform sampling over all valid partitions. After removing outward expansion, an audit of seeds 0–49, 50 puzzles per size and 250 total, passed uniqueness and the existing logical gates. On the same seeds, the fraction of smallest-region centroids in the central half-width, half-height rectangle fell from 76.3% to 8.9%; the fraction touching an edge rose from 9.0% to 74.3%. Ties for smallest area are averaged. This removes the core-induced central concentration but leaves an edge bias, so the distribution is not claimed to be uniform. Boards with a thick large region under the `compactLarge` definition below rose from 38.0% to 60.4%. These are audit metrics, not new central/edge quotas or rejection criteria.
 
-| 尺寸 | 生成中位数 | P95 | 最大值 |
-| --- | --- | --- | --- |
-| 8 | 62 ms | 250 ms | 357 ms |
-| 9 | 57 ms | 124 ms | 257 ms |
-| 10 | 61 ms | 265 ms | 321 ms |
-| 11 | 107 ms | 376 ms | 486 ms |
-| 12 | 125 ms | 413 ms | 611 ms |
+In that batch's actual simple-first traces, midgame intermediate-technique coverage was 94.4%, and sets of three or more covered 61.2% of puzzles. The following development-machine timings measure generation alone, excluding rendering and display-color assignment; they are not phone timing guarantees. Uniqueness boundary search remains capped at 400 moves before rebuilding a full partition, with no outward-expansion fallback.
 
-小区域分散也是软偏好。n 阶棋盘的平均区域面积为 n，对面积 a 的区域定义连续小块权重 `w = max(0, 1-a/n)`，不只统计一、两格的区域；面积接近平均值时权重自然归零。区域质心距离为 d，接近程度取 `p = max(0, 1-d/(n/2))²`。聚集损失为 `Σ(wᵢwⱼpᵢⱼ) / max(1, Σ(wᵢwⱼ))`，对所有不同区域对求和，生成评分扣除其 6 倍。小块越小、质心越近，扣分越多；相距至少半个棋盘宽度不扣分，单个小块也不扣分。按区域对权重归一化，避免仅按小块数量评价拥挤程度；保持旋转、反射和颜色重标不变。这是布局偏好，不是新增拒绝条件，也不保证小块之间完全不接触。`analyzeLogic` 同时报告该布局指标 `smallRegionClustering`，抽检脚本输出其平均值。
+| Size | Generation median | P95    | Maximum |
+| ---- | ----------------- | ------ | ------- |
+| 8    | 62 ms             | 250 ms | 357 ms  |
+| 9    | 57 ms             | 124 ms | 257 ms  |
+| 10   | 61 ms             | 265 ms | 321 ms  |
+| 11   | 107 ms            | 376 ms | 486 ms  |
+| 12   | 125 ms            | 413 ms | 611 ms  |
 
-锁定集合按最高有效阶数递增奖励。令 `r = max(0, 最高阶数-2)`，基础奖励为 `6r(r+1)`，二至六元分别为 0、12、36、72、120；途中最高阶数另按 `3r(r+1)` 加分。途中集合次数奖励最多计一次，避免重复二元消除盖过高阶集合。空间分散奖励采用下文的紧凑替代优先评分，最高有效阶数仍在六个方向一起比较。所有奖励只读取实际逻辑轨迹，仍由简单技巧先行的求解器验证有效阶数，未新增单题技巧硬要求。
+### Region geometry and proof scoring
 
-精确计数使用行、列、颜色三个方向的最少候选优先搜索，找到两解即停止，避免 12 阶固定按行枚举的长尾。逻辑求解器不读取答案、不盲猜，支持唯一位置、公共相邻/冲突格排除、区域与行列交集锁定，以及三类单元之间六个方向的二至六元锁定集合（含 X-wing）。每步保留候选依据用于提示。锁定集合在六个方向中优先取可产生排除的最小阶数，并以剩余单元数 m 将阶数限制到 `floor(m / 2)`：例如剩六个单元时，四元集合按反向二元集合处理，避免将等价的简单技巧算成高阶技巧。技巧选择严格按唯一位置、同色公共冲突格排除（初级）、相邻双色对夹缝排除（初级）、不同颜色的行／列公共冲突格排除（中级）、联合锁定集合、双单元联合排除、短链的顺序；一个颜色区域内部的公共冲突格也计入同色初级技巧。`analyzeLogic` 分别报告 `sameColorCommon`、`localPair`、`mixedColorCommon`、`subset`、`joint`、`chain`，以及 `bottlenecks`、`earlyBottlenecks` 和兼容原统计的 `earlySubsets`，另报告途中技巧位置数 `progressPatterns`、途中锁定集合次数 `progressSubsets`、途中最高有效阶数 `largestProgressSet` 及纯色整线数 `monochromeLines`。
+Small-region dispersion is a soft preference. On an `n`-size board, the average region area is `n`. A region of area `a` receives the continuous small-region weight `w = max(0, 1-a/n)`, rather than counting only one- and two-cell regions. The weight approaches zero as area approaches the mean. For centroid distance `d`, define proximity `p = max(0, 1-d/(n/2))²`. The clustering loss is `Σ(wᵢwⱼpᵢⱼ) / max(1, Σ(wᵢwⱼ))` over distinct region pairs, and the generation score subtracts six times this loss. Smaller, closer regions incur a higher penalty; separations of at least half the board width incur none, and a single small region alone is not penalized. Pair-weight normalization avoids scoring crowding solely by the number of small regions. The metric is invariant under rotation, reflection, and color relabeling. It is a layout preference, not a rejection criterion or a guarantee that small regions never touch. `analyzeLogic` reports `smallRegionClustering`, and the audit script reports its mean.
 
-相邻双色对夹缝排除要求两个尚未放狗的颜色各只剩两个候选：两对候选分别竖直相邻，处在相同的两行、两列之间恰隔一列。两只小狗必须分别占据这两行，因此中间列在这两行上方、下方的两个格子都必与一只小狗相邻，可以排除；横向旋转形式同理。位于棋盘外的目标忽略，有第三个候选时不成立。每步记录四个来源格和两种合法搭配，不读取答案。它单独计为 `localPair`，出现一次为整关增加 0.25 分局部图形多样性奖励，重复出现不再加分；先于混色排除、锁定集合、通用联合排除执行；不计中级卡点、途中中级技巧或空间奖励，也不能满足生成器的中高级技巧门槛。它属于通用联合排除的局部特例，提前识别后可以避免将简单几何图形误计成中级推理。
+Locked sets receive increasing rewards for their highest effective rank. Let `r = max(0, highestRank-2)`. The base reward is `6r(r+1)`, giving 0, 12, 36, 72, and 120 for ranks two through six. The highest midgame rank adds `3r(r+1)`. The reward for the number of midgame set steps is capped at one occurrence, so repeated pairs cannot overwhelm higher-rank sets. Spatial rewards use the compact-alternative-first policy below; effective ranks are compared across all six projection directions. Rewards read only the actual trace and retain the simple-first solver. They add no per-puzzle technique requirement.
 
-以下为移除逐层扩展之前的历史记录。该分类会改变历史技巧统计：在空间评分版本的同一批 500 题上加入此初级规则后，500 题仍全部逻辑可解，途中中级技巧覆盖从 87.2% 变为 66.2%；不能把被初级规则替代的步骤继续算成中级来维持旧比例。带 0.25 分封顶奖励的新生成器按种子 0～49、每尺寸 50 题抽检，共 250 题全部满足原有中级卡点门槛，途中中级技巧覆盖为 72%。回归统计按五种尺寸等权，避免额外的小尺寸穷举用例改变分布权重；新分类下的途中中级覆盖回归下限校准为 70%，各题的中级卡点和混色推理硬门槛没有降低。本机各尺寸纯生成中位数为 93～244 ms，P95 为 196～471 ms，最大 520 ms，不包含渲染、配色，也不是手机端时限保证。
+### Solver and technique order
 
-双单元联合排除选择同一类中的两个不同单元，每单元 2～6 个候选，枚举至多 36 个候选搭配，排除同行、同列、同色或相邻的搭配；求所有合法搭配共同阻止的候选格。搭配中的小狗本身不算被阻止，零个合法搭配也不能作为排除依据。步骤保留完整合法搭配供提示与独立验证。
+The exact counter branches on the row, column, or color with the fewest candidates and stops at two solutions, avoiding long tails from fixed row-order enumeration on 12 × 12 boards.
 
-短链使用恰剩两个候选的单元构造强联系，候选间冲突构造弱联系。搜索强—弱—强或强—弱—强—弱—强的三／五条联系，证明两端至少一端成立，再排除与两端都冲突的格子。采用跨所有起点的广度优先搜索，优先检查三条联系的证明，再考虑五条联系，避免先遇到长链便跳过其他起点的短解。最多扩展 512 个状态，达到扩展预算后仍检查已排队的证明；保留每条强联系的单元依据，不调用答案、回溯求解器或嵌套试填。
+The logical solver neither reads the answer nor guesses. It supports singles, common-neighbor/common-conflict exclusions, region–line intersection locks, and rank-two through rank-six locked sets across all six directions between rows, columns, and regions, including X-wing. Each step retains its candidate premises for hints. Sets prefer the lowest rank that produces an elimination. With `m` unfilled units, ranks are capped at `floor(m / 2)`: for example, a four-unit set among six remaining units is treated as its complementary pair rather than credited as an advanced technique.
 
-新题的实际逻辑路径最多使用两次短链，单次最多五条联系（至多六个候选格）；需要第三次短链的分区提前停止生成评估，不降低原有混色排除、独立中级卡点与唯一解门槛，也不增加生成器尝试次数或搜索预算。三条／五条联系的链分别扣 2／4 分，优先减少记忆负担；不要求短链每题出现，不添加长链或嵌套反证。次数约束针对当前求解顺序下的实际路径，不宣称所有人类路径都会满足。公开分析和提示继续完整求解，旧存档不会因超过新题次数限制而失效。这些限制是可校准的体验设计值，没有经过玩家难度实验。
+Technique order is strictly singles; same-color common-conflict exclusions (basic); local adjacent-color-pair gap exclusions (basic); mixed-color row/column common-conflict exclusions (intermediate); locked sets; joint exclusions; short chains. Common exclusions within one color region also count as basic same-color deductions. `analyzeLogic` reports `sameColorCommon`, `localPair`, `mixedColorCommon`, `subset`, `joint`, and `chain`, plus `bottlenecks`, `earlyBottlenecks`, and the compatibility statistic `earlySubsets`. It also reports midgame technique positions (`progressPatterns`), midgame set steps (`progressSubsets`), highest effective midgame rank (`largestProgressSet`), and monochrome lines (`monochromeLines`).
 
-链式难度限制加入后，按种子 0～19、每尺寸 20 题共 100 题抽检，全部符合原有逻辑质量门槛及最多两次链式推理限制。3 题用到短链，其中 1 题用了两次；合计三联系步骤 3 次、五联系步骤 1 次，途中中级技巧覆盖为 94%。本机单独运行的纯生成中位数按尺寸为 45～102 ms，P95 为 104～367 ms，最大 399 ms；同批种子改动前最大约 394 ms，没有增加尝试次数或搜索预算。这是有限样本与开发机测量，不是手机端耗时保证。
+A local adjacent-color-pair gap exclusion requires two unfilled colors with exactly two candidates each. For the vertical form, both pairs occupy the same two adjacent rows, in columns separated by exactly one column. The two pups must occupy different rows, so the two cells in the middle column immediately above and below those rows are excluded. The horizontal form is the rotation of this pattern. Ignore off-board targets; a third candidate invalidates the pattern. Each step records four source cells and both legal pairings without reading the answer. It counts separately as `localPair` and earns a one-time 0.25-point pattern-diversity bonus per puzzle, with no repeated reward. It runs before mixed-color exclusions, locked sets, and general joint exclusions. It does not count toward intermediate bottlenecks, midgame intermediate coverage, spatial rewards, or the generation gate for intermediate/advanced techniques. Recognizing this local special case of joint exclusion first avoids misclassifying elementary geometry as intermediate reasoning.
 
-空间分散评分以实际采用的推理为准。每个局面先穷尽更简单的技巧，再在同类技巧中优先执行空间分散分数最低的步骤；锁定集合先比较有效阶数，再比较分散程度，并在行、列、颜色之间的六个方向一起比较。执行后立即更新候选并重新求解。即使紧凑推理消除的是其他格子，也必须先执行，不能挑选分散的图形刷分。这保证在当前支持的技巧和优先级内先执行紧凑推理，不宣称找到了所有人类解法中的全局最短路径。
+The following figures predate the removal of outward expansion. Adding this basic classification to the same 500-puzzle spatial-scoring batch kept all puzzles logically solvable, but changed midgame intermediate coverage from 87.2% to 66.2%. Steps replaced by a basic rule must not remain credited as intermediate deductions. With the capped 0.25-point reward, seeds 0–49 across all five sizes, 250 puzzles total, still satisfied the original intermediate-bottleneck gates, with 72% midgame intermediate coverage. Regression statistics weight the five sizes equally, preventing extra small-board exhaustive cases from skewing the distribution. The revised coverage regression floor is 70%; per-puzzle bottleneck and mixed-color gates were not weakened. Development-machine generation medians were 93–244 ms across sizes, P95 values 196–471 ms, and the maximum 520 ms, excluding rendering and color assignment and without a phone timing guarantee.
 
-对排序后的不同坐标，相邻坐标间空缺 `g = 后者 - 前者 - 1`，定义 `G = mean(g / (g + 1))`。连续坐标得零分，间隔增加时平滑趋近一。对必需候选格，用八邻域距离构建最小生成树，每条树边距离为 d，定义 `C = mean((d - 1) / d)`；候选格八邻域连通时为零，颜色编号从不当作空间坐标。
+Joint exclusion considers two distinct units of the same family, each with two to six candidates. It enumerates at most 36 pairings and rejects pairs sharing a row, column, color, or adjacency. Intersect the cells blocked by every legal pairing. Chosen pup cells themselves are not blocked, and zero legal pairings cannot justify an elimination. The step retains all legal pairings for hints and independent verification.
 
-| 技巧 | 分散程度（0～1） | 整关最高额外加分 |
-| --- | --- | --- |
-| 唯一位置、同色公共排除、相邻双色对夹缝排除 | 不加空间分 | 0 |
-| 混色行／列公共排除 | 该行／列剩余候选坐标的 G | 2 |
-| 行列—颜色锁定 | 相关行或列的 G 与候选格 C 的较大值 | 3 |
-| 行—列锁定 | 行、列两侧 G 的平均值与候选格 C 的较大值 | 3，与上一项共用上限 |
-| 双单元联合排除 | 行／列单元取 G 与 C 的平均值；颜色单元只取 C | 1 |
-| 短链 | 搜索有上限，无法完整排除紧凑替代，暂不加空间分 | 0 |
+Short chains form strong links from units with exactly two candidates and weak links from candidate conflicts. A strong–weak–strong chain, or strong–weak–strong–weak–strong chain, proves at least one endpoint is true; any cell conflicting with both endpoints is excluded. Multi-source breadth-first search checks three-link proofs across all starts before considering five-link proofs, avoiding a long chain found at one start hiding a shorter proof elsewhere. It expands at most 512 states and still checks queued proofs when the expansion budget is exhausted. Each strong link retains its exact-one unit as evidence. No answer lookup, backtracking solver, or nested trial placement is used.
 
-每类只保留实际路径中的最高分散程度，不按重复次数累加，总空间奖励最多 6 分，低于从二阶升到三阶的 12 分阶数奖励。这些是观察负担的设计代理指标，尚未通过人类解题实验校准。`analyzeLogic` 的 `spatialScores` 返回三类最高程度，`spatialSteps` 返回实际分散步骤数；兼容字段 `spreadSetScore` 继续记录实际锁定的阶数乘分散程度，评分不再直接使用它。锁定搜索按有效阶数缓存组合、对超出目标阶数的颜色／行列并集提前剪枝，找到零分的紧凑同阶解释即可提前返回，不增加短链或生成器的搜索上限。
+New puzzles' actual logical traces allow at most two short-chain steps, each with at most five links and six candidate cells. Generation evaluation stops early if a third chain is needed, without weakening the mixed-color, independent-bottleneck, or uniqueness gates or increasing candidate attempts or search budgets. Three- and five-link chains incur penalties of 2 and 4 points, respectively, to favor a lower memory burden. Chains are optional; long chains and nested contradiction searches are not added. The limits apply to the actual trace under the current solver order, not every possible human solving path. Public analysis and hints retain the full solver, so old saves exceeding the new generation limit remain solvable. These are adjustable experience-design parameters, not experimentally calibrated human difficulty ratings.
 
-耗时工作在模块 Worker 中执行。控制器首次生成时创建 Worker，后续关卡复用同一实例及其中的缓存；请求和结果使用递增编号匹配，忽略过期结果。每次生成有独立的 10 秒超时，成功后清除计时器并保留 Worker。超时、生成失败或 Worker 异常时销毁实例，下次重试重新创建；离开游戏时也会终止空闲或正在计算的 Worker。`generateLevel(seed)` 复现整关（含随机尺寸）；`generatePuzzle(size, seed)` 用于指定尺寸的开发验证。
+After adding the chain limits, an audit of seeds 0–19, 20 puzzles per size and 100 total, passed the existing quality gates and the two-chain limit. Three puzzles used chains, including one with two chain steps; there were three three-link steps and one five-link step in total. Midgame intermediate coverage was 94%. Development-machine generation medians were 45–102 ms by size, P95 values 104–367 ms, and the maximum 399 ms, compared with about 394 ms before the change on the same seeds. No attempt or search budget was increased. These are finite-sample development-machine measurements, not phone timing guarantees.
 
-求解器按尺寸缓存行、列、八邻域与子集位计数；每个分区单独建立颜色冲突位集合。公共冲突格通过多字位集合求交，覆盖 12 阶的全部 144 格；锁定集合按阶数缓存组合，按最低位遍历所选单元并累积并集，超过目标阶数立即剪枝，只有找到有效消除后才构造推理依据数组。一次逻辑分析内复用单元候选数组和临时缓冲区，返回的推理步骤保持独立，不暴露可被下一步改写的缓冲区。
+### Spatial difficulty
 
-边界转移与多区域重新生长都保留已知合法答案；完整的无猜测逻辑轨迹确定了每只小狗，也就证明该候选唯一。因此中途不再重复运行精确计数器，最终出题仍独立精确计数确认唯一解。超出允许自动开局长度的候选提前结束分析；最终通过门槛的逻辑报告直接复用，不再完整求解两遍。公开 `analyzeLogic` 仍完整分析，旧存档的校验方式保留。
+Spatial scoring follows the deductions actually used. At each position, exhaust simpler rules, then prefer the same-technique step with the lowest dispersion score. For locked sets, compare effective rank first and dispersion second across all six directions between rows, columns, and colors. Update candidates and solve again after every step. A compact deduction must run first even if it removes different cells; choosing scattered patterns merely to inflate the score is not allowed. This establishes compact-first behavior within the supported techniques and priorities, not a globally shortest path over every human solution.
 
-显示配色使用一个固定的 12 色调色盘。离线求色时不读取棋盘、接触图或区域面积；运行时才为当前 8～12 个区域选择与排列这些颜色。只改变显示颜色，不改分区、答案、小狗、笔记或撤销记录。同一分区保持配色一致。
+For sorted distinct coordinates, define the gap between neighbors as `g = next - previous - 1` and `G = mean(g / (g + 1))`. Consecutive coordinates score zero; larger gaps approach one smoothly. For required candidate cells, build a minimum spanning tree using king-move distance `d` on each edge and define `C = mean((d - 1) / d)`. An eight-connected candidate set scores zero. Color IDs are never treated as spatial coordinates.
 
-### 固定十二色与损失曲线
+| Technique                                                         | Dispersion, 0–1                                                              | Maximum extra reward per puzzle |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------- |
+| Singles, same-color common exclusions, local adjacent-color pairs | No spatial reward                                                            | 0                               |
+| Mixed-color row/column common exclusions                          | `G` of the remaining candidate coordinates on that line                      | 2                               |
+| Row/column–color locks                                            | Maximum of the relevant line `G` and candidate-cell `C`                      | 3                               |
+| Row–column locks                                                  | Maximum of mean row/column `G` and candidate-cell `C`                        | 3, sharing the preceding cap    |
+| Joint exclusions                                                  | Mean of `G` and `C` for row/column units; `C` alone for color units          | 1                               |
+| Short chains                                                      | No spatial reward because bounded search cannot exhaust compact alternatives | 0                               |
 
-`color-model.json` 保存模型参数，`color-loss.js` 提供可审计的曲线，`palette.js` 保存已求解的 12 色与证书，`palette-report.json` 保存完整求解结果。所有 × 保持不透明暖白色 `#fffdf6`。
+Only the highest actual dispersion per category is retained, rather than adding rewards for repeated steps. Total spatial reward is capped at 6, below the 12-point increase from rank two to rank three. These are proxies for observation burden, not calibrated human difficulty measures. `analyzeLogic.spatialScores` contains the three category maxima, and `spatialSteps` contains actual dispersed-step counts. The compatibility field `spreadSetScore` still records actual set rank times dispersion but is no longer used directly in scoring. Set search caches combinations by effective rank, prunes projections whose union exceeds that rank, and returns early on a zero-dispersion same-rank explanation. Chain and generator search limits are unchanged.
 
-在本游戏中，灰感的代价是色相身份变弱、区域更难区分；灰色本身并非普遍不好。在 [OKLab / OKLCH](https://bottosson.github.io/posts/oklab/) 中，同明度、同彩度的两色距离为 `2 C |sin(Δh/2)|`，彩度下降会收缩色相差异。但 `C / Cmax(L,h)` 只表示色域利用程度，不等于人眼饱和度。模型改用 [CAM16](https://onlinelibrary.wiley.com/doi/abs/10.1002/col.22131) 的饱和度关联量 `s = 100 sqrt(M/Q)`；其色貌计算区分色彩感 M 与亮度 Q，并考虑观察条件。采用 D65、20 cd/m² 适应亮度、页面奶油色背景、Average surround 与完全色适应。这是固定观察假设，不能涵盖所有显示器与环境。
+### Worker execution and caching
 
-定义 `H(x) = max(0, x)²`，区间曲线 `B(x;l,u,w) = H((l-x)/w) + H((x-u)/w)`；适宜区间内不扣分，也不强迫颜色靠近区间中点。单色损失如下：
+Expensive work runs in a module Worker. The controller creates it for the first generation request and reuses the instance and its caches for subsequent levels. Monotonically increasing IDs match requests to responses and reject stale results. Each request has its own 10-second timeout, cleared on success while retaining the Worker. A timeout, generation failure, or Worker error destroys the instance; the next retry creates another. Leaving the game terminates either an idle or busy Worker. `generateLevel(seed)` reproduces a complete level including its random size; `generatePuzzle(size, seed)` supports fixed-size development checks.
 
-| 项目               | 原始扣分曲线                             | 权重 |
-| ------------------ | ---------------------------------------- | ---- |
-| 灰感               | `1 / (1 + exp((s-64)/3.5))`              | 4    |
-| 过暗、过亮         | `H((.61-L)/.04) + 12 H((L-.65)/.04)`     | 1    |
-| 最亮颜色偏亮       | `H((L-.65)/.01)`                         | 1    |
-| 过暗尾部           | `H((.60-L)/.02)`                         | 2    |
-| 感知饱和度失衡     | `B(s;68,80,4)`                           | 1    |
-| 过艳               | `H((s-78)/8) + H((M-70)/20)`             | 1.5  |
-| 白色 × 不清楚      | `H((2.1-R)/.25)`，R 为标记与底色对比度   | 2    |
-| 绝对彩度不足或过高 | `B(C;.135,.19,.03)`                      | .5   |
-| 偏暗土黄           | `exp(-.5 (Δh(h,95)/25)²) H((.65-L)/.04)` | 1    |
+The solver caches row, column, eight-neighbor geometry, and subset bit counts by board size, then constructs color-conflict bitsets for each partition. Common conflicts use multiword bitset intersections covering all 144 cells on a 12 × 12 board. Locked sets cache combinations by rank, visit selected units through their lowest set bits, accumulate projected unions, and prune immediately when the target rank is exceeded. Premise arrays are constructed only for effective eliminations. A logical analysis reuses candidate arrays and temporary buffers, but returned proof steps remain independent and do not expose buffers that later steps can overwrite.
 
-适宜明度区间调整为 .61～.65，亮端从 L=.65 开始加重惩罚，并保留对最亮颜色的额外风险项。固定原十二色的色相身份，候选色相由 `grid.hues` 指定（优先于 `hueStep`）；候选明度为 .58、.60、.62、.64、.65；最高约 .65（8 位 sRGB 量化存在微小偏差），必要时选择更深的颜色满足十二色之间的最低色差。低于 .60 的额外曲线与最坏暗色风险会快速增加代价，防止把个别颜色过度压暗；CAM16 饱和度以 68～80 为软目标，全盘跨度不超过 16 时不扣分，保留颜色之间的自然落差，超过后才按递增斜率扣分，允许在色域和色差约束下保留残余偏差。色域利用率候选包含 .65、.82、.90、.98，补充中间纯度选择。灰感、过艳、彩度和白色标记约束保持独立，不强迫统一明度或彩度。
+Boundary edits and multi-region regrowth preserve a known legal solution. A complete no-guess trace determines every pup and therefore proves uniqueness. Intermediate evaluations do not repeatedly run the exact counter; final output still receives an independent uniqueness check. Candidates with an overly long automatic opening stop early, and accepted logical reports are reused rather than solving the whole puzzle twice. Public `analyzeLogic` remains exhaustive over its normal deduction path, and save validation retains its checks.
 
-灰感曲线采用心理物理学常用的 sigmoid 形状，但这里没有观察者实验拟合，**不能解释为实测“被看成灰”的概率**。土黄项是本游戏的风格偏好，也不是色彩科学定律。阈值、宽度与权重均为可校准的设计假设。
+## Display colors
 
-12 色的 66 对颜色全部计算 OKLab 欧氏距离 d，扣分为 `H((.18-d)/.04) + 20 H((.105-d)/.01)`：小于 .18 逐渐扣分，接近 .105 时急剧增加；另以 d≥.095 为硬约束，候选色对不能通过牺牲最低色差换取其他分数。相较原有 .10 下限，这给非相邻颜色少量调整余地，运行时相邻区域仍以 .20 为目标。调色盘目标为平均单色加权损失，加上 `4 × 最坏灰感`、`2 × 最坏白色标记损失`、`2 × 最坏亮度峰值损失`、`8 × 最坏过暗损失`、`1 × 最坏饱和度失衡损失`，再加 `15 × 平均色对损失`。另加全盘饱和度跨度损失 `1 P((max s - min s-16)/4)`，其中 `u=max(0,x)`、`k=floor(u)`、`P(x)=k²+(2k+1)(u-k)`；这是通过平方整数节点的凸折线，节点间线性插值，且跨度越大斜率越高。该项直接约束最强与最弱颜色之间的跨度，不对 HSL 饱和度做统一。最坏项防止平均分掩盖一两个明显不佳的颜色。这里只考虑全局色对，不考虑哪些颜色会相邻。
+Display colors come from a fixed twelve-color palette. Offline palette optimization does not read a board, contact graph, or region areas; runtime assignment selects and permutes those colors for the current eight to twelve regions. It changes only display colors, never the partition, answer, pups, notes, or history. The same partition receives the same assignment.
 
-实际最优值 **29.524827027331643**，下界相同，MIP gap **0**；最小两两 OKLab 色差 **0.09728495610156399**。这是 240 个最终 8 位 sRGB 候选色、每 30° 色相族恰选一色这一有限问题的最优解，受浮点求解容差限制；不是连续 sRGB 色域或普遍人眼舒适度的最优证明。各项残余损失并非零，仍存在明亮程度、灰感与白色标记辨识度之间的取舍。
+### Fixed palette and loss curves
 
-[WCAG 非文本对比度](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html) 的 3:1 是图形辨识目标，不是视觉舒适度公式。本版白色 × 的最低对比度约 2.994，**不满足全部标记 3:1**；保留白色标记与较亮底色。真实棋盘截图仍用于评价整体观感。
+`color-model.json` stores model parameters, `color-loss.js` exposes auditable curves, `palette.js` stores the solved colors and certificate, and `palette-report.json` contains the full optimization result. All × marks remain opaque warm white, `#fffdf6`.
+
+In this game, a gray appearance weakens hue identity and makes regions harder to distinguish; gray is not inherently undesirable in every context. In [OKLab / OKLCH](https://bottosson.github.io/posts/oklab/), two colors with equal lightness and chroma have distance `2 C |sin(Δh/2)|`, so lower chroma contracts hue differences. However, `C / Cmax(L,h)` measures gamut utilization, not perceived saturation. The model instead uses the [CAM16](https://onlinelibrary.wiley.com/doi/abs/10.1002/col.22131) saturation correlate `s = 100 sqrt(M/Q)`, distinguishing colorfulness `M` from brightness `Q` and accounting for viewing conditions. Assumptions are D65, adapting luminance of 20 cd/m², the page's cream background, Average surround, and full chromatic adaptation. These fixed assumptions do not cover every display or environment.
+
+Define `H(x) = max(0, x)²` and the band curve `B(x;l,u,w) = H((l-x)/w) + H((x-u)/w)`. Values inside the preferred band incur no penalty and are not forced toward its midpoint.
+
+| Term                                      | Raw penalty curve                                       | Weight |
+| ----------------------------------------- | ------------------------------------------------------- | ------ |
+| Gray appearance                           | `1 / (1 + exp((s-64)/3.5))`                             | 4      |
+| Too dark or too light                     | `H((.61-L)/.04) + 12 H((L-.65)/.04)`                    | 1      |
+| Brightest-color risk                      | `H((L-.65)/.01)`                                        | 1      |
+| Dark tail                                 | `H((.60-L)/.02)`                                        | 2      |
+| Perceived saturation imbalance            | `B(s;68,80,4)`                                          | 1      |
+| Excessive vividness                       | `H((s-78)/8) + H((M-70)/20)`                            | 1.5    |
+| White × legibility                        | `H((2.1-R)/.25)`, where `R` is mark/background contrast | 2      |
+| Insufficient or excessive absolute chroma | `B(C;.135,.19,.03)`                                     | .5     |
+| Dark earthy yellow                        | `exp(-.5 (Δh(h,95)/25)²) H((.65-L)/.04)`                | 1      |
+
+The preferred lightness band is .61–.65, with stronger penalties above `L=.65` and a separate brightest-color risk. Preserve the original twelve hue identities; `grid.hues` specifies candidate hues and takes precedence over `hueStep`. Candidate lightness values are .58, .60, .62, .64, and .65. The maximum is approximately .65, with minor deviations from 8-bit sRGB quantization; darker choices remain available when necessary to satisfy the palette's minimum pairwise distance. The extra penalty below .60 and worst-darkness risk rise quickly to discourage overly dark outliers.
+
+CAM16 saturation has a soft target of 68–80. A palette-wide range up to 16 is unpenalized, retaining natural differences; beyond that, slopes increase progressively while permitting residual deviations under gamut and color-distance constraints. Gamut-utilization candidates .65, .82, .90, and .98 provide intermediate purity options. Grayness, vividness, chroma, and white-mark constraints remain separate and do not force uniform lightness or chroma.
+
+The grayness curve uses a sigmoid shape common in psychophysical modeling, but it has not been fitted to observer experiments and **must not be read as a measured probability of appearing gray**. The earthy-yellow term expresses this game's style preference, not a general color-science law. Thresholds, widths, and weights are adjustable design assumptions.
+
+Compute OKLab Euclidean distance `d` for all 66 pairs of the twelve colors. Pair loss is `H((.18-d)/.04) + 20 H((.105-d)/.01)`: penalties grow below .18 and sharply near .105. A separate hard constraint requires `d≥.095`, so other objectives cannot trade away the minimum distance. Relative to the former .10 floor, this allows some flexibility for non-neighboring colors; runtime neighboring regions still target .20.
+
+The palette objective combines mean weighted single-color loss with `4 × worst grayness`, `2 × worst white-mark loss`, `2 × worst brightness-peak loss`, `8 × worst darkness loss`, `1 × worst saturation-imbalance loss`, and `15 × mean pair loss`. Add the palette-wide saturation-range penalty `1 P((max s - min s-16)/4)`, with `u=max(0,x)`, `k=floor(u)`, and `P(x)=k²+(2k+1)(u-k)`. This is a convex piecewise-linear curve through squared integer knots, with linear interpolation and increasing slopes. It constrains the range between the most and least saturated colors, without imposing uniform HSL saturation. Worst-case terms prevent averages from hiding one or two poor colors. This stage considers global pairs only, without adjacency.
+
+The solved optimum is **29.524827027331643**, with the same lower bound and MIP gap **0**. The minimum pairwise OKLab distance is **0.09728495610156399**. This is the optimum of the finite problem with 240 final 8-bit sRGB candidates and exactly one selection from each 30° hue family, subject to floating-point solver tolerances. It is not a continuous-sRGB optimum or a proof of universal visual comfort. Residual losses remain nonzero, reflecting trade-offs between brightness, grayness, and white-mark legibility.
+
+The 3:1 target in [WCAG non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html) concerns graphical legibility, not visual comfort. The current white × minimum contrast is approximately 2.994, so **not all marks meet 3:1**. White marks and lighter backgrounds are retained. Actual board screenshots still inform overall visual evaluation.
 
 ### Dynamic color assignment
 
@@ -113,11 +133,11 @@ The remaining dynamic losses cover area-weighted single-color quality, large sat
 
 The Level 29 screenshot is retained as a regression fixture. Its previous minimum neighboring distance was 0.12624; the corrected assignment reaches 0.20563 with the same regions and fixed palette. Tests independently walk all eight grid directions, check corner-only contacts, and retain an infeasible dense graph to verify the soft-penalty fallback.
 
-### 离线优化与复算
+### Offline optimization and reproduction
 
-`scripts/pupdoku-palette-optimize.py` 使用 CAM16 单色评分和色对评分建立混合整数线性规划。颜色选择为二进制变量，色对乘积用 McCormick 下界线性化（乘积系数均为正，最小化目标使上界约束冗余），最坏风险用上图变量表示。饱和度范围由最大值、最小值变量与每个色相族的选择关联；跨度扣分使用上述凸折线各段的线性下界建立上图约束，精确编码所定义的分段线性目标，不把它称为未分段平方函数的精确解。只有确认最优才允许导出调色盘；超时不把当前最好解称为最优。
+`scripts/pupdoku-palette-optimize.py` builds a mixed-integer linear program from CAM16 single-color and pair scores. Color selections are binary variables. Pair products use McCormick lower-bound linearization: all product coefficients are positive, so minimization makes the upper-bound constraints redundant. Epigraph variables represent worst-case risks. Maximum and minimum saturation variables connect the range to each hue family's selection. Linear lower bounds for every segment of the convex range curve encode its epigraph exactly for the defined piecewise-linear objective; this is not described as an exact solution of an unsegmented square function. Palette export requires a confirmed optimum; an incumbent on timeout is not labeled optimal.
 
-在独立 Python 3.10+ 环境安装 `numpy==2.2.6 scipy==1.15.3 colour-science==0.4.6`，可选绘图安装 `matplotlib==3.10.1`：
+In an isolated Python 3.10+ environment, install `numpy==2.2.6 scipy==1.15.3 colour-science==0.4.6`. Plotting optionally requires `matplotlib==3.10.1`.
 
 ```sh
 python scripts/pupdoku-palette-optimize.py \
@@ -127,63 +147,69 @@ python scripts/pupdoku-palette-optimize.py \
   --swatch /tmp/pupdoku-fixed-palette.png
 ```
 
-`--time-limit` 控制求解秒数。导出后使用项目的 Prettier 格式化。固定模型改动后必须重新求解与导出；动态模型改动不影响固定调色盘证书。
+`--time-limit` sets the solver time limit in seconds. Format exported files with the project's Prettier configuration. Changes to the fixed model require solving and exporting again; dynamic-model changes do not affect the fixed palette's certificate.
 
-测试独立复算 12 色全部色差、标记对比度和目标函数，检查报告与当前固定模型一致；跨 8～12 阶检查固定色库、邻区区分优先、同等可行性下动态损失不劣于基线、确定性与分区不变。旧存档回归包含单一区域 70/144 格的棋盘，另有密集接触图样本。
+Tests independently recompute all twelve colors' pair distances, mark contrasts, and objective terms and check that the report matches the current fixed model. Across sizes 8–12, they check the fixed color pool, adjacency-first assignment, dynamic losses no worse than the baseline at equal feasibility, determinism, and unchanged partitions. Legacy-save regressions include a region occupying 70 of 144 cells and dense contact-graph samples.
 
-## 手势与生命
+## Gestures and lives
 
-鼠标、触屏和笔统一使用 Pointer Events：
+Mouse, touch, and pen share Pointer Events:
 
-- 单击标记/取消 ×。已有小狗不能通过点击、双击、滑动或键盘清除，只能通过撤销取消。
-- 从空白滑动批量标记 ×，从 × 滑动批量擦除。每笔采用一致模式，重复经过同一格不反复切换，也不修改小狗。
-- 第一次点击立即标记或取消 ×，不等待双击窗口。280 ms 内同格的两次点击识别为双击：撤回第一次点击的笔记编辑，再放小狗，成功的双击只有一条撤销记录。对已有小狗的双击不修改棋盘或撤销记录。错误双击扣生命，不额外消耗撤销记录；该格的笔记被替换为带白色描边的红叉，包括原来为空的格子。红叉是持久排除标记，错误高亮消退、点击其他格子、提示和刷新均不会恢复成白叉。手动点击或擦除红叉后为空，再次单击才成为普通白叉；批量涂白叉不能覆盖红叉，拖动预览遵循相同规则。
-- 快速移动时插值补齐经过的格子。一整笔滑动只生成一次撤销记录；取消手势撤回预览。切题、重来、撤销、提示或离开页面会取消未完成的手势。
-- 点击及拖动经过的格子会在 220 ms 内轻微缩小后回弹，重入格子可再次触发；遵循系统减少动态效果设置。
-- 每题三颗生命。任何不在唯一答案位置上的小狗都扣一颗生命并拒绝落子，包括暂时没有行列冲突的位置。× 是笔记，不检查正确性、不扣生命。
-- 正确放置一只小狗时请求一次 3 ms 短震动，提示实际放狗也适用；标记、错误、重复点击已有小狗及撤销不触发。设备不支持或浏览器拒绝震动时不影响落子。
-- 撤销不返还生命。生命用完后通过重来按钮重试；完成后自动播放全屏通关提示并进入下一关。
+- A click toggles ×. Existing pups cannot be removed by clicking, double-clicking, dragging, or keyboard clearing; only Undo removes them.
+- Dragging from an empty cell paints × marks; dragging from an existing × erases marks. Each stroke uses a consistent mode, revisits do not toggle cells again, and pups are unchanged.
+- The first tap marks or clears immediately, without waiting for the double-tap window. Two taps on the same cell within 280 ms form a double tap: roll back the first tap's note edit, then place a pup. A successful double tap creates one history entry. Double-tapping an existing pup changes neither cells nor history. An incorrect double tap costs one life and consumes no extra history entry; it replaces the cell's note, including an empty cell, with a red × with a white outline. Red crosses persist after transient highlights, other clicks, hints, and refreshes. Manually clearing a red cross leaves an empty cell; the next tap creates a white cross. Painting white crosses never downgrades red ones, including in drag previews.
+- Interpolate fast pointer movements to cover crossed cells. A full drag creates one history entry; cancelling a gesture discards its preview. Changing levels, restarting, undoing, requesting hints, or leaving the page cancels unfinished gestures.
+- Clicked and dragged-over cells briefly shrink and rebound over 220 ms. Re-entering a cell can retrigger the animation. Respect the system's reduced-motion preference.
+- Each puzzle starts with three lives. Any pup outside the unique solution costs one life and is rejected, even if it has no immediate row or column conflict. × marks are notes and are not checked for correctness or charged a life.
+- Correct pup placement requests one brief 3 ms vibration, including a hint that actually places a pup. Marking, mistakes, repeated actions on an existing pup, and Undo do not vibrate. Missing or denied vibration support never interrupts a move.
+- Undo does not restore lives. Restart after losing all lives; completing a puzzle automatically plays the full-screen completion sequence and advances to the next level.
 
-键盘支持方向键移动、Enter/空格标记、X 切换标记、D 放置小狗、Delete/Backspace 清除标记；X/D 兼容大小写。按住 X 再按方向键可连续涂抹，起始格为空时整笔打白叉，起始格为白叉或红叉时整笔擦除。起始编辑立即生效，方向键自动重复可持续移动并支持中途转向；同一笔重复经过的格子不反复切换，小狗始终跳过，涂白叉时保留红叉。每笔仅在第一次实际修改时记录一次撤销快照，后续修改共用该记录，且立即保存。松开 X、棋盘或窗口失焦、页面可见性变化、Tab/Escape/Home/End、组合键及其他游戏操作均结束当前笔画；结束后残留的 X 自动重复不会重新启动涂抹，须重新按下 X。辅助读屏可读取行列、区域编号、标记状态、错误反馈和提示依据。
+Keyboard controls support arrows for movement, Enter/Space to toggle a mark, X to toggle a mark, D to place a pup, and Delete/Backspace to clear marks. X and D are case-insensitive. Hold X and use arrows for a continuous stroke: an empty starting cell selects white marking, and a white or red cross selects erasing. The initial edit is immediate; arrow autorepeat keeps moving and turns are supported. Revisiting a cell does not toggle it again. Pups are skipped and white painting preserves red crosses. Only the first actual edit records an undo snapshot; later edits share it and are saved immediately. Release X, leave board/window focus, change page visibility, press Tab/Escape/Home/End or a modified shortcut, or perform another game action to end the stroke. Residual X autorepeat does not restart it; a fresh X press is required. Screen readers receive row, column, region, mark state, error feedback, and hint premises.
 
-可见界面保留关卡、三条规则、计数、生命、Undo 和 Hint；不显示难度或大小选择器。品牌、介绍、页脚、计时和说明文案均不显示。逻辑提示用虚线标记候选来源，绿框标记推理结论，完整解释仅供辅助读屏读取。
+The visible interface contains the level, three rules, pup count, lives, Undo, and Hint, without difficulty or size selectors. Branding, introductions, footers, timers, and instructional copy are not shown. Logical hints use dashed outlines for candidate premises and green frames for conclusions; full explanations are provided only to assistive technology.
 
-提示按顺序选择一类操作：先清除打在答案位置上的错误白叉；没有错叉时，如果尚未放狗的一行、一列或同色区域在实际叉号之外只剩一个空格，就在该格放狗；再给已有小狗的同行、同列、同色区域及八个相邻位置（含四个对角）的所有空格补白叉，保留已有白叉、红叉和小狗；最后使用其他逻辑技巧。可见唯一候选只按实际标记判断，不提前隐式排除尚未打叉的冲突格。每次提示只执行一类操作，并只产生一条撤销记录，不在同次提示继续执行后续类别。该顺序只影响游戏提示，不改变生成器评定难度使用的逻辑路径。
+Hints perform one kind of action in this order: clear an incorrect white cross on a solution cell; place a pup if an unfilled row, column, or color has exactly one empty cell under the actual marks; mark all empty row, column, color, and neighboring peers of placed pups, preserving existing white crosses, red crosses, and pups; then use other logical techniques. Visible singles use actual marks, without silently excluding still-unmarked conflicting peers. Each hint performs one category only and creates one history entry, without continuing into another category in the same action. This order affects game hints, not the generator's difficulty trace.
 
-## 存档与验证
+Other logical eliminations use the independent `findHintDeduction` selector. At the same position, enumerate complete explanations for supported techniques, retaining the five-link and 512-expansion chain limits, and compare only newly markable candidates. If one elimination set is a strict subset of another, discard the covered explanation across technique classes. Equal sets retain the simpler explanation. Rank remaining options by the existing technique tiers, preferring lower-rank sets, fewer legal joint pairings, and shorter chains. At equal complexity, prefer more new crosses, more units reduced to singles, and more compact geometry. Apply one complete proof per hint, without merging unrelated explanations. `findDeduction` and generation retain the simple-first, compact-alternative-first order, so hint selection does not alter difficulty statistics.
 
-浏览器自动保存关卡、棋盘和撤销记录。恢复时重新验证连通性、唯一解、逻辑可解性和已放小狗的正确位置，不信任缓存中的答案。旧尺寸不在 8～12 内的存档会开始新题。
+## Saved progress and verification
 
-`npm run check` 包括跨尺寸的区域/唯一解/逻辑轨迹校验、二至六元锁定集合、双单元联合排除、短链与穷举答案核验、随机关卡续关、生命与撤销、鼠标/触屏手势、快速滑动和取消、Worker 重试、存档、通关淡入/停留/淡出时序、自动续关与退出清理，以及根目录/子路径部署验证。
+The browser saves the level, cells, and history automatically. Restoration rechecks region connectivity, uniqueness, logical solvability, and existing pup positions rather than trusting the cached answer. Saves outside the supported size range 8–12 start a new puzzle.
 
-生成器抽检可复算：`node scripts/pupdoku-generation-audit.mjs --samples 100 --seed 0`。输出各尺寸的初级同色排除、初级相邻双色对夹缝排除、中级混色排除、锁定集合、双单元联合排除、短链次数与覆盖率，独立中级卡点数量、纯色整线比例、途中技巧比例及有效锁定阶数分布、排除紧凑替代后的三类空间分散步骤与覆盖率，以及不含渲染和配色分配的生成耗时。`chainDifficulty` 报告抽检中单题最多短链次数、最长联系数与三／五联系步骤总量，并检查每题符合短链难度预算。`meanGeometry` 另报告最小色块重心在中央宽高各半区域的比例、接触棋盘边缘的比例，以及最大色块中属于完整 2×2 的格子比例；最小或最大面积并列时取平均，不按颜色编号选一个。`compactLarge` 统计是否存在面积至少为平均区域的 1.5 倍、至少一半格子属于完整 2×2、且 `16 × 面积 / 周长² ≥ 0.35` 的色块；这是便于复算的形状口径，不是视觉标准。新增分布指标用于批量评估，不作为每题必须出现某种技巧的验收条件。每一步中级推理前无可用初级排除，每一步联合推理前无可用单个单元的公共冲突排除；测试使用独立候选回放核验这些瓶颈和所有消除结论，防止仅靠技巧标签宣称题目更难。
+`npm run check` includes cross-size partition, uniqueness, and proof-trace validation; rank-two through rank-six sets; joint exclusions; chains and independent exhaustive-answer checks; random-size progression; lives and Undo; mouse/touch gestures, rapid dragging, and cancellation; Worker retries; saved progress; completion fade-in/hold/fade-out timing, automatic progression, and cleanup; and root/subpath deployment checks.
 
-小区域分散、高阶递增奖励与集合间隔奖励共同加入后，使用相同种子 0～29、每尺寸 30 题，共 150 题对比：聚集损失均值从 .26351 降至 .23214（降低 11.9%），小于平均面积的区域数均值从 5.18 到 5.21，并非靠减少小块取得分散指标改善。二元集合占全部集合步骤从 83.0% 降至 72.1%，三元及以上集合的题目覆盖从 38.7% 升至 56.7%，实际使用非连续行／列颜色集合的覆盖从 18.7% 升至 39.3%。该批题目包含一次有效六元集合。软偏好存在取舍：纯色整线覆盖从 43.3% 回升至 53.3%，途中技巧覆盖从 93.3% 降至 83.3%，原有唯一解、无猜测及中级卡点门槛仍全部通过。这是有限样本的生成分布，不能作为任意种子的比例保证。
+Reproduce generation audits with `node scripts/pupdoku-generation-audit.mjs --samples 100 --seed 0`. Output includes counts and coverage by size for basic same-color exclusions, basic local adjacent-color pairs, intermediate mixed-color exclusions, locked sets, joint exclusions, and chains; independent intermediate bottlenecks; monochrome lines; midgame technique coverage and effective-rank distributions; three spatial categories after compact alternatives are exhausted; and generation timings excluding rendering and color assignment.
 
-以下是加入小区域聚集评分前，纯色整线与技巧分布改造的基线记录：每尺寸 100 个种子（0～99），共 500 题抽检全部成功，前半局均有至少两处独立中级卡点。使用相同种子和同一修正后的求解器对旧、新生成器作比较：纯色整线题从 84.2% 降至 39.8%，实际使用三元及以上锁定集合从 18.8% 升至 35.2%，途中使用锁定集合或混色公共排除从 63.8% 升至 92.4%，途中使用锁定集合从 28.8% 升至 55.6%。这里的“途中使用”按实际轨迹统计，不宣称该模式在开局绝对不可见。三至五元均在本批题目出现，六元未出现，不通过提高求解顺序或硬性筛选来凑覆盖率。
+`chainDifficulty` reports the maximum chain-step count per puzzle, maximum link count, and totals for three- and five-link steps, checking the chain budget for every puzzle. `meanGeometry` reports how often the smallest region's centroid lies in the central half-width/half-height rectangle, how often it touches an edge, and the fraction of the largest region's cells belonging to complete 2 × 2 blocks. Average ties for minimum or maximum area rather than selecting a region by color ID. `compactLarge` records whether a region has at least 1.5 times the mean region area, at least half its cells in complete 2 × 2 blocks, and `16 × area / perimeter² ≥ 0.35`. These are reproducible geometry metrics, not visual standards or per-puzzle technique requirements. Before each intermediate step, no basic elimination may remain; before a joint step, no single-unit common-conflict elimination may remain. Independent candidate replay verifies bottlenecks and every elimination, preventing technique labels alone from claiming greater difficulty.
 
-本次空间评分改造前的开发机记录如下，耗时不含渲染和配色，也不是跨设备时限。新增偏好增加了生成开销，采用有限的额外候选预算控制成本：
+### Historical distribution audits
 
-| 尺寸 | 纯色整线 | 三元以上 | 途中技巧 | 途中集合 | 生成中位数 | P95    | 最大值 |
-| ---- | -------- | -------- | -------- | -------- | ---------- | ------ | ------ |
-| 8    | 45%      | 18%      | 90%      | 16%      | 53 ms      | 124 ms | 284 ms |
-| 9    | 54%      | 31%      | 94%      | 35%      | 100 ms     | 264 ms | 393 ms |
-| 10   | 45%      | 38%      | 91%      | 64%      | 117 ms     | 264 ms | 410 ms |
-| 11   | 30%      | 49%      | 91%      | 79%      | 166 ms     | 384 ms | 671 ms |
-| 12   | 25%      | 40%      | 96%      | 84%      | 211 ms     | 570 ms | 934 ms |
+After combining small-region dispersion, increasing rank rewards, and set-spacing rewards, a comparison on seeds 0–29, 30 puzzles per size and 150 total, reduced mean clustering loss from .26351 to .23214, an 11.9% reduction. The mean number of below-average regions changed from 5.18 to 5.21, so dispersion did not improve merely by removing small regions. Pairs fell from 83.0% to 72.1% of all set steps; coverage of sets of three or more rose from 38.7% to 56.7%; and coverage of sets spanning non-consecutive rows/columns rose from 18.7% to 39.3%. That batch contained one effective rank-six set. Soft preferences trade off: monochrome-line coverage rose from 43.3% to 53.3%, and midgame technique coverage fell from 93.3% to 83.3%, while the existing uniqueness, no-guess, and bottleneck gates all passed. Finite-sample distributions are not guarantees for arbitrary seeds.
 
-加入紧凑替代优先和三类空间评分后，种子 0～49、每尺寸 50 题，共 250 题全部生成并通过推理门槛。对比用旧代码快照和相同种子，两个版本顺序运行，不并行争用 CPU。以下为该次本机纯生成耗时，不含渲染和显示配色，不作为手机端时限保证：
+Before adding small-region clustering scores, a baseline audit generated seeds 0–99 for all five sizes, 500 puzzles total. Every puzzle passed and had at least two independent first-half intermediate bottlenecks. Comparing old and new generators on identical seeds with the same corrected solver, monochrome-line coverage fell from 84.2% to 39.8%; actual use of sets of three or more rose from 18.8% to 35.2%; midgame set or mixed-color coverage rose from 63.8% to 92.4%; and midgame set coverage rose from 28.8% to 55.6%. “Midgame use” refers to the actual trace, not a claim that a pattern is invisible at the start. Ranks three through five appeared, while rank six did not. Solver order and hard filters were not changed to inflate coverage.
 
-| 尺寸 | 新版中位数 | 新版 P95 | 新版最大值 | 旧版中位数 | 旧版 P95 |
-| --- | --- | --- | --- | --- | --- |
-| 8 | 59 ms | 205 ms | 324 ms | 68 ms | 129 ms |
-| 9 | 107 ms | 308 ms | 704 ms | 94 ms | 238 ms |
-| 10 | 116 ms | 228 ms | 239 ms | 130 ms | 238 ms |
-| 11 | 166 ms | 314 ms | 530 ms | 222 ms | 442 ms |
-| 12 | 188 ms | 470 ms | 495 ms | 390 ms | 854 ms |
+The development-machine baseline before the spatial-scoring changes is below. Timings exclude rendering and color assignment and are not cross-device limits. Additional preferences increase generation work; a bounded extra-candidate budget controls the cost.
 
-组合缓存与按阶数剪枝降低了大棋盘耗时，但评分变化也改变了候选接受与重试次数，部分小尺寸的长尾有所增加，不能宣称所有种子都更快。
+| Size | Monochrome line | Rank 3+ | Midgame technique | Midgame set | Generation median | P95    | Maximum |
+| ---- | --------------- | ------- | ----------------- | ----------- | ----------------- | ------ | ------- |
+| 8    | 45%             | 18%     | 90%               | 16%         | 53 ms             | 124 ms | 284 ms  |
+| 9    | 54%             | 31%     | 94%               | 35%         | 100 ms            | 264 ms | 393 ms  |
+| 10   | 45%             | 38%     | 91%               | 64%         | 117 ms            | 264 ms | 410 ms  |
+| 11   | 30%             | 49%     | 91%               | 79%         | 166 ms            | 384 ms | 671 ms  |
+| 12   | 25%             | 40%     | 96%               | 84%         | 211 ms            | 570 ms | 934 ms  |
 
-技巧覆盖率按实际求解轨迹统计，支持某种技巧不代表每张题目都会使用。短链只在所有前置技巧均无进展时计数，不能通过优先调用短链提高覆盖率。
+After compact-first selection and the three spatial rewards were added, seeds 0–49, 50 puzzles per size and 250 total, all generated successfully and passed the proof gates. The comparison used an old code snapshot and the same seeds, with both versions run sequentially rather than competing for CPU time. These local generation timings exclude rendering and color assignment and are not phone timing guarantees.
 
-旧存档仍可继续完成，严格技巧门槛只应用于新题；读取旧存档不会因技巧不足而重置进度。面积与推理步数只是趣味性的代理指标，尚未经过玩家难度校准。
+| Size | New median | New P95 | New maximum | Old median | Old P95 |
+| ---- | ---------- | ------- | ----------- | ---------- | ------- |
+| 8    | 59 ms      | 205 ms  | 324 ms      | 68 ms      | 129 ms  |
+| 9    | 107 ms     | 308 ms  | 704 ms      | 94 ms      | 238 ms  |
+| 10   | 116 ms     | 228 ms  | 239 ms      | 130 ms     | 238 ms  |
+| 11   | 166 ms     | 314 ms  | 530 ms      | 222 ms     | 442 ms  |
+| 12   | 188 ms     | 470 ms  | 495 ms      | 390 ms     | 854 ms  |
+
+Combination caching and rank-based pruning reduced large-board time, but changed scoring also changed candidate acceptance and retry counts, increasing some small-board tails. Not every seed is claimed to be faster.
+
+Technique coverage follows the actual logical trace: support for a technique does not mean every puzzle uses it. Chains count only when all preceding techniques have stalled, never through priority changes made to boost their coverage.
+
+Existing saves remain playable; stricter generation gates apply only to new puzzles and do not reset older progress. Region area and deduction counts are proxies for puzzle interest, not calibrated measures of human difficulty.

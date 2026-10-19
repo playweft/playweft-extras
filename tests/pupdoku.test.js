@@ -13,6 +13,7 @@ import {
   lockedSetSpread,
   deductionSpread,
   findDeduction,
+  findHintDeduction,
   findLocalPair,
   findLockedSet,
   remixRegions,
@@ -1030,11 +1031,140 @@ test('joint pairs and five-link chains have checkable proofs and preserve every 
     const before = [...game.cells],
       result = hint(game);
     assert.equal(result.kind, 'exclude');
-    assert.deepEqual(result.step, step);
-    assert.ok(step.removed.every((i) => game.cells[i] === 1));
+    assert.deepEqual(
+      result.step,
+      findHintDeduction(puzzle.regions, puzzle.size, candidates, placed),
+    );
+    verifyAdvancedStep(result.step, puzzle, candidates);
+    for (const answer of completions)
+      for (const i of result.step.removed)
+        assert.notEqual(answer[Math.floor(i / puzzle.size)], i % puzzle.size);
+    assert.ok(result.step.removed.every((i) => game.cells[i] === 1));
     assert.equal(undo(game), true);
     assert.deepEqual(game.cells, before);
   }
+});
+
+test('hints skip strictly covered eliminations within and across technique classes', () => {
+  const { dominated } = JSON.parse(
+    readFileSync(
+      new URL('./fixtures/pupdoku-hint-dominance.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  for (const fixture of dominated) {
+    const { puzzle, original } = fixture;
+    const candidates = new Set(fixture.candidates),
+      placed = new Set(fixture.placed);
+    assert.deepEqual(
+      findDeduction(puzzle.regions, puzzle.size, candidates, placed),
+      original,
+    );
+    const step = findHintDeduction(
+      puzzle.regions,
+      puzzle.size,
+      candidates,
+      placed,
+    );
+    assert.ok(step.removed.length > original.removed.length);
+    assert.ok(
+      original.removed.every((i) => step.removed.includes(i)),
+      'a dominated explanation must not be shown',
+    );
+    verifyAdvancedStep(step, puzzle, candidates);
+    const answers = enumerate(puzzle.regions, puzzle.size);
+    assert.ok(answers.length > 0);
+    for (const answer of answers)
+      for (const i of step.removed)
+        assert.notEqual(answer[Math.floor(i / puzzle.size)], i % puzzle.size);
+    const game = createGame(puzzle);
+    game.cells = puzzle.regions.map((_, i) =>
+      placed.has(i) ? 2 : candidates.has(i) ? 0 : 1,
+    );
+    const red = game.cells.findIndex((v) => v === 1);
+    if (red >= 0) game.cells[red] = 3;
+    const before = [...game.cells],
+      result = hint(game);
+    assert.equal(result.kind, 'exclude');
+    assert.deepEqual(result.step, step);
+    assert.deepEqual(
+      game.cells,
+      before.map((v, i) => (step.removed.includes(i) ? 1 : v)),
+    );
+    assert.equal(game.history.length, 1);
+    assert.equal(game.hearts, 3);
+    assert.equal(undo(game), true);
+    assert.deepEqual(game.cells, before);
+    assert.deepEqual([...candidates], fixture.candidates);
+    assert.deepEqual([...placed], fixture.placed);
+    assert.deepEqual(
+      findDeduction(puzzle.regions, puzzle.size, candidates, placed),
+      original,
+      'hint selection must not alter the difficulty solver',
+    );
+    assert.deepEqual(
+      generatePuzzle(puzzle.size, puzzle.seed),
+      puzzle,
+      'hint ranking must not change generated partitions or technique counts',
+    );
+  }
+});
+
+test('identical elimination sets keep the simpler explanation and partial overlaps are never merged', () => {
+  const { equal, partial } = JSON.parse(
+    readFileSync(
+      new URL('./fixtures/pupdoku-hint-dominance.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  const equalStep = findHintDeduction(
+    equal.puzzle.regions,
+    equal.puzzle.size,
+    new Set(equal.candidates),
+    new Set(equal.placed),
+  );
+  assert.equal(equalStep.type, 'common');
+  const alternative = findLockedSet(
+    equal.puzzle.regions,
+    equal.puzzle.size,
+    new Set(equal.candidates),
+    new Set(equal.placed),
+  );
+  assert.equal(alternative.type, 'subset');
+  assert.deepEqual(new Set(equalStep.removed), new Set(alternative.removed));
+  const candidates = new Set(partial.candidates),
+    placed = new Set(partial.placed),
+    old = findDeduction(
+      partial.puzzle.regions,
+      partial.puzzle.size,
+      candidates,
+      placed,
+    ),
+    step = findHintDeduction(
+      partial.puzzle.regions,
+      partial.puzzle.size,
+      candidates,
+      placed,
+    );
+  assert.equal(step.type, 'common');
+  assert.ok(old.removed.some((i) => step.removed.includes(i)));
+  const untouched = old.removed.filter((i) => !step.removed.includes(i));
+  assert.ok(untouched.length > 0);
+  assert.ok(step.removed.some((i) => !old.removed.includes(i)));
+  for (const i of step.removed)
+    assert.ok(
+      step.sources.every((source) => incompatible(source, i, partial.puzzle)),
+    );
+  const game = createGame(partial.puzzle);
+  game.cells = partial.puzzle.regions.map((_, i) =>
+    placed.has(i) ? 2 : candidates.has(i) ? 0 : 1,
+  );
+  const result = hint(game);
+  assert.deepEqual(result.step, step);
+  assert.ok(
+    untouched.every((i) => game.cells[i] === 0),
+    'an unrelated overlapping proof must not be folded into the same hint',
+  );
 });
 
 test('short chains prefer a three-link proof across starting cells over a five-link proof', () => {

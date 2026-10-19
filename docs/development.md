@@ -1,82 +1,82 @@
-# 开发与部署
+# Development and deployment
 
-本文介绍本地联调、静态部署和新增游戏的方法。以下命令均在仓库根目录执行。
+This guide covers local integration, static deployment, and adding games. Run all commands from the repository root.
 
-## 开发
+## Development
 
-Node.js 22.12+：
+Requires Node.js 22.12+:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-访问 `http://localhost:9140/` 浏览游戏列表；在 Playweft 中填写 `http://localhost:9140/light-trails/` 或其 `playweft.json` 地址，再通过平台大厅邀请好友开始。端口 9140 避免与 `playweft-games` 的 9139 冲突。
+Open `http://localhost:9140/` to browse the games. In Playweft, enter `http://localhost:9140/light-trails/` or its `playweft.json` URL, then invite friends through the platform lobby. Port 9140 avoids a conflict with the `playweft-games` server on 9139.
 
-小狗数独可以直接打开 `http://localhost:9140/pupdoku/` 游玩，也支持 Playweft 单人模式。每关随机生成 8 × 8～12 × 12 棋盘及连续色块，保证唯一解，通关后自动进入新关；单击或滑动标记 ×、双击放小狗，错误落子扣生命，支持整笔撤销、逻辑提示和本地进度保存。玩法见[小狗数独说明](../games/pupdoku/README.md)，实现与维护见[技术说明](pupdoku.md)。
+Play Pupdoku directly at `http://localhost:9140/pupdoku/` or through Playweft's solo mode. Each level randomly generates an 8 × 8 to 12 × 12 board with connected colored regions and a unique solution, then advances automatically when completed. Click or drag to mark ×, double-click to place a pup, and lose a life for an incorrect placement. The game supports whole-stroke Undo, logical hints, and locally saved progress. See the [Pupdoku README](../games/pupdoku/README.md) for rules and the [technical notes](pupdoku.md) for implementation and maintenance.
 
-绒绒消消乐可以直接打开 `http://localhost:9140/fuzzy-match-3/` 游玩，也支持 Playweft 单人模式。桌面、平板和手机使用对应的应用式布局；提供闯关、每日挑战、特殊棋子、提示与本地存档，没有 PWA 安装或 Service Worker。玩法与实现见[游戏说明](../games/fuzzy-match-3/README.md)。
+Play Fuzzy Match 3 directly at `http://localhost:9140/fuzzy-match-3/` or through Playweft's solo mode. Desktop, tablet, and phone use their respective app-style layouts. Features include level progression, daily challenges, special pieces, hints, and local saves, without PWA installation or a Service Worker. See the [game README](../games/fuzzy-match-3/README.md) for rules and implementation.
 
-不启动平台也可以联调光尾蛇：
+To test Light Trails without starting the platform:
 
 ```sh
 npm run dev:light-trails
 ```
 
-分别在两个可见窗口打开 `http://localhost:9139/__dev/?seat=1` 和 `?seat=2`；`?seat=0` 用于旁观。也可用 `PORT=9141 npm run dev:light-trails` 指定其他端口。该工具执行同一份 Lua 游戏脚本，只用于开发，不包含平台认证和房间安全边界，不进入生产构建。
+Open `http://localhost:9139/__dev/?seat=1` and `?seat=2` in two visible windows; use `?seat=0` to spectate. Set another port with `PORT=9141 npm run dev:light-trails`. This tool executes the same Lua game script but is development-only: it does not provide platform authentication or room security boundaries and is excluded from production builds.
 
-## 校验与构建
+## Validation and build
 
 ```sh
 npm run check
 npm run build
 ```
 
-`dist/` 是一个静态站点，包含首页、`featured-games.json`、公共资源，以及每个游戏的 `index.html`、`help.html`、`playweft.json` 和 `game.lua`。客户端资源由 Vite 打包，所有游戏复用同一个构建流程。
+`dist/` is a static site containing the homepage, `featured-games.json`, shared assets, and each game's `index.html`, `help.html`, `playweft.json`, and, where applicable, `game.lua`. Vite bundles client assets through one shared build pipeline.
 
-部署 `dist/` 到独立 HTTPS 静态站点即可。`public/_headers` 给推荐列表和 Manifest 配置 CORS；Lua 由平台服务端获取。不要添加阻止平台 iframe 嵌入的 `X-Frame-Options`。本仓库不保存部署账号或凭据。
+Deploy `dist/` to a dedicated HTTPS static host. `public/_headers` configures CORS for featured-game listings and manifests; the platform server fetches Lua rules. Do not add an `X-Frame-Options` policy that blocks platform iframe embedding. Deployment accounts and credentials are not stored in this repository.
 
-Cloudflare Workers Builds 使用仓库根目录，部署命令为 `npx wrangler deploy`。仓库内的 `wrangler.jsonc` 明确指定静态资源目录 `dist/`，并在部署前执行 `npm run build`，因此平台的构建命令可以留空。无需 Cloudflare Vite 插件，也无需自动改写 `vite.config.js`。
+For Cloudflare Workers Builds, use the repository root and the deployment command `npx wrangler deploy`. The repository's `wrangler.jsonc` explicitly sets the static assets directory to `dist/` and runs `npm run build` before deployment, so the platform build-command field may be left empty. No Cloudflare Vite plugin or automatic rewrite of `vite.config.js` is required.
 
-## 子路径部署
+## Subpath deployment
 
-不设置 `BASE_PATH`（或设为空值、`/`）时，默认部署在根目录，现有部署方式不变。
+With `BASE_PATH` unset, empty, or `/`, deployment uses the root path as before.
 
-如需部署到 `/extras/`，在 Cloudflare Workers Builds 的**构建环境变量**中设置：
+To deploy under `/extras/`, set this **build environment variable** in Cloudflare Workers Builds:
 
 ```text
 BASE_PATH=/extras/
 ```
 
-然后重新构建部署；部署命令仍为 `npx wrangler deploy`。这是构建参数，不是 Worker 运行时变量，无需增加 Worker 代码。用户自行配置 `你的域名/extras/*` Route。访问首页时使用带尾斜杠的 `/extras/`；该 Route 不包含裸路径 `/extras`。
+Rebuild and deploy with the same `npx wrangler deploy` command. This is a build parameter, not a Worker runtime variable, and requires no additional Worker code. Configure the `your-domain/extras/*` Route yourself. Open the homepage at `/extras/` with its trailing slash; that Route does not include the bare `/extras` path.
 
-本地构建也可以运行 `BASE_PATH=/extras/ npm run build`，或在未提交的 `.env.local` 中设置。支持 `extras`、`/extras`、`/extras/`，均规范为 `/extras/`；也支持 `/games/extras/` 等多级路径。这里只接受路径，不接受域名、查询参数或 `..`。此变量仅影响生产构建，`npm run dev` 仍使用根路径。
+For local builds, run `BASE_PATH=/extras/ npm run build` or set the value in an uncommitted `.env.local`. Values `extras`, `/extras`, and `/extras/` normalize to `/extras/`. Nested paths such as `/games/extras/` also work. Only paths are accepted, not domains, query parameters, or `..`. This setting affects production builds only; `npm run dev` continues to use root paths.
 
-构建自动调整页面资源 URL 和 Manifest ID，并将完整站点放到 `dist/extras/`。Cloudflare 的 `_headers` 留在 `dist/_headers`，内部匹配规则自动加上前缀。Wrangler 的 `assets.directory` 始终为 `./dist`，不要改成 `./dist/extras`。每次正常构建先清空原输出，切换前缀或恢复根路径不会残留上一种目录。
+The build updates asset URLs and manifest IDs and places the complete site in `dist/extras/`. Cloudflare's `_headers` remains at `dist/_headers`, with its internal matching rules prefixed automatically. Wrangler's `assets.directory` stays `./dist`; do not change it to `./dist/extras`. Each normal build clears the previous output, so switching prefixes or returning to the root leaves no stale directories.
 
-| 入口          | 示例路径                             |
-| ------------- | ------------------------------------ |
-| 首页          | `/extras/`                           |
-| 推荐列表      | `/extras/featured-games.json`        |
-| 光尾蛇        | `/extras/light-trails/`              |
-| 小狗数独      | `/extras/pupdoku/`                   |
-| 绒绒消消乐      | `/extras/fuzzy-match-3/`                |
-| 游戏 Manifest | `/extras/light-trails/playweft.json` |
+| Entry          | Example path                         |
+| -------------- | ------------------------------------ |
+| Homepage       | `/extras/`                           |
+| Featured games | `/extras/featured-games.json`        |
+| Light Trails   | `/extras/light-trails/`              |
+| Pupdoku        | `/extras/pupdoku/`                   |
+| Fuzzy Match 3  | `/extras/fuzzy-match-3/`             |
+| Game manifest  | `/extras/light-trails/playweft.json` |
 
-## 目录
+## Project structure
 
 ```text
-games/light-trails/       游戏页面、渲染、Lua 规则、Manifest、帮助
-games/pupdoku/            单人逻辑解谜、唯一解生成、Worker、Manifest、帮助
-games/fuzzy-match-3/         响应式三消、特殊棋子、闯关、每日挑战、本地进度
-src/playweft-client.js    共享 MessageChannel / JSON-RPC 客户端
-public/                  图标、featured-games.json、静态响应头
-build/vite/plugins/      游戏包输出、稳定 URL 映射
-scripts/                 仅供开发的联调工具和 Lua 测试适配
-tests/                   规则、通信、网络联调和打包验证
-vite.config.js           统一多页面构建
+games/light-trails/       Game page, rendering, Lua rules, manifest, help
+games/pupdoku/            Solo logic puzzle, unique-solution generation, Worker, manifest, help
+games/fuzzy-match-3/      Responsive match-three, special pieces, levels, daily challenges, local progress
+src/playweft-client.js    Shared MessageChannel / JSON-RPC client
+public/                  Icons, featured-games.json, static response headers
+build/vite/plugins/      Game package output and stable URL mapping
+scripts/                 Development-only integration tools and Lua test adapters
+tests/                   Rules, messaging, network integration, and package validation
+vite.config.js           Shared multi-page build
 ```
 
-新增游戏时创建 `games/<name>/`，在 `vite.config.js` 的 `games` 列表加入名字，再更新推荐列表和首页。每个游戏独立维护自己的 Manifest 版本；调整规则和参数后更新版本并创建新房间，避免修改正在运行的对局。
+To add a game, create `games/<name>/`, add its name to the `games` list in `vite.config.js`, and update the featured list and homepage. Each game maintains its own manifest version. After changing rules or parameters, bump the version and create a new room rather than changing a running match.
 
-光尾蛇的规则、同步方式和已知限制见 [游戏说明](../games/light-trails/README.md)。
+See the [Light Trails README](../games/light-trails/README.md) for its rules, synchronization model, and known limitations.

@@ -823,7 +823,7 @@ function rankedSubsetMasks(unitCount, counts) {
   return subsetMasksCache.get(unitCount);
 }
 
-function lockedSet(regions, size, candidates, families) {
+function lockedSet(regions, size, candidates, families, collect) {
   // Exhaust all six directions at a lower rank before trying the next rank.
   // Cached combinations avoid traversing 2^m masks once a pair suffices.
   const { counts, bitIndices } = geometry(size),
@@ -883,6 +883,10 @@ function lockedSet(regions, size, candidates, families) {
           sources,
           removed,
         };
+        if (collect) {
+          collect(step);
+          continue;
+        }
         const spread = lockedSetSpread(step, size);
         if (spread < bestSpread) {
           best = step;
@@ -916,7 +920,7 @@ function mixedColorLine(family, sources, regions) {
 
 // Two exact-two color pairs on a 2x3 / 3x2 frame must occupy opposite
 // rows/columns. The two exterior middle cells touch whichever pup is nearer.
-function adjacentPairExclusion(size, candidates, families) {
+function adjacentPairExclusion(size, candidates, families, collect) {
   const vertical = new Map(),
     horizontal = new Map();
   for (const unit of families.region) {
@@ -948,8 +952,8 @@ function adjacentPairExclusion(size, candidates, families) {
             ...(column + 2 < size ? [first.a + size + 2] : []),
           ];
       const removed = targets.filter((index) => candidates.has(index));
-      if (removed.length)
-        return {
+      if (removed.length) {
+        const step = {
           type: 'localPair',
           family: 'region',
           orientation,
@@ -961,6 +965,9 @@ function adjacentPairExclusion(size, candidates, families) {
           ],
           removed,
         };
+        if (collect) collect(step);
+        else return step;
+      }
     }
   }
   return null;
@@ -977,7 +984,7 @@ export function findLocalPair(regions, size, candidates, placed = new Set()) {
 // Two distinct units in the same family require two distinct pups. Intersect
 // the blocked cells of EVERY compatible pair, including unsupported source
 // candidates. Clear each chosen pup itself: a peer mask contains its own bit.
-function jointExclusion(candidates, families, context) {
+function jointExclusion(candidates, families, context, collect) {
   const { words, peers, candidateWords } = context;
   let best = null,
     bestSpread = Infinity;
@@ -1021,6 +1028,10 @@ function jointExclusion(candidates, families, context) {
             combinations: pairs,
             removed,
           };
+          if (collect) {
+            collect(step);
+            continue;
+          }
           const spread = deductionSpread(step, context.size);
           if (spread < bestSpread) {
             best = step;
@@ -1036,7 +1047,7 @@ function jointExclusion(candidates, families, context) {
 // An alternating S-W-S(-W-S) chain proves that at least one endpoint is true:
 // not A implies B, B excludes C, not C implies D. No trial solution or recursive
 // solving is involved. Strong links retain their exact-one unit as evidence.
-function shortChain(candidates, families, context) {
+function shortChain(candidates, families, context, collect) {
   const { words, peers } = context;
   const strong = new Map();
   for (const family of FAMILIES)
@@ -1080,14 +1091,17 @@ function shortChain(candidates, families, context) {
           peers[node.start * words + (i >>> 5)] & (1 << (i & 31)) &&
           peers[node.end * words + (i >>> 5)] & (1 << (i & 31)),
       );
-      if (removed.length)
-        return {
+      if (removed.length) {
+        const step = {
           type: 'chain',
           sources: node.sources,
           links: node.links,
           endpoints: [node.start, node.end],
           removed,
         };
+        if (collect) collect(step);
+        else return step;
+      }
     }
     if (node.links.length >= CHAIN_LIMITS.maxLinks) continue;
     if (expansions >= CHAIN_LIMITS.searchExpansions) continue;
@@ -1119,7 +1133,7 @@ function shortChain(candidates, families, context) {
   return null;
 }
 
-function nextDeduction(regions, size, candidates, placed, context) {
+function nextDeduction(regions, size, candidates, placed, context, collect) {
   const families = unitCandidates(
     regions,
     size,
@@ -1145,7 +1159,7 @@ function nextDeduction(regions, size, candidates, placed, context) {
     candidateWords[index >>> 5] |= 1 << (index & 31);
   for (const mixed of [false, true]) {
     if (mixed) {
-      const pair = adjacentPairExclusion(size, candidates, families);
+      const pair = adjacentPairExclusion(size, candidates, families, collect);
       if (pair) return pair;
     }
     let best = null,
@@ -1174,6 +1188,10 @@ function nextDeduction(regions, size, candidates, placed, context) {
           sources: [...sources],
           removed,
         };
+        if (collect) {
+          collect(step);
+          continue;
+        }
         if (!mixed) return step;
         const spread = deductionSpread(step, size, regions);
         if (spread < bestSpread) {
@@ -1184,6 +1202,12 @@ function nextDeduction(regions, size, candidates, placed, context) {
       }
     }
     if (best) return best;
+  }
+  if (collect) {
+    lockedSet(regions, size, candidates, families, collect);
+    jointExclusion(candidates, families, context, collect);
+    shortChain(candidates, families, context, collect);
+    return null;
   }
   return (
     lockedSet(regions, size, candidates, families) ||
@@ -1200,6 +1224,87 @@ export function findDeduction(regions, size, candidates, placed = new Set()) {
     placed,
     logicContext(regions, size),
   );
+}
+
+// Hints compare complete proofs at this position; generation keeps its original
+// simple-first traversal. Never union unrelated explanations to enlarge a hint.
+export function findHintDeduction(
+  regions,
+  size,
+  candidates,
+  placed = new Set(),
+) {
+  const context = logicContext(regions, size),
+    families = unitCandidates(
+      regions,
+      size,
+      candidates,
+      placed,
+      context.allUnits,
+    ),
+    maskOf = (indices) =>
+      indices.reduce((mask, i) => mask | (1n << BigInt(i)), 0n),
+    units = FAMILIES.flatMap((family) => families[family])
+      .filter((unit) => unit.candidates.length > 1)
+      .map((unit) => maskOf(unit.candidates)),
+    frontier = [];
+  const rank = (step) => {
+    if (step.type === 'common')
+      return [mixedColorLine(step.family, step.sources, regions) ? 2 : 0, 0];
+    if (step.type === 'localPair') return [1, 0];
+    if (step.type === 'subset') return [3, step.sourceIds.length];
+    if (step.type === 'joint') return [4, step.combinations.length];
+    return [5, step.links.length];
+  };
+  const singlesAfter = (mask) =>
+    units.reduce((total, unit) => {
+      const remaining = unit & ~mask;
+      return (
+        total +
+        Number(remaining !== 0n && (remaining & (remaining - 1n)) === 0n)
+      );
+    }, 0);
+  function compare(a, b) {
+    const ar = rank(a.step),
+      br = rank(b.step);
+    return (
+      ar[0] - br[0] ||
+      ar[1] - br[1] ||
+      b.step.removed.length - a.step.removed.length ||
+      singlesAfter(b.mask) - singlesAfter(a.mask) ||
+      deductionSpread(a.step, size, regions) -
+        deductionSpread(b.step, size, regions) ||
+      a.step.sources.length - b.step.sources.length
+    );
+  }
+  function collect(step) {
+    const removed = [...new Set(step.removed)].filter((i) => candidates.has(i));
+    if (!removed.length) return;
+    const next = { step: { ...step, removed }, mask: maskOf(removed) };
+    for (let i = frontier.length - 1; i >= 0; i--) {
+      const previous = frontier[i];
+      if (next.mask === previous.mask) {
+        if (compare(next, previous) < 0) frontier[i] = next;
+        return;
+      }
+      if ((next.mask & previous.mask) === next.mask) return;
+      if ((next.mask & previous.mask) === previous.mask) frontier.splice(i, 1);
+    }
+    frontier.push(next);
+  }
+  const single = nextDeduction(
+    regions,
+    size,
+    candidates,
+    placed,
+    context,
+    collect,
+  );
+  if (single) return single;
+  let best = null;
+  for (const option of frontier)
+    if (!best || compare(option, best) < 0) best = option;
+  return best?.step ?? null;
 }
 
 function logicalPosition(regions, size, cells) {
@@ -1640,7 +1745,7 @@ export function hint(game) {
       size,
       game.cells,
     );
-    step = findDeduction(game.puzzle.regions, size, candidates, placed);
+    step = findHintDeduction(game.puzzle.regions, size, candidates, placed);
     if (!step) return null;
     index = step.type === 'single' ? step.index : step.removed[0];
     kind = step.type === 'single' ? 'place' : 'exclude';

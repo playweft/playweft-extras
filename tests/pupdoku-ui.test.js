@@ -1099,6 +1099,47 @@ test('hint marks the empty unit and adjacent peers of a placed pup without placi
   assert.deepEqual(ui.state().game.cells, before);
 });
 
+test('hint highlights the complete covering proof as a single reversible action', async () => {
+  const { dominated } = JSON.parse(
+    await readFile(
+      new URL('./fixtures/pupdoku-hint-dominance.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  const fixture = dominated.find((item) => item.cross),
+    game = puzzle.createGame(fixture.puzzle),
+    candidates = new Set(fixture.candidates),
+    placed = new Set(fixture.placed);
+  game.cells = game.cells.map((_, i) =>
+    placed.has(i) ? 2 : candidates.has(i) ? 0 : 1,
+  );
+  const before = [...game.cells],
+    ui = await mount(JSON.stringify({ game, level: 4 }));
+  ui.click('hint');
+  const { preferred } = fixture;
+  assert.deepEqual(
+    ui.state().game.cells,
+    before.map((value, i) => (preferred.removed.includes(i) ? 1 : value)),
+  );
+  assert.equal(ui.state().game.history.length, 1);
+  assert.equal(
+    ui.el('board').querySelectorAll('.hinted').length,
+    preferred.removed.length,
+  );
+  assert.ok(
+    preferred.sources.every((i) =>
+      ui.el('board').children[i].classList.contains('source'),
+    ),
+  );
+  assert.ok(
+    ui.controller
+      .getSnapshot()
+      .message.includes(` ${preferred.removed.length} 格`),
+  );
+  ui.click('undo');
+  assert.deepEqual(ui.state().game.cells, before);
+});
+
 test('wrong double taps each charge one life, show loss at zero, and restart restores three lives', async () => {
   const ui = await mount();
   await ui.finish();

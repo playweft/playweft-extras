@@ -315,7 +315,7 @@ function Actions({ controller, game }) {
   );
 }
 
-function StorageError({ error, controller }) {
+function StorageError({ error, controller, restoring }) {
   const retry = useRef();
   useLayoutEffect(() => {
     retry.current.focus();
@@ -336,17 +336,24 @@ function StorageError({ error, controller }) {
           }
         }}
       >
-        <h2 id="storage-error-title">存档读取失败</h2>
+        <h2 id="storage-error-title">
+          存档{error.operation === 'write' ? '保存' : '读取'}失败
+        </h2>
         <p id="storage-error-reason">{error.reason}</p>
         <code id="storage-error-code">{error.code}</code>
-        <p class="storage-error-note">读取成功前不会覆盖存档。</p>
+        <p class="storage-error-note">
+          {error.operation === 'write'
+            ? '当前进度仍在，请重试保存。'
+            : '读取成功前不会覆盖存档。'}
+        </p>
         <button
           id="storage-retry"
           ref={retry}
           type="button"
+          disabled={restoring}
           onClick={() => controller.retryRestore()}
         >
-          重试读取
+          重试{error.operation === 'write' ? '保存' : '读取'}
         </button>
       </div>
     </div>
@@ -368,11 +375,12 @@ export function PupdokuApp({ controller }) {
     busy,
     generationError,
     storageError,
+    restoring,
     message,
     completion,
     transition,
   } = state;
-  const loadingVisible = busy && transition === 'waiting';
+  const loadingVisible = restoring || (busy && transition === 'waiting');
   const lost = game?.hearts === 0;
   return (
     <main class="game" aria-label="小狗数独">
@@ -388,7 +396,7 @@ export function PupdokuApp({ controller }) {
           class="round-button"
           type="button"
           aria-label="重新开始本关"
-          disabled={busy || !!completion || !!storageError}
+          disabled={busy || restoring || !!completion || !!storageError}
           onClick={() => controller.restart()}
         >
           <Icon path="M8 11a11 11 0 1 1-1 12M4 5v9h9" />
@@ -408,7 +416,7 @@ export function PupdokuApp({ controller }) {
         <div
           id="board-wrap"
           class="board-wrap"
-          aria-busy={String(busy)}
+          aria-busy={String(busy || restoring)}
           data-transition={transition ?? 'idle'}
           style={{
             '--level-fade': `${transition === 'in' ? LEVEL_TRANSITION_TIMING.fadeIn : LEVEL_TRANSITION_TIMING.fadeOut}ms`,
@@ -428,7 +436,7 @@ export function PupdokuApp({ controller }) {
             aria-label="正在生成关卡"
             aria-hidden={String(!loadingVisible)}
             data-visible={String(loadingVisible)}
-            data-active={String(busy)}
+            data-active={String(busy || restoring)}
           >
             <span class="spinner" />
           </div>
@@ -477,7 +485,11 @@ export function PupdokuApp({ controller }) {
         </div>
       )}
       {storageError && (
-        <StorageError error={storageError} controller={controller} />
+        <StorageError
+          error={storageError}
+          controller={controller}
+          restoring={restoring}
+        />
       )}
     </main>
   );

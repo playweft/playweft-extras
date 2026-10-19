@@ -71,7 +71,13 @@ async function mount(profile) {
   if (profile) localStorage.setItem(key, JSON.stringify(profile));
   root = document.createElement("div");
   document.body.append(root);
-  act(() => render(h(FuzzyMatch3App), root));
+  const storage = {
+    getItem: async (name) => globalThis.localStorage.getItem(name),
+    setItem: async (name, value) => globalThis.localStorage.setItem(name, value),
+    removeItem: async (name) => globalThis.localStorage.removeItem(name),
+  };
+  act(() => render(h(FuzzyMatch3App, { storage }), root));
+  await act(flush);
   await act(flush);
 }
 async function click(node) {
@@ -1612,4 +1618,27 @@ test("a queued save resumes before win/loss, without spending another move or aw
   } finally {
     Math.random = previousRandom;
   }
+});
+
+test("a failed asynchronous read preserves progress and retries instead of creating level one", async () => {
+  const native = globalThis.localStorage;
+  const profile = { adventure: createGame(43, false, seededRandom(42)) };
+  native.setItem(key, JSON.stringify(profile));
+  let blocked = true;
+  globalThis.localStorage = {
+    getItem(name) { if (blocked) throw new Error('Platform read failed'); return native.getItem(name); },
+    setItem(name, value) { return native.setItem(name, value); },
+    removeItem(name) { return native.removeItem(name); },
+  };
+  try {
+    await mount();
+    assert.equal(root.querySelector('.board'), null);
+    assert.match(root.querySelector('[role="alertdialog"]').textContent, /Platform read failed/);
+    assert.equal(JSON.parse(native.getItem(key)).adventure.level, 43);
+    blocked = false;
+    await click(button('重试读取'));
+    await act(flush);
+    assert.match(root.querySelector('h1').textContent, /43/);
+    assert.deepEqual(boardTypes(), profile.adventure.board.map(tile => tile.type));
+  } finally { globalThis.localStorage = native; }
 });

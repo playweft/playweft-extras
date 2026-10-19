@@ -9,7 +9,7 @@ A logic puzzle about finding a home for every pup on a colorful grid. Play with 
 - Place exactly one pup in each colored region.
 - Pups must not touch, including diagonally.
 
-Each puzzle has a randomly generated board from 8 × 8 to 12 × 12, with a unique solution that can be found through logical deductions. Completing a puzzle automatically starts the next one. Progress is saved in your current browser.
+Each puzzle has a randomly generated board from 8 × 8 to 12 × 12, with a unique solution that can be found through logical deductions. Completing a puzzle automatically starts the next one. Progress is saved in your current browser. In Playweft, saves use the platform’s persistent-storage bridge; standalone play uses IndexedDB. Existing localStorage saves migrate automatically when still available.
 
 ## Controls
 

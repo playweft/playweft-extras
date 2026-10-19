@@ -317,7 +317,7 @@ test('storage read exceptions display the browser error and remain retryable', a
   assert.equal(writes, 0, 'a successful read alone does not rewrite the save');
 });
 
-test('a throwing localStorage getter is diagnosed before mounting instead of crashing', () => {
+test('the standalone controller uses IndexedDB even if native localStorage is inaccessible', async () => {
   const descriptor = Object.getOwnPropertyDescriptor(
     globalThis,
     'localStorage',
@@ -331,10 +331,10 @@ test('a throwing localStorage getter is diagnosed before mounting instead of cra
       },
     });
     controller = createPupdokuController();
-    controller.start();
+    await controller.start();
     const error = controller.getSnapshot().storageError;
-    assert.equal(error.code, 'STORAGE_ACCESS');
-    assert.match(error.reason, /SecurityError: Storage unavailable/);
+    assert.equal(error.code, 'STORAGE_READ');
+    assert.match(error.reason, /IndexedDB is unavailable/);
     assert.equal(controller.getSnapshot().busy, false);
   } finally {
     controller?.dispose();
@@ -1354,4 +1354,113 @@ test('completing consecutive levels generates fresh random-size boards; restarti
     true,
     'leaving also terminates an idle worker',
   );
+});
+
+test('async restoration waits for storage and never starts a replacement puzzle on read failure', async () => {
+  let resolveRead, rejectRead, read;
+  read = new Promise((resolve, reject) => {
+    resolveRead = resolve;
+    rejectRead = reject;
+  });
+  const raw = JSON.stringify({
+    game: puzzle.createGame(puzzle.generatePuzzle(8, 31)),
+    level: 256,
+  });
+  const ui = await mount(null, {
+    storage: {
+      getItem: () => read,
+      setItem: async () => {
+        assert.fail('a failed read must not overwrite progress');
+      },
+    },
+  });
+  assert.equal(ui.requests.length, 0);
+  assert.equal(ui.controller.getSnapshot().restoring, true);
+  assert.equal(ui.el('loading').dataset.visible, 'true');
+  await act(async () => {
+    rejectRead(
+      Object.assign(new Error('Platform storage unavailable'), {
+        code: 'STORAGE_UNAVAILABLE',
+      }),
+    );
+    await flush();
+  });
+  assert.equal(ui.el('storage-error-code').textContent, 'STORAGE_UNAVAILABLE');
+  assert.equal(ui.requests.length, 0);
+  read = Promise.resolve(raw);
+  await act(async () => {
+    ui.click('storage-retry');
+    await flush();
+  });
+  assert.equal(ui.el('level').textContent, 'Level 256');
+  assert.equal(ui.el('storage-error'), null);
+  assert.equal(ui.requests.length, 0);
+});
+
+test('async saving coalesces pending snapshots in order and a failed commit retries current progress', async () => {
+  const initial = JSON.stringify({
+    game: puzzle.createGame(puzzle.generatePuzzle(8, 31)),
+    level: 256,
+  });
+  let committed = initial,
+    finishWrite,
+    shouldFail = false;
+  const writes = [];
+  const ui = await mount(null, {
+    storage: {
+      getItem: async () => committed,
+      setItem(rawKey, raw) {
+        writes.push(raw);
+        return new Promise((resolve, reject) => {
+          finishWrite = () => {
+            if (shouldFail)
+              reject(new DOMException('Disk full', 'QuotaExceededError'));
+            else {
+              committed = raw;
+              resolve();
+            }
+          };
+        });
+      },
+    },
+  });
+  await act(flush);
+  assert.equal(ui.el('level').textContent, 'Level 256');
+  ui.click('hint');
+  ui.controller.keyboardAction(0, 'x');
+  ui.controller.keyboardAction(1, 'x');
+  const latest = JSON.stringify({
+    game: ui.controller.getSnapshot().game,
+    level: 256,
+  });
+  assert.equal(writes.length, 1);
+  assert.equal(committed, initial);
+  await act(async () => {
+    finishWrite();
+    await flush();
+  });
+  assert.equal(writes.length, 2);
+  assert.equal(writes[1], latest);
+  shouldFail = true;
+  await act(async () => {
+    finishWrite();
+    await flush();
+  });
+  assert.match(ui.el('storage-error-title').textContent, /保存失败/);
+  assert.match(
+    ui.el('storage-error-reason').textContent,
+    /QuotaExceededError: Disk full/,
+  );
+  assert.equal(ui.controller.canEdit(), false);
+  assert.notEqual(committed, latest);
+  shouldFail = false;
+  ui.click('storage-retry');
+  await act(async () => {
+    finishWrite();
+    await flush();
+  });
+  assert.equal(committed, latest);
+  assert.equal(ui.el('storage-error'), null);
+  assert.equal(ui.controller.canEdit(), true);
+  assert.equal(ui.el('level').textContent, 'Level 256');
 });

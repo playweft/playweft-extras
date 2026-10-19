@@ -44,19 +44,23 @@ function dailyGame(date) {
   const seed = Number(date.replaceAll("-", ""));
   return createGame(1, true, seededRandom(seed));
 }
-function load() {
-  let data;
+async function load(storage) {
+  let data, parseError;
   for (const key of [STORAGE, LEGACY_STORAGE]) {
+    const raw = await storage.getItem(key);
+    if (raw === null) continue;
     try {
-      const parsed = JSON.parse(localStorage.getItem(key));
+      const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         data = parsed;
         break;
       }
-    } catch {
-      /* Try the legacy save if the new save is unavailable or malformed. */
+      parseError = new Error("Invalid saved profile");
+    } catch (error) {
+      parseError = error;
     }
   }
+  if (!data && parseError) throw parseError;
   const date = todayKey();
   const adventure = restoreGame(data?.adventure) ?? createGame();
   const daily =
@@ -66,8 +70,11 @@ function load() {
     const level = Number(key);
     if (
       Number.isInteger(level) &&
-      level >= 1 && level <= MAX_LEVEL &&
-      Number.isInteger(stars) && stars >= 1 && stars <= 3
+      level >= 1 &&
+      level <= MAX_LEVEL &&
+      Number.isInteger(stars) &&
+      stars >= 1 &&
+      stars <= 3
     )
       levelStars[level] = stars;
   }
@@ -92,15 +99,79 @@ function load() {
         totalScore(adventure),
         totalScore(daily),
       ),
-      eliminated: Math.max(0, Number(data?.stats?.eliminated ?? data?.stats?.fruit) || 0),
+      eliminated: Math.max(
+        0,
+        Number(data?.stats?.eliminated ?? data?.stats?.fruit) || 0,
+      ),
       dailyWins: Math.max(0, Number(data?.stats?.dailyWins) || 0),
     },
   };
 }
 const format = (n) => n.toLocaleString("zh-CN");
 
-export function FuzzyMatch3App() {
-  const [profile, setProfile] = useState(load);
+function StorageGate({ error, retry, saving = false }) {
+  const button = useRef();
+  useLayoutEffect(() => {
+    button.current?.focus();
+  }, [error]);
+  return (
+    <div class="storage-gate">
+      {error ? (
+        <div
+          class="storage-failure"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="storage-title"
+          aria-describedby="storage-reason"
+          onKeyDown={(event) => {
+            if (event.key === "Tab") {
+              event.preventDefault();
+              button.current.focus();
+            }
+          }}
+        >
+          <h2 id="storage-title">存档{saving ? "保存" : "读取"}失败</h2>
+          <p id="storage-reason">{error.message || String(error)}</p>
+          {error.code && <code>{error.code}</code>}
+          <button ref={button} type="button" onClick={retry}>
+            重试{saving ? "保存" : "读取"}
+          </button>
+        </div>
+      ) : (
+        <p role="status">正在读取存档…</p>
+      )}
+    </div>
+  );
+}
+
+export function FuzzyMatch3App({ storage }) {
+  const [profile, setProfile] = useState(null);
+  const [error, setError] = useState(null);
+  const [attempt, retry] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setError(null);
+    load(storage).then(
+      (value) => {
+        if (active) setProfile(value);
+      },
+      (reason) => {
+        if (active) setError(reason);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [storage, attempt]);
+  if (!profile)
+    return (
+      <StorageGate error={error} retry={() => retry((value) => value + 1)} />
+    );
+  return <FuzzyGame initialProfile={profile} storage={storage} />;
+}
+
+function FuzzyGame({ initialProfile, storage }) {
+  const [profile, setProfile] = useState(() => initialProfile);
   const [mode, setMode] = useState("adventure");
   const [view, setView] = useState(null);
   const [levelPage, setLevelPage] = useState(0);
@@ -115,6 +186,8 @@ export function FuzzyMatch3App() {
   const [busy, setBusy] = useState(() => pendingColorClear(profile[mode].board) >= 0);
   const [chainLabel, setChainLabel] = useState(null);
   const [saved, setSaved] = useState(true);
+  const [saveError, setSaveError] = useState(null);
+  const [saveAttempt, retrySave] = useState(0);
   const active = profile[mode];
   const [board, setBoard] = useState(active.board);
   const config = levelConfig(active.level, mode === "daily");
@@ -182,20 +255,32 @@ export function FuzzyMatch3App() {
   }
 
   useEffect(() => {
-    try {
-      // Persist the normalized format, including upgraded fields and specials.
-      localStorage.setItem(STORAGE, JSON.stringify(profile));
-      setSaved(true);
-    } catch {
-      setSaved(false);
-      return;
-    }
-    try {
-      localStorage.removeItem(LEGACY_STORAGE);
-    } catch {
-      /* The new save is safe even if cleaning up the old key is blocked. */
-    }
-  }, [profile]);
+    let active = true;
+    const raw = JSON.stringify(profile);
+    setSaved(null);
+    // The shared adapter serializes writes; only the latest committed snapshot
+    // can change the UI to saved. Cleanup never removes the previous save first.
+    Promise.resolve()
+      .then(() => storage.setItem(STORAGE, raw))
+      .then(() => {
+        if (active) {
+          setSaved(true);
+          setSaveError(null);
+        }
+        return Promise.resolve()
+          .then(() => storage.removeItem(LEGACY_STORAGE))
+          .catch(() => {});
+      })
+      .catch((error) => {
+        if (active) {
+          setSaved(false);
+          setSaveError(error);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [profile, storage, saveAttempt]);
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
@@ -1195,13 +1280,13 @@ export function FuzzyMatch3App() {
                   <div>
                     <strong>自动保存</strong>
                     <p>
-                      {saved
+                      {saved === null ? "正在保存当前进度…" : saved
                         ? "仅保存在当前浏览器。"
                         : "浏览器无法保存，关闭页面后进度会丢失。"}
                     </p>
                   </div>
                   <span class="setting-status">
-                    {saved ? "已开启" : "不可用"}
+                    {saved === null ? "保存中" : saved ? "已开启" : "不可用"}
                   </span>
                 </div>
                 <button class="settings-help" onClick={() => setView("help")}>
@@ -1313,6 +1398,7 @@ export function FuzzyMatch3App() {
           </section>
         </div>
       )}
+      {saveError && <StorageGate error={saveError} saving retry={() => retrySave((value) => value + 1)} />}
     </div>
   );
 }

@@ -174,7 +174,7 @@ Other logical eliminations use the independent `findHintDeduction` selector. At 
 
 ## Saved progress and verification
 
-The browser saves the level, cells, and history automatically. Restoration rechecks region connectivity, uniqueness, logical solvability, and existing pup positions rather than trusting the cached answer. Saves outside the supported size range 8–12 start a new puzzle.
+The browser saves the level, cells, and history automatically through the platform storage bridge, or first-party IndexedDB in standalone play. Legacy localStorage data migrates once when the destination is empty. Restoration finishes before a new board can start and rechecks region connectivity, uniqueness, logical solvability, and existing pup positions rather than trusting the cached answer. Invalid saves produce a diagnostic dialog and remain preserved instead of being replaced. Writes serialize and coalesce pending snapshots; transaction failures retain the current in-memory game for an explicit retry. Read and write failures never silently fall back to temporary iframe storage.
 
 `npm run check` includes cross-size partition, uniqueness, and proof-trace validation; rank-two through rank-six sets; joint exclusions; chains and independent exhaustive-answer checks; random-size progression; lives and Undo; mouse/touch gestures, rapid dragging, and cancellation; Worker retries; saved progress; completion fade-in/hold/fade-out timing, automatic progression, and cleanup; and root/subpath deployment checks.
 

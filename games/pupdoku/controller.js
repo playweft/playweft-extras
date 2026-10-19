@@ -9,6 +9,7 @@ import {
   isComplete,
 } from './puzzle.js';
 import { BoardGestures } from './gestures.js';
+import { createStandaloneStorage } from '../../src/game-storage.js';
 
 export const STORAGE_KEY = 'playweft:pupdoku:v1';
 export const DEFAULT_MESSAGE = '单击或滑动标记 ×，双击放小狗。';
@@ -38,21 +39,20 @@ export function createPupdokuController({
   schedule = setTimeout,
   unschedule = clearTimeout,
 } = {}) {
-  let saveStorage;
+  let saveStorage, committedRaw;
+  const failure = (code, reason, error) => ({
+    game: null,
+    level: 1,
+    storageError: {
+      code,
+      reason: error
+        ? `${reason}\n${error.name || 'Error'}: ${error.message || String(error)}`
+        : reason,
+    },
+  });
   function readSave() {
-    const failure = (code, reason, error) => ({
-      game: null,
-      level: 1,
-      storageError: {
-        code,
-        reason: error
-          ? `${reason}\n${error.name || 'Error'}: ${error.message || String(error)}`
-          : reason,
-      },
-    });
     try {
-      // Safari can throw even when accessing the localStorage property.
-      saveStorage = storage === undefined ? globalThis.localStorage : storage;
+      saveStorage = storage === undefined ? createStandaloneStorage() : storage;
     } catch (error) {
       return failure('STORAGE_ACCESS', '无法访问浏览器本地存储。', error);
     }
@@ -62,6 +62,13 @@ export function createPupdokuController({
     } catch (error) {
       return failure('STORAGE_READ', '读取浏览器存档时发生异常。', error);
     }
+    if (raw?.then)
+      return raw.then(parseSave, (error) =>
+        failure(error?.code || 'STORAGE_READ', '读取存档时发生异常。', error),
+      );
+    return parseSave(raw);
+  }
+  function parseSave(raw) {
     if (raw === null) return { game: null, level: 1, storageError: null };
     let saved;
     try {
@@ -83,13 +90,19 @@ export function createPupdokuController({
         (error) => (validationError = error),
       );
       if (!game) return failure(validationError.code, validationError.reason);
+      committedRaw = raw;
       return { game, level: saved.level, storageError: null };
     } catch (error) {
       return failure('RESTORE_EXCEPTION', '校验存档时发生异常。', error);
     }
   }
+  const initialRead = readSave();
+  let restoreTask;
   let state = {
-    ...readSave(),
+    ...(initialRead?.then
+      ? { game: null, level: 1, storageError: null }
+      : initialRead),
+    restoring: !!initialRead?.then,
     busy: false,
     generationError: false,
     selected: 0,
@@ -121,21 +134,58 @@ export function createPupdokuController({
     // generation must not resume the cleared old partition as a new puzzle.
     if (
       state.storageError ||
+      state.restoring ||
       !state.game ||
       state.generationError ||
       state.transition === 'out' ||
       state.transition === 'waiting'
     )
       return;
+    const raw = JSON.stringify({ game: state.game, level: state.level });
+    if (raw === committedRaw && !pendingSave) return;
+    pendingSave = raw;
+    return writeNext();
+  }
+  let pendingSave, writing;
+  function writeNext() {
+    if (writing || pendingSave === undefined) return writing;
+    const raw = pendingSave;
+    pendingSave = undefined;
+    const success = () => {
+      committedRaw = raw;
+    };
+    const failed = (error) => {
+      // Keep the latest in-memory progress for an explicit retry.
+      if (!disposed)
+        publish({
+          storageError: {
+            ...failure(
+              error?.code || 'STORAGE_WRITE',
+              '保存存档时发生异常。',
+              error,
+            ).storageError,
+            operation: 'write',
+          },
+        });
+    };
     try {
-      saveStorage?.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ game: state.game, level: state.level }),
-      );
-    } catch {
-      /* Play remains available without storage. */
+      const result = saveStorage?.setItem(STORAGE_KEY, raw);
+      if (result?.then) {
+        writing = Promise.resolve(result)
+          .then(success, failed)
+          .finally(() => {
+            writing = null;
+            if (!state.storageError && pendingSave !== undefined)
+              void writeNext();
+          });
+        return writing;
+      }
+      success();
+    } catch (error) {
+      failed(error);
     }
   }
+
   function commit(patch) {
     publish(patch);
     save();
@@ -200,6 +250,7 @@ export function createPupdokuController({
     return (
       !disposed &&
       !state.storageError &&
+      !state.restoring &&
       state.game &&
       !state.busy &&
       !state.completion &&
@@ -360,7 +411,7 @@ export function createPupdokuController({
     }
   }
   async function newGame(prepared) {
-    if (state.busy || disposed || state.storageError) return;
+    if (state.busy || disposed || state.storageError || state.restoring) return;
     cancelInput();
     clearHighlights();
     const previous = state.game,
@@ -425,6 +476,14 @@ export function createPupdokuController({
   }
   function start() {
     if (disposed || state.storageError) return;
+    if (state.restoring) {
+      restoreTask ??= initialRead.then((restored) => {
+        if (disposed) return;
+        publish({ ...restored, restoring: false });
+        return start();
+      });
+      return restoreTask;
+    }
     if (!state.game) return newGame();
     if (isComplete(state.game.puzzle, state.game.cells)) complete();
   }
@@ -443,7 +502,30 @@ export function createPupdokuController({
     start,
     retryRestore() {
       if (disposed || !state.storageError) return;
-      publish(readSave());
+      if (state.storageError.operation === 'write') {
+        publish({ storageError: null });
+        return Promise.resolve(save()).then(() => {
+          if (
+            !disposed &&
+            !state.storageError &&
+            !state.busy &&
+            !state.completion &&
+            state.game &&
+            isComplete(state.game.puzzle, state.game.cells)
+          )
+            complete();
+        });
+      }
+      const restored = readSave();
+      if (restored?.then) {
+        publish({ restoring: true });
+        return restored.then((result) => {
+          if (disposed) return;
+          publish({ ...result, restoring: false });
+          return start();
+        });
+      }
+      publish(restored);
       return start();
     },
     canEdit,
@@ -499,10 +581,12 @@ export function createPupdokuController({
       }
     },
     suspend() {
+      if (disposed) return;
       cancelInput();
       save();
     },
     dispose() {
+      if (disposed) return;
       disposed = true;
       cancelInput();
       save();

@@ -38,3 +38,31 @@ test('bridge buffers pre-initialize state, deduplicates versions, resets per mat
   await Promise.all(outstanding);
   delete globalThis.window;
 });
+
+test('storage waits for initialize, advertises support, preserves errors and closes pending readiness', async () => {
+  const host = new EventTarget(); host.parent = host;
+  globalThis.window = host;
+  const { PlayweftBridge } = await import('../src/playweft-client.js');
+  const bridge = new PlayweftBridge(), messages = [];
+  const port = { postMessage: message => messages.push(message), start() {}, close() {} };
+  const ready = bridge.ready();
+  const read = bridge.localStorage.getItem('save');
+  bridge.onWindowMessage({ source: host, data: { type: 'playweft:bridge', version: 1 }, ports: [port] });
+  bridge.receive({ jsonrpc: '2.0', id: messages[0].id, result: { capabilities: ['localStorage.getItem', 'localStorage.setItem'] } });
+  await ready; await Promise.resolve();
+  const request = messages.at(-1);
+  assert.equal(request.method, 'localStorage.getItem');
+  assert.deepEqual(request.params, { key: 'save' });
+  bridge.receive({ jsonrpc: '2.0', id: request.id, result: '256' });
+  assert.equal(await read, '256');
+  await assert.rejects(bridge.localStorage.length(), error => error.code === 'STORAGE_UNSUPPORTED');
+  const write = bridge.localStorage.setItem('save', '257');
+  await Promise.resolve();
+  bridge.receive({ jsonrpc: '2.0', id: messages.at(-1).id, error: { code: -32000, message: 'Disk full', data: { code: 'STORAGE_QUOTA_EXCEEDED', retryable: false } } });
+  await assert.rejects(write, error => error.name === 'QuotaExceededError' && error.code === 'STORAGE_QUOTA_EXCEEDED');
+  bridge.close();
+  const unopened = new PlayweftBridge();
+  const waiting = unopened.ready(); unopened.close();
+  await assert.rejects(waiting, /closed/);
+  delete globalThis.window;
+});

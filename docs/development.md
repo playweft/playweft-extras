@@ -25,6 +25,27 @@ npm run dev:light-trails
 
 Open `http://localhost:9139/__dev/?seat=1` and `?seat=2` in two visible windows; use `?seat=0` to spectate. Set another port with `PORT=9141 npm run dev:light-trails`. This tool executes the same Lua game script but is development-only: it does not provide platform authentication or room security boundaries and is excluded from production builds.
 
+## Local saves
+
+Pupdoku and Fuzzy Match 3 use `src/game-storage.js`. Embedded games wait for
+Playweft's `localStorage.*` bridge capabilities before loading progress; standalone
+games use first-party IndexedDB. Both paths are asynchronous and serialize writes.
+Deploy the platform storage API before deploying updated game clients. An older
+platform reports an explicit unsupported-storage error instead of silently saving
+to an iframe's temporary localStorage.
+
+Existing localStorage data is imported once when the target key is absent. The
+source is removed only after the copies and migration marker have committed.
+Interrupted migrations resume, and existing destination saves take precedence.
+Saves already removed by the browser cannot be recovered. Standalone and platform
+saves belong to separate browser storage contexts and are not automatically synced.
+
+Read failures preserve the original data and offer retry. Pupdoku coalesces queued
+snapshots and Fuzzy Match 3 saves settled boards; write failures retain in-memory
+progress and offer retry. Saving runs during play, rather than relying on unload.
+Browser shutdown before an in-flight operation commits can still lose that latest
+operation; successful commits persist independently of the game frame.
+
 ## Validation and build
 
 ```sh

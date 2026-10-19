@@ -1762,20 +1762,25 @@ export function hint(game) {
 }
 
 // Saved state is untrusted. Recompute the unique answer and validate connectivity.
-export function restoreGame(saved) {
-  const { size, regions } = saved?.puzzle ?? {};
-  if (
-    !SIZES.includes(size) ||
-    !Array.isArray(regions) ||
-    regions.length !== size ** 2 ||
-    !regions.every(
-      (region) => Number.isInteger(region) && region >= 0 && region < size,
-    )
-  )
+export function restoreGame(saved, onError = () => {}) {
+  const reject = (code, reason) => {
+    onError({ code, reason });
     return null;
+  };
+  const { size, regions } = saved?.puzzle ?? {};
+  if (!SIZES.includes(size))
+    return reject('BOARD_SIZE', `棋盘大小无效：${String(size)}，应为 8～12。`);
+  if (!Array.isArray(regions) || regions.length !== size ** 2)
+    return reject('BOARD_REGIONS', `区域数据应为包含 ${size ** 2} 格的数组。`);
+  const invalidRegion = regions.findIndex(
+    (region) => !Number.isInteger(region) || region < 0 || region >= size,
+  );
+  if (invalidRegion >= 0)
+    return reject('REGION_ID', `第 ${invalidRegion + 1} 格的区域编号无效。`);
   for (let region = 0; region < size; region++) {
     const first = regions.indexOf(region);
-    if (first < 0) return null;
+    if (first < 0)
+      return reject('REGION_MISSING', `区域 ${region + 1} 没有格子。`);
     const seen = new Set([first]),
       queue = [first];
     for (const index of queue) {
@@ -1802,34 +1807,53 @@ export function restoreGame(saved) {
       }
     }
     if (seen.size !== regions.filter((value) => value === region).length)
-      return null;
+      return reject('REGION_DISCONNECTED', `区域 ${region + 1} 的格子不连通。`);
   }
   const solutions = solve(regions, size);
-  if (solutions.length !== 1) return null;
-  const puzzle = describePuzzle([...regions], size, saved.puzzle.seed);
-  if (!puzzle) return null;
-  const validCells = (cells) =>
-    Array.isArray(cells) &&
-    cells.length === size ** 2 &&
-    cells.every((value) => [0, 1, 2, 3].includes(value)) &&
-    cells.every(
-      (value, index) =>
-        value !== 3 ||
-        puzzle.solution[Math.floor(index / size)] !== index % size,
-    ) &&
-    cells.every(
-      (value, index) =>
-        value !== 2 ||
-        (puzzle.solution[Math.floor(index / size)] === index % size &&
-          conflicts(puzzle, cells, index).length === 0),
+  if (solutions.length !== 1)
+    return reject(
+      'SOLUTION_COUNT',
+      solutions.length === 0 ? '棋盘没有合法解。' : '棋盘存在多个合法解。',
     );
-  if (
-    !validCells(saved.cells) ||
-    !Number.isInteger(saved.hearts) ||
-    saved.hearts < 0 ||
-    saved.hearts > 3
-  )
+  const puzzle = describePuzzle([...regions], size, saved.puzzle.seed);
+  if (!puzzle)
+    return reject(
+      'LOGIC_UNSOLVED',
+      '棋盘有唯一解，但当前逻辑求解器无法完成校验。',
+    );
+  const cellsError = (cells) => {
+    if (!Array.isArray(cells) || cells.length !== size ** 2)
+      return {
+        code: 'CELL_COUNT',
+        reason: `标记数据应为包含 ${size ** 2} 格的数组。`,
+      };
+    for (let index = 0; index < cells.length; index++) {
+      const value = cells[index],
+        row = Math.floor(index / size),
+        col = index % size,
+        position = `第 ${row + 1} 行、第 ${col + 1} 列`;
+      if (![0, 1, 2, 3].includes(value))
+        return { code: 'CELL_VALUE', reason: `${position}的标记值无效。` };
+      if (value === 3 && puzzle.solution[row] === col)
+        return {
+          code: 'RED_CROSS',
+          reason: `${position}的红叉与正确答案冲突。`,
+        };
+      if (
+        value === 2 &&
+        (puzzle.solution[row] !== col || conflicts(puzzle, cells, index).length)
+      )
+        return {
+          code: 'PUP_POSITION',
+          reason: `${position}的小狗位置不合法。`,
+        };
+    }
     return null;
+  };
+  const error = cellsError(saved.cells);
+  if (error) return reject(error.code, error.reason);
+  if (!Number.isInteger(saved.hearts) || saved.hearts < 0 || saved.hearts > 3)
+    return reject('HEARTS', `生命值无效：${String(saved.hearts)}，应为 0～3。`);
   return {
     puzzle,
     cells: [...saved.cells],
@@ -1838,7 +1862,7 @@ export function restoreGame(saved) {
       Number.isSafeInteger(saved.hints) && saved.hints >= 0 ? saved.hints : 0,
     history: Array.isArray(saved.history)
       ? saved.history
-          .filter(validCells)
+          .filter((cells) => !cellsError(cells))
           .slice(-150)
           .map((cells) => [...cells])
       : [],

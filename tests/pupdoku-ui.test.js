@@ -66,11 +66,16 @@ afterEach(() => {
   }
 });
 const flush = () => new Promise((resolve) => setImmediate(resolve));
-async function mount(saved, { vibrate, workerAvailable = true } = {}) {
+async function mount(
+  saved,
+  { vibrate, workerAvailable = true, storage: storageOverride } = {},
+) {
   const requests = [],
     workers = [],
     timers = new Map();
-  const storage = new Map(saved ? [['playweft:pupdoku:v1', saved]] : []);
+  const storage = new Map(
+    saved != null ? [['playweft:pupdoku:v1', saved]] : [],
+  );
   let nextTimer = 0,
     now = 0,
     randomCall = 0;
@@ -82,7 +87,7 @@ async function mount(saved, { vibrate, workerAvailable = true } = {}) {
   };
   const unschedule = (id) => timers.delete(id);
   const controller = createPupdokuController({
-    storage: {
+    storage: storageOverride ?? {
       getItem: (key) => storage.get(key) ?? null,
       setItem: (key, value) => storage.set(key, value),
     },
@@ -185,6 +190,159 @@ async function mount(saved, { vibrate, workerAvailable = true } = {}) {
     dispatch,
   };
 }
+
+test('invalid saves show precise errors, preserve the original and retry without resetting progress', async () => {
+  const key = 'playweft:pupdoku:v1',
+    valid = {
+      game: puzzle.createGame(puzzle.generatePuzzle(8, 31)),
+      level: 256,
+    };
+  const cases = [
+    ['{broken', 'SAVE_JSON', /JSON/],
+    ['', 'SAVE_JSON', /JSON/],
+    ['null', 'SAVE_FORMAT', /根节点/],
+    [JSON.stringify({ ...valid, level: 0 }), 'SAVE_LEVEL', /关卡编号.*0/],
+    [
+      JSON.stringify({ ...valid, level: { toString: null } }),
+      'SAVE_LEVEL',
+      /关卡编号.*toString/,
+    ],
+    [
+      JSON.stringify({ ...valid, game: { ...valid.game, hearts: -1 } }),
+      'HEARTS',
+      /生命值.*-1/,
+    ],
+    [
+      JSON.stringify({
+        ...valid,
+        game: { ...valid.game, cells: [4, ...valid.game.cells.slice(1)] },
+      }),
+      'CELL_VALUE',
+      /第 1 行、第 1 列/,
+    ],
+    [
+      JSON.stringify({
+        ...valid,
+        game: { ...valid.game, puzzle: { ...valid.game.puzzle, size: 7 } },
+      }),
+      'BOARD_SIZE',
+      /棋盘大小.*7/,
+    ],
+  ];
+  for (const [raw, code, reason] of cases) {
+    const ui = await mount(raw);
+    assert.equal(ui.el('storage-error').getAttribute('role'), 'alertdialog');
+    assert.equal(ui.el('storage-error-code').textContent, code);
+    assert.match(ui.el('storage-error-reason').textContent, reason);
+    assert.equal(document.activeElement, ui.el('storage-retry'));
+    ui.dispatch(ui.el('storage-retry'), 'keydown', {
+      key: 'Tab',
+      shiftKey: true,
+    });
+    assert.equal(document.activeElement, ui.el('storage-retry'));
+    assert.equal(
+      ui.requests.length,
+      0,
+      'failed restoration must not generate Level 1',
+    );
+    assert.equal(ui.controller.canEdit(), false);
+    assert.equal(ui.el('restart').disabled, true);
+    ui.controller.start();
+    ui.controller.restart();
+    await ui.controller.newGame();
+    ui.controller.suspend();
+    ui.click('storage-retry');
+    assert.equal(
+      ui.storage.get(key),
+      raw,
+      'retry and lifecycle events preserve the original',
+    );
+    assert.equal(ui.requests.length, 0);
+
+    ui.storage.set(key, JSON.stringify(valid));
+    ui.click('storage-retry');
+    assert.equal(ui.el('storage-error'), null);
+    assert.equal(ui.el('level').textContent, 'Level 256');
+    assert.deepEqual(ui.controller.getSnapshot().game, valid.game);
+    assert.equal(ui.requests.length, 0);
+    assert.equal(ui.controller.canEdit(), true);
+    ui.click('hint');
+    assert.equal(
+      ui.state().level,
+      256,
+      'saving resumes after a successful read',
+    );
+  }
+  const ui = await mount('{broken');
+  ui.controller.dispose();
+  assert.equal(
+    ui.storage.get(key),
+    '{broken',
+    'disposal also preserves the original',
+  );
+});
+
+test('storage read exceptions display the browser error and remain retryable', async () => {
+  const valid = JSON.stringify({
+    game: puzzle.createGame(puzzle.generatePuzzle(8, 31)),
+    level: 29,
+  });
+  let blocked = true,
+    writes = 0;
+  const ui = await mount(null, {
+    storage: {
+      getItem() {
+        if (blocked)
+          throw new window.DOMException('Access is denied', 'SecurityError');
+        return valid;
+      },
+      setItem() {
+        writes++;
+      },
+    },
+  });
+  assert.equal(ui.el('storage-error-code').textContent, 'STORAGE_READ');
+  assert.match(
+    ui.el('storage-error-reason').textContent,
+    /SecurityError: Access is denied/,
+  );
+  ui.controller.suspend();
+  ui.click('storage-retry');
+  assert.equal(ui.requests.length, 0);
+  assert.equal(writes, 0);
+  blocked = false;
+  ui.click('storage-retry');
+  assert.equal(ui.el('storage-error'), null);
+  assert.equal(ui.el('level').textContent, 'Level 29');
+  assert.equal(writes, 0, 'a successful read alone does not rewrite the save');
+});
+
+test('a throwing localStorage getter is diagnosed before mounting instead of crashing', () => {
+  const descriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    'localStorage',
+  );
+  let controller;
+  try {
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new window.DOMException('Storage unavailable', 'SecurityError');
+      },
+    });
+    controller = createPupdokuController();
+    controller.start();
+    const error = controller.getSnapshot().storageError;
+    assert.equal(error.code, 'STORAGE_ACCESS');
+    assert.match(error.reason, /SecurityError: Storage unavailable/);
+    assert.equal(controller.getSnapshot().busy, false);
+  } finally {
+    controller?.dispose();
+    if (descriptor)
+      Object.defineProperty(globalThis, 'localStorage', descriptor);
+    else delete globalThis.localStorage;
+  }
+});
 
 function complete(ui) {
   for (let i = 0; i < 300 && !ui.controller.getSnapshot().completion; i++)

@@ -315,6 +315,44 @@ function Actions({ controller, game }) {
   );
 }
 
+function StorageError({ error, controller }) {
+  const retry = useRef();
+  useLayoutEffect(() => {
+    retry.current.focus();
+  }, []);
+  return (
+    <div class="storage-error-overlay">
+      <div
+        id="storage-error"
+        class="storage-error"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="storage-error-title"
+        aria-describedby="storage-error-reason storage-error-code"
+        onKeyDown={(event) => {
+          if (event.key === 'Tab') {
+            event.preventDefault();
+            retry.current.focus();
+          }
+        }}
+      >
+        <h2 id="storage-error-title">存档读取失败</h2>
+        <p id="storage-error-reason">{error.reason}</p>
+        <code id="storage-error-code">{error.code}</code>
+        <p class="storage-error-note">读取成功前不会覆盖存档。</p>
+        <button
+          id="storage-retry"
+          ref={retry}
+          type="button"
+          onClick={() => controller.retryRestore()}
+        >
+          重试读取
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function PupdokuApp({ controller }) {
   const [state, setState] = useState(controller.getSnapshot);
   const [keyboardFocus, setKeyboardFocus] = useState(false);
@@ -329,6 +367,7 @@ export function PupdokuApp({ controller }) {
     level,
     busy,
     generationError,
+    storageError,
     message,
     completion,
     transition,
@@ -349,7 +388,7 @@ export function PupdokuApp({ controller }) {
           class="round-button"
           type="button"
           aria-label="重新开始本关"
-          disabled={busy || !!completion}
+          disabled={busy || !!completion || !!storageError}
           onClick={() => controller.restart()}
         >
           <Icon path="M8 11a11 11 0 1 1-1 12M4 5v9h9" />
@@ -436,6 +475,9 @@ export function PupdokuApp({ controller }) {
             <p>第 {completion.level} 关完成</p>
           </div>
         </div>
+      )}
+      {storageError && (
+        <StorageError error={storageError} controller={controller} />
       )}
     </main>
   );

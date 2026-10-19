@@ -1786,29 +1786,25 @@ test('restoration recomputes answers and rejects malformed or contradictory save
   const restored = restoreGame(saved);
   assert.deepEqual(restored, game);
   assert.equal(restoreGame(null), null);
-  for (const change of [
-    (value) => {
-      value.puzzle.size = 7;
-    },
-    (value) => {
-      value.puzzle.regions[0] = -1;
-    },
-    (value) => {
-      value.puzzle.regions.fill(0);
-    },
-    (value) => {
-      value.cells[0] = 4;
-    },
-    (value) => {
-      value.cells[0] = value.cells[1] = 2;
-    },
-    (value) => {
-      value.hearts = -1;
-    },
+  for (const [change, code] of [
+    [(value) => (value.puzzle.size = 7), 'BOARD_SIZE'],
+    [(value) => (value.puzzle.regions[0] = -1), 'REGION_ID'],
+    [(value) => value.puzzle.regions.fill(0), 'REGION_MISSING'],
+    [(value) => (value.cells[0] = 4), 'CELL_VALUE'],
+    [(value) => (value.cells[0] = value.cells[1] = 2), 'PUP_POSITION'],
+    [(value) => (value.cells = []), 'CELL_COUNT'],
+    [(value) => (value.hearts = -1), 'HEARTS'],
+    [(value) => (value.cells[value.puzzle.solution[0]] = 3), 'RED_CROSS'],
   ]) {
     const invalid = structuredClone(game);
     change(invalid);
-    assert.equal(restoreGame(invalid), null);
+    let error;
+    assert.equal(
+      restoreGame(invalid, (details) => (error = details)),
+      null,
+    );
+    assert.equal(error.code, code);
+    assert.ok(error.reason.length > 0);
   }
 });
 

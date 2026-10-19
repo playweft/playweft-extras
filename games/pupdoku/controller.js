@@ -26,7 +26,7 @@ export const LEVEL_TRANSITION_TIMING = {
 // Game actions are synchronous, so consecutive pointer events see the latest
 // position even when Preact batches rendering. Only snapshots reach the view.
 export function createPupdokuController({
-  storage = globalThis.localStorage,
+  storage,
   vibrate = (duration) => globalThis.navigator?.vibrate?.(duration),
   randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0],
   createWorker = () =>
@@ -38,19 +38,58 @@ export function createPupdokuController({
   schedule = setTimeout,
   unschedule = clearTimeout,
 } = {}) {
-  let saved;
-  try {
-    saved = JSON.parse(storage?.getItem(STORAGE_KEY) ?? 'null');
-  } catch {
-    /* Start fresh when storage is unavailable. */
+  let saveStorage;
+  function readSave() {
+    const failure = (code, reason, error) => ({
+      game: null,
+      level: 1,
+      storageError: {
+        code,
+        reason: error
+          ? `${reason}\n${error.name || 'Error'}: ${error.message || String(error)}`
+          : reason,
+      },
+    });
+    try {
+      // Safari can throw even when accessing the localStorage property.
+      saveStorage = storage === undefined ? globalThis.localStorage : storage;
+    } catch (error) {
+      return failure('STORAGE_ACCESS', '无法访问浏览器本地存储。', error);
+    }
+    let raw;
+    try {
+      raw = saveStorage?.getItem(STORAGE_KEY) ?? null;
+    } catch (error) {
+      return failure('STORAGE_READ', '读取浏览器存档时发生异常。', error);
+    }
+    if (raw === null) return { game: null, level: 1, storageError: null };
+    let saved;
+    try {
+      saved = JSON.parse(raw);
+    } catch (error) {
+      return failure('SAVE_JSON', '存档不是有效的 JSON 数据。', error);
+    }
+    if (!saved || typeof saved !== 'object' || Array.isArray(saved))
+      return failure('SAVE_FORMAT', '存档根节点应为对象。');
+    if (!Number.isSafeInteger(saved.level) || saved.level <= 0)
+      return failure(
+        'SAVE_LEVEL',
+        `关卡编号无效：${JSON.stringify(saved.level)?.slice(0, 120) ?? 'undefined'}。`,
+      );
+    try {
+      let validationError;
+      const game = restoreGame(
+        saved.game,
+        (error) => (validationError = error),
+      );
+      if (!game) return failure(validationError.code, validationError.reason);
+      return { game, level: saved.level, storageError: null };
+    } catch (error) {
+      return failure('RESTORE_EXCEPTION', '校验存档时发生异常。', error);
+    }
   }
-  const restored = restoreGame(saved?.game);
   let state = {
-    game: restored,
-    level:
-      restored && Number.isSafeInteger(saved.level) && saved.level > 0
-        ? saved.level
-        : 1,
+    ...readSave(),
     busy: false,
     generationError: false,
     selected: 0,
@@ -81,6 +120,7 @@ export function createPupdokuController({
     // Keep the completed save until its replacement exists. A refresh during
     // generation must not resume the cleared old partition as a new puzzle.
     if (
+      state.storageError ||
       !state.game ||
       state.generationError ||
       state.transition === 'out' ||
@@ -88,7 +128,7 @@ export function createPupdokuController({
     )
       return;
     try {
-      storage?.setItem(
+      saveStorage?.setItem(
         STORAGE_KEY,
         JSON.stringify({ game: state.game, level: state.level }),
       );
@@ -159,6 +199,7 @@ export function createPupdokuController({
   function canEdit() {
     return (
       !disposed &&
+      !state.storageError &&
       state.game &&
       !state.busy &&
       !state.completion &&
@@ -319,7 +360,7 @@ export function createPupdokuController({
     }
   }
   async function newGame(prepared) {
-    if (state.busy || disposed) return;
+    if (state.busy || disposed || state.storageError) return;
     cancelInput();
     clearHighlights();
     const previous = state.game,
@@ -376,11 +417,16 @@ export function createPupdokuController({
     }
   }
   function restart() {
-    if (state.busy || state.completion) return;
+    if (state.busy || state.completion || state.storageError) return;
     cancelInput();
     clearHighlights();
     if (!state.game || state.generationError) return newGame();
     commit({ game: createGame(state.game.puzzle), message: DEFAULT_MESSAGE });
+  }
+  function start() {
+    if (disposed || state.storageError) return;
+    if (!state.game) return newGame();
+    if (isComplete(state.game.puzzle, state.game.cells)) complete();
   }
   return {
     getSnapshot: () => state,
@@ -394,9 +440,11 @@ export function createPupdokuController({
         if (feedback === handler) feedback = null;
       };
     },
-    start() {
-      if (!state.game) return newGame();
-      if (isComplete(state.game.puzzle, state.game.cells)) complete();
+    start,
+    retryRestore() {
+      if (disposed || !state.storageError) return;
+      publish(readSave());
+      return start();
     },
     canEdit,
     gestures,

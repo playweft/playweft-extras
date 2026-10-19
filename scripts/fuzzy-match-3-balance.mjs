@@ -1,3 +1,4 @@
+import { objectiveProgress } from "../games/fuzzy-match-3/objectives.js";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
 import {
@@ -20,7 +21,7 @@ function play({ seed, level, daily, strategy, overrides }) {
   const random = seededRandom(seed);
   const decisions = seededRandom(seed ^ 0xabc123);
   const config = configuration(level, daily, overrides);
-  const game = createGame(level, daily, random);
+  const game = createGame(level, daily, random, { goalKind: config.goalKind });
   game.moves = config.moves;
   let earlyThree = false;
   while (game.moves > 0) {
@@ -39,6 +40,7 @@ function play({ seed, level, daily, strategy, overrides }) {
       earlyThree = true;
     if (game.status !== "playing") break;
   }
+  const goal = objectiveProgress(game, config);
   return {
     won: game.status === "won",
     three: game.status === "won" && totalScore(game) >= config.starTargets[2],
@@ -48,7 +50,7 @@ function play({ seed, level, daily, strategy, overrides }) {
     earlyThree,
     unmetGoals: [
       ...(game.score < config.target ? ["score"] : []),
-      ...(game.collected[config.targetType] < config.count ? ["collection"] : []),
+      ...(!goal.complete ? [goal.kind === "collect" ? "collection" : goal.kind] : []),
       ...(iceLayers(game.board) > 0 ? ["ice"] : []),
     ],
   };
@@ -79,12 +81,12 @@ export function audit({
   const lost = results.filter((game) => !game.won);
   const failureReasons = {
     losses: lost.length,
-    unmet: Object.fromEntries(["score", "collection", "ice"].map((goal) => [
+    unmet: Object.fromEntries(["score", "collection", "spread", "reveal", "deliver", "ice"].map((goal) => [
       goal, lost.filter((game) => game.unmetGoals.includes(goal)).length,
     ])),
     combinations: Object.fromEntries([
-      "score", "collection", "ice", "score+collection", "score+ice",
-      "collection+ice", "score+collection+ice",
+      "score", "ice", "score+ice",
+      ...["collection", "spread", "reveal", "deliver"].flatMap(kind => [kind, `score+${kind}`, `${kind}+ice`, `score+${kind}+ice`]),
     ].map((combination) => [
       combination, lost.filter((game) => game.unmetGoals.join("+") === combination).length,
     ])),

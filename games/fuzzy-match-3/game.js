@@ -1,8 +1,8 @@
-export const SIZE = 8;
+import { SIZE, TYPE_COUNT } from "./constants.js";
+import { createObjective, goalKindForLevel, isDelivery, objectiveProgress, validObjective } from "./objectives.js";
+export { SIZE, TYPE_COUNT } from "./constants.js";
 export const MOVE_BONUS = 1500;
 const PATTERN_BONUSES = { row: 80, column: 80, color: 200 };
-// Keep numeric tile types stable so existing saved boards retain their progress.
-export const TYPE_COUNT = 6;
 let nextId = 0;
 const tile = (type) => ({ id: ++nextId, type, special: null });
 const perpendicular = (direction) =>
@@ -97,12 +97,13 @@ export function findMatches(board) {
           !piece ||
           piece.ice ||
           piece.special === "color" ||
+          isDelivery(piece) ||
           (run.length && piece.type !== board[run[0]].type)
         ) {
           finish();
           run = [];
         }
-        if (piece && !piece.ice && piece.special !== "color") run.push(index);
+        if (piece && !piece.ice && piece.special !== "color" && !isDelivery(piece)) run.push(index);
       }
       finish();
     }
@@ -116,6 +117,7 @@ const isStriped = (piece) =>
 function exchangeCombo(board, a, b) {
   if (!adjacent(a, b) || !board[a] || !board[b] || board[a].ice || board[b].ice)
     return null;
+  if (isDelivery(board[a]) || isDelivery(board[b])) return null;
   if (board[a].special === "color" || board[b].special === "color")
     return isStriped(board[a]) || isStriped(board[b]) ? "colorStripe" : "color";
   return isStriped(board[a]) && isStriped(board[b]) ? "doubleStripe" : null;
@@ -204,7 +206,7 @@ function matchReward(group) {
 function mostCommonType(board) {
   const counts = Array(TYPE_COUNT).fill(0);
   for (const piece of board)
-    if (piece && piece.special !== "color") counts[piece.type]++;
+    if (piece && piece.special !== "color" && !isDelivery(piece)) counts[piece.type]++;
   return counts.indexOf(Math.max(...counts));
 }
 
@@ -286,10 +288,11 @@ export function resolveWave(
       ...activated,
       ...finaleStripes,
       ...finaleFrozen,
-    ].filter((index) => board[index]),
+    ].filter((index) => board[index] && !isDelivery(board[index])),
   );
   if (!cleared.size && !finaleColorClears.length) return null;
   const groups = matchGroups(lines);
+  const effectGroups = groups.map(group => [...new Set(group.flatMap(line => line.indices))]);
   const colorTargets = new Map();
   if (pendingIndex >= 0) colorTargets.set(pendingIndex, mostCommonType(board));
   if (exchange.length === 2) {
@@ -354,7 +357,7 @@ export function resolveWave(
   const firedStripes = new Set();
   function stripeHit(index, incomingDirection) {
     const piece = effectBoard[index];
-    if (!piece) return;
+    if (!piece || isDelivery(piece)) return;
     if (
       piece?.special === "color" &&
       !piece.ice &&
@@ -378,6 +381,7 @@ export function resolveWave(
     for (const index of exchange) {
       const row = Math.floor(index / SIZE),
         col = index % SIZE;
+      effectGroups.push(Array.from({ length: SIZE }, (_, i) => [row * SIZE + i, i * SIZE + col]).flat());
       for (let i = 0; i < SIZE; i++) {
         stripeHit(row * SIZE + i, "row");
         stripeHit(i * SIZE + col, "column");
@@ -401,6 +405,7 @@ export function resolveWave(
       const direction = stripeDirections.get(index) ?? special;
       stripeDirections.set(index, direction);
       firedStripes.add(index);
+      effectGroups.push(Array.from({ length: SIZE }, (_, i) => direction === "row" ? row * SIZE + i : i * SIZE + col));
       for (let i = 0; i < SIZE; i++)
         stripeHit(
           direction === "row" ? row * SIZE + i : i * SIZE + col,
@@ -409,14 +414,18 @@ export function resolveWave(
     }
     if (special === "color") {
       const target = colorTargets.get(index) ?? mostCommonType(board);
+      const affected = [index];
       board.forEach((piece, i) => {
         if (
-          piece &&
+          piece && !isDelivery(piece) &&
           !protectedColorClear(i) &&
           (target === "all" || piece.type === target)
-        )
+        ) {
           cleared.add(i);
+          affected.push(i);
+        }
       });
+      effectGroups.push(affected);
     }
   }
   if (armed.size)
@@ -480,6 +489,7 @@ export function resolveWave(
     areaMultiplier,
     patternBonus,
     groupCount: groups.length,
+    effectGroups,
     creations,
     transformed,
     stripeDirections,
@@ -506,7 +516,7 @@ export function refill(board, random = Math.random, onDrop) {
       for (let row = SIZE - 1; row >= 0; row--) {
         const index = row * SIZE + col;
         const survivor = remaining[SIZE - 1 - row];
-        const piece = survivor?.piece ?? tile(Math.floor(random() * 6));
+        const piece = survivor?.piece ?? tile(Math.floor(random() * TYPE_COUNT));
         next[index] = piece;
         if (survivor) {
           if (survivor.from !== index) onDrop?.(piece, survivor.from, index);
@@ -581,7 +591,7 @@ export function refill(board, random = Math.random, onDrop) {
 
 export function shuffleBoard(board, random = Math.random) {
   const movable = board.flatMap((piece, index) =>
-    piece && !piece.ice ? [index] : [],
+    piece && !piece.ice && !isDelivery(piece) ? [index] : [],
   );
   if (movable.length < 3 && !findMove(board))
     throw new Error("No room for a legal exchange");
@@ -599,7 +609,7 @@ export function shuffleBoard(board, random = Math.random) {
   for (let attempt = 0; attempt < 100; attempt++) {
     const colors = createBoard(random);
     const next = board.map((piece, i) =>
-      !piece || piece.ice || piece.special === "color"
+      !piece || piece.ice || isDelivery(piece) || piece.special === "color"
         ? piece
         : { ...piece, type: colors[i].type },
     );
@@ -657,6 +667,7 @@ export function levelConfig(level = 1, daily = false) {
     : Math.min(24, 12 + (level - 1) * 2);
   return {
     moves,
+    goalKind: goalKindForLevel(level, daily),
     iceCount,
     doubleIce,
     iceCells,
@@ -677,15 +688,24 @@ export function totalScore(game) {
   return game.score + moveBonus(game);
 }
 
-export function createGame(level = 1, daily = false, random = Math.random) {
+export function createGame(level = 1, daily = false, random = Math.random, options = {}) {
   const config = levelConfig(level, daily);
   let board = createBoard(random);
   config.iceCells.forEach((index, order) => {
     board[index] = { ...board[index], ice: order < config.doubleIce ? 2 : 1 };
   });
+  const objective = createObjective(options.goalKind ?? config.goalKind, level);
+  if (objective.kind === "deliver") {
+    const columns = [2, 5, 0, 7, 3, 4, 1, 6];
+    for (const col of columns.slice(0, objective.total)) {
+      const index = board[SIZE + col].ice ? col : SIZE + col;
+      board[index] = { ...tile(null), kind: "delivery" };
+    }
+  }
   if (!findMove(board)) board = shuffleBoard(board, random);
   return {
     board,
+    objective,
     iceGoal: iceLayers(board),
     level,
     moves: config.moves,
@@ -706,7 +726,7 @@ export function gameStatus(
   if (
     game.score >= config.target &&
     iceLayers(game.board) === 0 &&
-    game.collected[config.targetType] >= config.count
+    objectiveProgress(game, config).complete
   )
     return "won";
   return game.moves <= 0 ? "lost" : "playing";
@@ -722,9 +742,11 @@ export function validGame(game, { allowDeadBoard = false } = {}) {
         f === null ||
         (f &&
           Number.isSafeInteger(f.id) &&
-          (f.special === "color"
-            ? f.type === null
-            : Number.isInteger(f.type) && f.type >= 0 && f.type < TYPE_COUNT) &&
+          (isDelivery(f)
+            ? f.type === null && f.special === null && !f.ice && f.pending === undefined
+            : f.kind === undefined && (f.special === "color"
+              ? f.type === null
+              : Number.isInteger(f.type) && f.type >= 0 && f.type < TYPE_COUNT)) &&
           [null, "row", "column", "color"].includes(f.special) &&
           Number.isInteger(f.ice ?? 0) &&
           (f.ice ?? 0) >= 0 &&
@@ -770,6 +792,7 @@ export function validGame(game, { allowDeadBoard = false } = {}) {
     (pendingColorClear(game.board) >= 0 && game.status !== "playing")
   )
     return false;
+  if (!validObjective(game)) return false;
   nextId = Math.max(nextId, ...pieces.map((f) => f.id));
   return true;
 }
@@ -779,6 +802,7 @@ export function restoreGame(saved) {
   if (!saved || !Array.isArray(saved.board)) return null;
   const game = {
     ...saved,
+    objective: saved.objective ?? { kind: "collect" },
     iceGoal: saved.iceGoal ?? iceLayers(saved.board),
     board: saved.board.map((piece) =>
       piece?.special === "burst"

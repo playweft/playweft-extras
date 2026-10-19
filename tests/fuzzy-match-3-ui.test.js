@@ -9,7 +9,7 @@ import {
   TYPE_COUNT,
   adjacent,
   canSwap,
-  createGame,
+  createGame as createRotatingGame,
   findMatches,
   findMove,
   levelConfig,
@@ -20,6 +20,9 @@ import {
   seededRandom,
   swap,
 } from "../games/fuzzy-match-3/game.js";
+// These established rule/collection fixtures retain their original objective.
+const createGame = (level = 1, daily = false, random = Math.random) =>
+  createRotatingGame(level, daily, random, { goalKind: "collect" });
 import { TILE_THEME } from "../games/fuzzy-match-3/theme.js";
 import { simulateTurn } from "../scripts/fuzzy-match-3-ai.mjs";
 
@@ -1617,6 +1620,94 @@ test("a queued save resumes before win/loss, without spending another move or aw
     assert.equal(saved().adventure.score, snapshot.adventure.score);
   } finally {
     Math.random = previousRandom;
+  }
+});
+
+for (const [level, kind, floorCount] of [[1, "collect", 0], [2, "spread", 16], [3, "reveal", 8], [4, "deliver", 8]])
+  test(`${kind} objective renders on its level and persists through reload`, async () => {
+    const adventure = createRotatingGame(level, false, seededRandom(42));
+    await mount({ adventure });
+    assert.equal(root.querySelectorAll(".cell").length, 64);
+    assert.equal(root.querySelectorAll(".mini-goal[data-goal]").length, 1);
+    assert.equal(root.querySelector(".mini-goal[data-goal]").dataset.goal, kind);
+    assert.equal(root.querySelector(".game-details [data-goal]").dataset.goal, kind);
+    assert.equal(root.querySelectorAll(kind === "spread" ? ".paint-target" : kind === "reveal" ? ".hidden-picture" : ".delivery-exit").length, floorCount);
+    if (kind === "deliver") assert.equal(root.querySelectorAll(".delivery-token").length, 2);
+    const snapshot = saved();
+    act(() => render(null, root));
+    root.remove();
+    root = null;
+    await mount(snapshot);
+    assert.deepEqual(saved().adventure, adventure);
+    assert.equal(root.querySelector(".mini-goal[data-goal]").dataset.goal, kind);
+  });
+
+test("legacy in-progress collection games migrate once without acquiring the new level objective", async () => {
+  const adventure = createGame(2, false, seededRandom(42));
+  delete adventure.objective;
+  adventure.collected[1] = 6;
+  await mount({ adventure });
+  assert.equal(root.querySelector(".mini-goal[data-goal]").dataset.goal, "collect");
+  assert.deepEqual(saved().adventure.objective, { kind: "collect" });
+  assert.equal(saved().adventure.collected[1], 6);
+  assert.deepEqual(saved().adventure.board, adventure.board);
+});
+
+for (const kind of ["spread", "reveal"])
+  test(`${kind} floor updates during a clear, stays fixed, and saves only a settled board`, async () => {
+    const adventure = patternedGame();
+    adventure.objective = kind === "spread"
+      ? { kind, cells: [0, 1, 2], painted: [0] }
+      : { kind, groups: [{ cells: [0, 1, 8, 9], type: 3 }], revealed: [] };
+    for (const index of [0, 1, 10]) adventure.board[index].type = 5;
+    const oldRandom = Math.random;
+    Math.random = seededRandom(73);
+    try {
+      await mount({ adventure });
+      await click(piece(10));
+      await click(piece(2));
+      await until(() => root.querySelectorAll(".clearing").length > 0);
+      if (kind === "spread") {
+        assert.equal(root.querySelectorAll(".painted").length, 3);
+        assert.match(root.querySelector(".mini-goal[data-goal]").getAttribute("aria-label"), /3 \/ 3/);
+      } else assert.equal(root.querySelectorAll(".revealed").length, 2);
+      assert.deepEqual(saved().adventure, adventure);
+      await settled();
+      const snapshot = saved();
+      assert.notDeepEqual(snapshot.adventure.objective, adventure.objective);
+      const floorClasses = [...root.querySelectorAll(".floor-cell")].map(node => node.className);
+      await click(root.querySelectorAll(".tools button")[1]);
+      assert.deepEqual([...root.querySelectorAll(".floor-cell")].map(node => node.className), floorClasses);
+    } finally {
+      Math.random = oldRandom;
+    }
+  });
+
+test("cargo animates its arrival, updates the main goal live, refills and completes normally", async () => {
+  const adventure = createRotatingGame(4, false, seededRandom(1));
+  const template = patternedGame();
+  adventure.board = template.board;
+  adventure.iceGoal = 0;
+  adventure.objective = { kind: "deliver", total: 1, delivered: 0, exits: [2] };
+  for (const i of [48, 49, 58]) adventure.board[i].type = 5;
+  adventure.board[50] = { ...adventure.board[50], kind: "delivery", type: null };
+  adventure.score = levelConfig(4).target;
+  const oldRandom = Math.random;
+  Math.random = seededRandom(4);
+  try {
+    await mount({ adventure });
+    await click(piece(50));
+    await click(piece(58));
+    await until(() => root.querySelector(".cell.clearing .delivery-token"));
+    assert.match(root.querySelector(".mini-goal[data-goal]").getAttribute("aria-label"), /1 \/ 1/);
+    assert.deepEqual(saved().adventure, adventure);
+    await settled();
+    assert.equal(saved().adventure.objective.delivered, 1);
+    assert.equal(root.querySelectorAll(".delivery-token").length, 0);
+    assert.equal(saved().adventure.status, "won");
+    assert.equal(saved().adventure.moves, adventure.moves - 1);
+  } finally {
+    Math.random = oldRandom;
   }
 });
 

@@ -1,3 +1,4 @@
+import { advanceObjective, collectDeliveries, isDelivery, objectiveValue } from "../games/fuzzy-match-3/objectives.js";
 import {
   canSwap,
   findMatches,
@@ -58,7 +59,12 @@ export function simulateTurn(
     next.collected = next.collected.map(
       (count, i) => count + wave.collected[i],
     );
+    next.objective = advanceObjective(next, wave);
     board = refill(wave.board, random);
+    for (let arrival; (arrival = collectDeliveries(next, board));) {
+      next.objective = arrival.objective;
+      board = refill(arrival.board, random);
+    }
     if (wave.cleared.length || wave.iceHits.size) chain++;
   }
   if (findMatches(board).length || !findMove(board))
@@ -101,6 +107,12 @@ function rankMoves(game, config, strategy, random) {
           merit =
             Math.min(deficit, wave.collected[config.targetType]) * 200 +
             wave.score * 0.1;
+          if (game.objective && game.objective.kind !== "collect") {
+            merit = wave.score * 0.1 + 2 * (objectiveValue({ ...game, board: wave.board, objective: advanceObjective(game, wave) }, config) - objectiveValue(game, config));
+            game.board.forEach((piece, index) => {
+              if (isDelivery(piece)) merit += wave.cleared.filter(i => i > index && i % 8 === index % 8).length * 120;
+            });
+          }
           for (const layers of wave.iceHits.values())
             merit += layers === 0 ? 350 : 200;
           for (const special of wave.creations.values())
@@ -120,7 +132,7 @@ function positionValue(game, config) {
   let value =
     Math.min(game.score, config.target) * 0.08 +
     Math.max(0, game.score - config.target) * 0.04 +
-    Math.min(game.collected[config.targetType], config.count) * 90 -
+    objectiveValue(game, config) -
     iceLayers(game.board) * 140;
   game.board.forEach((piece, i) => {
     if (!piece || piece.ice || !piece.special) return;

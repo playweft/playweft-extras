@@ -1998,6 +1998,40 @@ a {
   }
 }
 
+
+/* Objectives stay on the floor while pieces exchange and fall above them. */
+.board { position: relative; }
+.board-ground {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  pointer-events: none;
+  z-index: 0;
+}
+.cell { z-index: 1; }
+.floor-cell { position: relative; overflow: hidden; }
+.paint-target { background: #64617655; box-shadow: inset 0 0 0 1px #e7e6f024; }
+.paint-target.painted { background: #7caa9478; box-shadow: inset 0 0 0 1px #b8dfc44d; }
+.hidden-picture { background: #b5a17c88; box-shadow: inset 0 0 0 1px #ebd9b344; }
+.hidden-picture:not(.revealed):after {
+  content: ""; position: absolute; inset: 20%;
+  border: 2px dashed #e8d9be77; border-radius: 4px;
+}
+.hidden-picture.revealed { background: #e9dabcbb; }
+.hidden-picture.picture-complete { background: #b5cba5bb; }
+.picture-fragment { position: absolute; width: 200%; height: 200%; opacity: .45; }
+.picture-fragment > .tile-art { width: 100%; height: 100%; filter: none; }
+.delivery-exit { box-shadow: inset 0 -4px #dec28aaa; }
+.delivery-exit > svg { position: absolute; bottom: 0; left: calc(50% - 7px); color: #ffe4a9; }
+.delivery-token { position: relative; display: block; width: 94%; height: 94%; pointer-events: none; }
+.cell .delivery-token > .tile-art { position: absolute; inset: -2% 10% auto; width: 80%; height: 80%; }
+.delivery-basket { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 2px 1px #211c394d); }
+.cell.clearing .delivery-token { animation: tile-pop .24s ease-in forwards; }
+.objective-icon { display: inline-flex; align-items: center; justify-content: center; color: #84956c; }
+.mini-goal > .objective-icon { height: 32px; }
+
 .storage-gate {
   position: fixed;
   inset: 0;

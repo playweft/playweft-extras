@@ -28,7 +28,7 @@ test("balance audits separate every failed-goal combination and successful games
   ]) {
     const result = audit({
       level, games: 2, seed: 42, strategy: "simple",
-      overrides: { moves: 1, target, count },
+      overrides: { moves: 1, target, count, goalKind: "collect" },
     });
     const reasons = result.failureReasons;
     assert.equal(reasons.losses, expected ? 2 : 0);
@@ -105,7 +105,7 @@ test("AI drains already triggered specials on the last move before deciding the 
 });
 
 test("strong AI handles blocked empty cells and refills them once the surrounding ice thaws", () => {
-  const game = createGame(4, false, seededRandom(42));
+  const game = createGame(4, false, seededRandom(42), { goalKind: "collect" });
   game.board = game.board.map((piece, i) => ({
     ...piece,
     ice: [18, 19, 20].includes(i) ? 1 : 0,

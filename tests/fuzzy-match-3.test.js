@@ -4,7 +4,7 @@ import {
   adjacent,
   canSwap,
   createBoard,
-  createGame,
+  createGame as createRotatingGame,
   findMatches,
   findMove,
   gameStatus,
@@ -22,6 +22,9 @@ import {
   swap,
   validGame,
 } from "../games/fuzzy-match-3/game.js";
+// These established rule/collection fixtures retain their original objective.
+const createGame = (level = 1, daily = false, random = Math.random) =>
+  createRotatingGame(level, daily, random, { goalKind: "collect" });
 
 const boardFrom = (rows) =>
   rows.flat().map((type, id) => ({ id: id + 100, type, special: null }));

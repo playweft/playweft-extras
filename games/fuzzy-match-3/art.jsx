@@ -6,9 +6,13 @@ import {
   ArrowLeft, ArrowRight, ChartColumnIncreasing, Check, CircleHelp,
   Lightbulb, LockKeyhole, Map, Pause, PawPrint, Play, RotateCcw, Settings, Shuffle,
   Sparkle, Sparkles, Star, Sun, Trophy, Volume2, VolumeX, X,
+  PaintBucket, ScanEye, ArrowDownToLine,
 } from "lucide-preact";
 
 const ICONS = {
+  paint: PaintBucket,
+  reveal: ScanEye,
+  deliver: ArrowDownToLine,
   play: Play,
   map: Map,
   lock: LockKeyhole,
@@ -207,4 +211,34 @@ export function Animal({ type = 0, special = null, className = "" }) {
       )}
     </svg>
   );
+}
+
+
+export function Delivery({ type }) {
+  return <span class="delivery-token">
+    <Animal type={type} />
+    <svg class="delivery-basket" viewBox="0 0 66 72" aria-hidden="true">
+      <path d="M8 43h50l-6 23H14Z" fill="#deb97d" stroke="#f9e4b9" stroke-width="2" />
+      <path d="M19 46v16m14-16v16m14-16v16M12 53h43" stroke="#a77748" stroke-width="2" />
+      <path d="M33 44v13m-5-5 5 5 5-5" fill="none" stroke="#fff5d9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </span>;
+}
+
+export function GoalFloor({ objective }) {
+  if (!objective || objective.kind === "collect") return null;
+  return <div class="board-ground" aria-hidden="true">
+    {Array.from({ length: 64 }, (_, index) => {
+      const target = objective.kind === "spread" && objective.cells.includes(index);
+      const painted = target && objective.painted.includes(index);
+      const group = objective.kind === "reveal" && objective.groups.find(group => group.cells.includes(index));
+      const revealed = group && objective.revealed.includes(index);
+      const complete = group && group.cells.every(i => objective.revealed.includes(i));
+      const exit = objective.kind === "deliver" && index >= 56 && objective.exits.includes(index % 8);
+      return <div key={index} class={`floor-cell ${target ? "paint-target" : ""} ${painted ? "painted" : ""} ${group ? "hidden-picture" : ""} ${revealed ? "revealed" : ""} ${complete ? "picture-complete" : ""} ${exit ? "delivery-exit" : ""}`}>
+        {revealed && <span class="picture-fragment" style={{ left: `${-(index % 8 - group.cells[0] % 8) * 100}%`, top: `${-Math.floor((index - group.cells[0]) / 8) * 100}%` }}><Animal type={group.type} /></span>}
+        {exit && <Icon name="deliver" size={14} />}
+      </div>;
+    })}
+  </div>;
 }

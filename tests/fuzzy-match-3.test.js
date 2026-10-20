@@ -428,19 +428,23 @@ test("rainbow exchanged with piece clears exactly that piece color and the rainb
     }
 });
 
-test("two exchanged rainbows clear all 64 cells and count only real piece", () => {
+test("two exchanged rainbows clear the screen with the first selection and queue the second", () => {
   const board = patterned();
   board[0] = { ...board[0], type: null, special: "color" };
   board[1] = { ...board[1], type: null, special: "color" };
   board[27].special = "column";
   const wave = resolveWave(swap(board, 0, 1), { exchange: [0, 1] });
-  assert.equal(wave.cleared.length, 64);
-  assert.equal(wave.board.filter(Boolean).length, 0);
+  assert.equal(wave.cleared.length, 63);
+  assert.equal(wave.board.filter(Boolean).length, 1);
+  assert.equal(wave.board[0].id, board[1].id);
+  assert.equal(wave.board[0].pending, 1);
+  assert.ok(wave.cleared.includes(1));
+  assert.ok(!wave.cleared.includes(0));
   assert.equal(
     wave.collected.reduce((a, b) => a + b),
     62,
   );
-  assert.equal(wave.score, 7680);
+  assert.equal(wave.score, clearPoints(63));
   assert.equal(wave.creations.size, 0);
   assert.equal(refill(wave.board, seededRandom(3)).filter(Boolean).length, 64);
 });
@@ -1387,11 +1391,11 @@ test("area scoring excludes ice and protected rainbows", () => {
   board[18] = { ...board[18], type: null, special: "color" };
   board[27] = { ...board[27], ice: 2 };
   const wave = resolveWave(swap(board, 0, 1), { exchange: [0, 1] });
-  assert.equal(wave.cleared.length, 62);
-  assert.equal(wave.score, 7380);
+  assert.equal(wave.cleared.length, 61);
+  assert.equal(wave.score, clearPoints(61));
   assert.equal(wave.board[18].special, "color");
   assert.equal(wave.board[27].ice, 1);
-  assert.equal(wave.areaMultiplier, 1 + Math.sqrt(59 / 61));
+  assert.equal(wave.areaMultiplier, 1 + Math.sqrt(58 / 61));
 });
 
 test("converted reward cells count toward area, base points and collection", () => {
@@ -1521,18 +1525,21 @@ test("double rainbows preserve every uninvolved rainbow, even when triggered str
     board[56].special = "row";
     const protectedIds = [11, 27, 45, 63].map((i) => board[i].id);
     const wave = resolveWave(swap(board, ...pair), { exchange: pair });
-    assert.equal(wave.cleared.length, 60);
-    assert.equal(wave.score, 7080);
+    assert.equal(wave.cleared.length, 59);
+    assert.equal(wave.score, clearPoints(59));
     assert.equal(
       wave.collected.reduce((a, b) => a + b),
       58,
     );
-    assert.ok(wave.cleared.includes(0) && wave.cleared.includes(1));
+    assert.ok(wave.cleared.includes(pair[1]));
+    assert.ok(!wave.cleared.includes(pair[0]));
+    assert.equal(wave.board[pair[0]].id, board[pair[1]].id);
+    assert.equal(wave.board[pair[0]].pending, 1);
     for (const i of [11, 27, 45, 63]) {
       assert.equal(wave.cleared.includes(i), false);
       assert.equal(wave.board[i], board[i]);
     }
-    assert.equal(wave.board.filter(Boolean).length, 4);
+    assert.equal(wave.board.filter(Boolean).length, 5);
     const refilled = refill(wave.board, seededRandom(42));
     for (const id of protectedIds)
       assert.ok(
@@ -1841,4 +1848,50 @@ test("queued saves can contain matches and zero moves, and finish before win/los
   const bad = structuredClone(game);
   bad.board[0].pending = 1;
   assert.equal(validGame(bad), false);
+});
+
+test("double-rainbow selection order survives swapping and queues exactly the second selected piece", () => {
+  for (const pair of [[27, 28], [28, 27], [19, 27], [27, 19]]) {
+    const board = patterned();
+    for (const i of [...pair, 0, 63]) board[i] = { ...board[i], type: null, special: "color" };
+    board[24].special = "row"; // Its ray crosses both exchanged positions.
+    const wave = resolveWave(swap(board, ...pair), { exchange: pair });
+    assert.ok(wave.cleared.includes(pair[1]), "first selected rainbow fires at its destination");
+    assert.equal(wave.board[pair[1]], null);
+    assert.equal(wave.board[pair[0]].id, board[pair[1]].id);
+    assert.equal(wave.board[pair[0]].pending, 1);
+    assert.deepEqual([...wave.armed], [[pair[0], 1]]);
+    for (const i of [0, 63]) assert.equal(wave.board[i], board[i]);
+    assert.equal(wave.cleared.length, 61);
+    assert.equal(wave.areaCount, 61);
+    assert.equal(wave.score, clearPoints(61));
+  }
+});
+
+test("the exchanged partner waits for refill, then clears the new majority before natural matches", () => {
+  const game = createGame(1, false, seededRandom(1));
+  game.board = patterned();
+  for (const i of [0, 1]) game.board[i] = { ...game.board[i], type: null, special: "color" };
+  const wave = resolveWave(swap(game.board, 0, 1), { exchange: [0, 1] });
+  const screen = refill(wave.board, seededRandom(15));
+  const partner = screen.findIndex(piece => piece?.id === game.board[1].id);
+  assert.equal(partner, 56);
+  screen.forEach((piece, i) => {
+    if (piece.special !== "color") piece.type = i < 40 ? 4 : (Math.floor(i / 8) * 2 + i % 8) % 6;
+  });
+  assert.ok(findMatches(screen).some(line => line.indices.length >= 5));
+  const queuedGame = { ...game, board: screen, moves: 0, score: 100000, collected: Array(6).fill(100) };
+  assert.equal(gameStatus(queuedGame), "playing", "completion waits for the partner even on the last move");
+  assert.ok(validGame(queuedGame));
+  const restored = restoreGame(JSON.parse(JSON.stringify(queuedGame)));
+  assert.ok(restored);
+  const second = resolveWave(restored.board, { chain: 2 });
+  const majority = screen.map((piece, i) => piece.type === 4 ? i : -1).filter(i => i >= 0);
+  assert.equal(second.triggeredColorClear, partner);
+  assert.equal(second.colorClearTarget, 4);
+  assert.deepEqual(new Set(second.cleared), new Set([...majority, partner]));
+  assert.equal(second.groupCount, 0);
+  assert.equal(second.creations.size, 0);
+  assert.equal(second.score, clearPoints(majority.length + 1, 2));
+  assert.equal(pendingColorClear(second.board), -1);
 });

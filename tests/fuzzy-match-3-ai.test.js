@@ -11,6 +11,7 @@ import {
   validGame,
   swap,
   resolveWave,
+  refill,
 } from "../games/fuzzy-match-3/game.js";
 import { chooseMove, simulateTurn } from "../scripts/fuzzy-match-3-ai.mjs";
 import { audit } from "../scripts/fuzzy-match-3-balance.mjs";
@@ -168,4 +169,28 @@ test("AI does not start a finale on a failed last move, even when remaining spec
   const lost = simulateTurn(game, [10, 2], { config, random: seededRandom(8) });
   assert.equal(lost.status, "lost");
   assert.ok(lost.board.some((tile) => tile?.special));
+});
+
+test("AI settles both exchanged rainbows across refills on a failed last move without starting a finale", () => {
+  for (const pair of [[0, 1], [1, 0]]) {
+    const game = createGame(1, false, seededRandom(42));
+    game.board = game.board.map((piece, i) => ({ ...piece, type: (Math.floor(i / 8) * 2 + i % 8) % 6 }));
+    for (const i of pair) game.board[i] = { ...game.board[i], type: null, special: "color" };
+    game.moves = 1;
+    const config = { ...levelConfig(1), target: 1000000, count: 1000000 };
+    const random = seededRandom(33);
+    const first = resolveWave(swap(game.board, ...pair), { exchange: pair });
+    const nextScreen = refill(first.board, random);
+    const second = resolveWave(nextScreen, { chain: 2 });
+    assert.equal(nextScreen[second.triggeredColorClear].id, game.board[pair[1]].id);
+    const before = structuredClone(game);
+    const next = simulateTurn(game, pair, { random: seededRandom(33), config });
+    assert.equal(next.status, "lost");
+    assert.equal(next.moves, 0);
+    assert.ok(next.score >= first.score + second.score);
+    assert.ok(game.board.slice(0, 2).every(piece => !next.board.some(tile => tile?.id === piece.id)));
+    assert.ok(!next.board.some(piece => piece?.pending));
+    assert.ok(validGame(next));
+    assert.deepEqual(game, before);
+  }
 });

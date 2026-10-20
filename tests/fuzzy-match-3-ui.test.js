@@ -643,7 +643,7 @@ test("cancelled, second-pointer and outward edge gestures never wrap or spend mo
   assert.deepEqual(saved().adventure, original);
 });
 
-test("two rainbow tools exchange, clear the whole board and refill while counting only piece", async () => {
+test("two rainbow tools clear the current screen then activate the queued partner after refill", async () => {
   const adventure = createGame(50);
   adventure.board = adventure.board.map((piece) => ({ ...piece, ice: 0 }));
   adventure.iceGoal = 0;
@@ -654,8 +654,15 @@ test("two rainbow tools exchange, clear the whole board and refill while countin
   assert.match(piece(0).getAttribute("aria-label"), /彩虹道具/);
   await click(piece(0));
   await click(piece(1));
-  await until(() => root.querySelectorAll(".clearing").length === 64);
+  await until(() => root.querySelectorAll(".clearing").length === 63);
+  assert.equal(piece(0).dataset.tileId, String(adventure.board[1].id));
+  assert.equal(piece(0).dataset.pendingColorClear, "1");
+  assert.ok(!piece(0).classList.contains("clearing"));
+  assert.equal(piece(1).dataset.tileId, String(adventure.board[0].id));
   assert.equal(saved().adventure.score, 0, "save only after the board settles");
+  await until(() => root.querySelector(`.cell.clearing[data-tile-id="${adventure.board[1].id}"]`));
+  assert.equal(root.querySelector(`.cell[data-tile-id="${adventure.board[0].id}"]`), null);
+  assert.equal(saved().adventure.score, 0, "the next-screen blast also remains transient");
   await settled();
   const next = saved().adventure;
   assert.equal(next.moves, adventure.moves - 1);
@@ -1346,25 +1353,20 @@ test("double rainbow animation and saved refill preserve the other rainbows thro
   adventure.board[3].special = "column";
   adventure.board[40].special = "row";
   const protectedIds = [adventure.board[27].id, adventure.board[63].id];
-  const draws = [];
-  for (let col = 0; col < 8; col++)
-    for (let row = col === 3 || col === 7 ? 6 : 7; row >= 0; row--)
-      draws.push((((row * 2 + col) % 6) + 0.1) / 6);
   const previousRandom = Math.random;
-  let draw = 0;
-  Math.random = () => draws[draw++] ?? 0.6;
+  Math.random = seededRandom(42);
   try {
     await mount({ adventure });
     await click(piece(0));
     await click(piece(1));
-    await until(() => root.querySelectorAll(".clearing").length === 62);
+    await until(() => root.querySelectorAll(".clearing").length === 61);
     assert.equal(piece(27).classList.contains("clearing"), false);
     assert.equal(piece(63).classList.contains("clearing"), false);
     assert.equal(root.querySelectorAll(".rainbow-token").length, 4);
     await settled();
     const next = saved().adventure;
     assert.equal(next.moves, adventure.moves - 1);
-    assert.equal(next.score, 7380);
+    assert.ok(next.score > 7380, "the queued partner scores on the following screen");
     assert.equal(
       next.board.filter((piece) => piece.special === "color").length,
       2,

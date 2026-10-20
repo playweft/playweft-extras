@@ -85,9 +85,10 @@ function rankMoves(game, config, strategy, random) {
         preferred: [b, a],
         random: seededRandom(42),
       });
-      // Direction changes where a newly created special is placed.
+      // Selection order changes the retained reward or queued rainbow position.
       const pairs =
-        forward.creations.size && strategy === "strong"
+        (forward.creations.size ||
+          (game.board[a].special === "color" && game.board[b].special === "color")) && strategy === "strong"
           ? [
               [a, b],
               [b, a],

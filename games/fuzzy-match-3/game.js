@@ -256,19 +256,23 @@ export function resolveWave(
         )))
   )
     return null;
-  const activated =
-    pendingIndex >= 0
-      ? [pendingIndex]
-      : combo
-        ? exchange.filter((index) => board[index]?.special)
-        : [];
   const doubleColorClear =
     combo === "color" &&
     exchange.every((index) => board[index].special === "color");
+  // Exchange coordinates refer to the board after swapping: the first selected
+  // piece now occupies exchange[1], and its partner waits at exchange[0].
+  const activated =
+    pendingIndex >= 0
+      ? [pendingIndex]
+      : doubleColorClear
+        ? [exchange[1]]
+        : combo
+          ? exchange.filter((index) => board[index]?.special)
+          : [];
   const protectedColorClear = (index) =>
     doubleColorClear &&
     board[index]?.special === "color" &&
-    !exchange.includes(index);
+    index !== exchange[1];
   const transformed = new Map();
   let effectBoard = board;
   if (combo === "colorStripe") {
@@ -342,6 +346,7 @@ export function resolveWave(
     (order, piece) => Math.max(order, piece?.pending || 0),
     0,
   );
+  if (doubleColorClear) armed.set(exchange[0], ++pendingOrder);
   for (const index of finaleColorClears)
     if (!board[index].pending) armed.set(index, ++pendingOrder);
   const immediateColorClears = new Set([

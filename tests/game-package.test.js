@@ -40,6 +40,13 @@ test('Vite emits independent game package at /light-trails/ with resolvable asse
     assert.equal(piece.name, 'Fuzzy Match 3');
     assert.equal(piece.name_localized['zh-CN'], '绒绒消消乐');
     assert.deepEqual(piece.modes, { solo: {} });
+    for (const family of ['Fredoka', 'ZCOOL-KuaiLe']) {
+      const font = await readFile(join(outDir, 'fuzzy-match-3/fonts', family + '.woff2'));
+      assert.equal(font.subarray(0, 4).toString(), 'wOF2');
+      const license = await readFile(join(outDir, 'fuzzy-match-3/fonts', family + '-OFL.txt'), 'utf8');
+      assert.match(license, /Copyright/);
+      assert.match(license, /SIL OPEN FONT LICENSE Version 1\.1/);
+    }
     for (const [game, metadata] of [
       ['light-trails', manifest],
       ['pupdoku', solo],

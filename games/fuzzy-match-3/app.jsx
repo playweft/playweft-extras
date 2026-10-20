@@ -1076,7 +1076,7 @@ function FuzzyGame({ initialProfile, storage }) {
                   >
                     <span
                       class="chain-count"
-                      style={{ fontSize: `${1.25 + Math.min(chainLabel.chain - 1, 4) * 0.125}rem` }}
+                      style={{ fontSize: `${1.75 + Math.min(Math.max(chainLabel.chain - 2, 0), 3) * 0.125}rem` }}
                     >
                       {chainLabel.chain > 1 ? `${chainLabel.chain} 连击` : ""}
                     </span>

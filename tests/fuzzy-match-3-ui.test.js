@@ -959,10 +959,10 @@ test("a winning finale animates all stripes without rotating, queues rainbows, a
       return saved().adventure.status === "won";
     }, 600);
     assert.ok(scoreChanges.length >= 4, "queued specials and later cascades each update the score before settlement");
-    assert.equal(chainSizes.get(2), "1.375rem");
-    assert.equal(chainSizes.get(5), "1.75rem");
+    assert.equal(chainSizes.get(2), "1.75rem");
+    assert.equal(chainSizes.get(5), "2.125rem");
     for (const [chain, size] of chainSizes)
-      if (chain > 5) assert.equal(size, "1.75rem");
+      if (chain > 5) assert.equal(size, "2.125rem");
     assertDisplayedScore(totalScore(saved().adventure), config);
     assert.equal(root.querySelector(".board").getAttribute("aria-busy"), "true");
     assert.equal(root.querySelector(".chain-label"), null);

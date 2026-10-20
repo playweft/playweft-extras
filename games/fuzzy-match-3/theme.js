@@ -7,3 +7,5 @@ export const TILE_THEME = [
   { id: "bull", name: "牛" },
   { id: "dragon", name: "龙" },
 ];
+
+export const DELIVERY_THEME = { id: "egg", name: "蛋" };

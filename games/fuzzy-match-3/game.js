@@ -296,7 +296,10 @@ export function resolveWave(
   );
   if (!cleared.size && !finaleColorClears.length) return null;
   const groups = matchGroups(lines);
-  const effectGroups = groups.map(group => [...new Set(group.flatMap(line => line.indices))]);
+  const effectGroups = groups.map(group => {
+    const indices = [...new Set(group.flatMap(line => line.indices))];
+    return { sources: indices, indices };
+  });
   const colorTargets = new Map();
   if (pendingIndex >= 0) colorTargets.set(pendingIndex, mostCommonType(board));
   if (exchange.length === 2) {
@@ -386,7 +389,10 @@ export function resolveWave(
     for (const index of exchange) {
       const row = Math.floor(index / SIZE),
         col = index % SIZE;
-      effectGroups.push(Array.from({ length: SIZE }, (_, i) => [row * SIZE + i, i * SIZE + col]).flat());
+      effectGroups.push({
+        sources: [index],
+        indices: Array.from({ length: SIZE }, (_, i) => [row * SIZE + i, i * SIZE + col]).flat(),
+      });
       for (let i = 0; i < SIZE; i++) {
         stripeHit(row * SIZE + i, "row");
         stripeHit(i * SIZE + col, "column");
@@ -410,7 +416,12 @@ export function resolveWave(
       const direction = stripeDirections.get(index) ?? special;
       stripeDirections.set(index, direction);
       firedStripes.add(index);
-      effectGroups.push(Array.from({ length: SIZE }, (_, i) => direction === "row" ? row * SIZE + i : i * SIZE + col));
+      effectGroups.push({
+        // Converted stripes inherit paint from the exchanged pair as one batch.
+        sources: transformed.has(index) ? exchange : [index],
+        initial: transformed.has(index),
+        indices: Array.from({ length: SIZE }, (_, i) => direction === "row" ? row * SIZE + i : i * SIZE + col),
+      });
       for (let i = 0; i < SIZE; i++)
         stripeHit(
           direction === "row" ? row * SIZE + i : i * SIZE + col,
@@ -430,7 +441,11 @@ export function resolveWave(
           affected.push(i);
         }
       });
-      effectGroups.push(affected);
+      effectGroups.push({
+        sources: combo === "colorStripe" ? exchange : affected,
+        initial: combo === "colorStripe",
+        indices: affected,
+      });
     }
   }
   if (armed.size)
@@ -701,9 +716,8 @@ export function createGame(level = 1, daily = false, random = Math.random, optio
   });
   const objective = createObjective(options.goalKind ?? config.goalKind, level);
   if (objective.kind === "deliver") {
-    const columns = [2, 5, 0, 7, 3, 4, 1, 6];
-    for (const col of columns.slice(0, objective.total)) {
-      const index = board[SIZE + col].ice ? col : SIZE + col;
+    const columns = [2, 5, 0, 7, 3, 4, 1, 6].filter(col => !board[col].ice);
+    for (const index of columns.slice(0, objective.total)) {
       board[index] = { ...tile(null), kind: "delivery" };
     }
   }

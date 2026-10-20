@@ -71,15 +71,20 @@ export function advanceObjective(game, wave) {
     for (const index of affected) if (targets.has(index)) revealed.add(index);
     return { ...goal, revealed: [...revealed].sort((a, b) => a - b) };
   }
-  const targets = new Set(goal.cells), painted = new Set(goal.painted);
-  // Independent matches do not share paint. Overlapping match/line/clear effects can.
+  const targets = new Set(goal.cells), initialPainted = new Set(goal.painted);
+  const painted = new Set(initialPainted);
+  // Match groups share paint, but a stripe carries it only from its origin.
+  // Crossing painted floor along a ray cannot send paint back to that origin.
   const groups = wave.effectGroups ?? [];
   for (;;) {
     const previous = painted.size;
-    for (const group of groups)
-      if (group.some(index => affected.has(index) && painted.has(index)))
-        for (const index of group)
+    for (const group of groups) {
+      // Exchange batches sample the floor before any effects in this wave.
+      const sourcePaint = group.initial ? initialPainted : painted;
+      if (group.sources.some(index => affected.has(index) && sourcePaint.has(index)))
+        for (const index of group.indices)
           if (affected.has(index) && targets.has(index)) painted.add(index);
+    }
     if (painted.size === previous) break;
   }
   return { ...goal, painted: [...painted].sort((a, b) => a - b) };

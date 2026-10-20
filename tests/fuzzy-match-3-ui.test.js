@@ -88,6 +88,10 @@ async function click(node) {
   act(() => node.click());
   await act(flush);
 }
+async function showLevelList() {
+  await click(root.querySelector('[aria-label="暂停游戏"]'));
+  await click(button("返回选关"));
+}
 const button = (label) =>
   [...root.querySelectorAll("button")].find(
     (node) => node.textContent.trim() === label,
@@ -258,6 +262,7 @@ test("failure to remove the legacy key does not invalidate a successfully saved 
   try {
     await mount();
     assert.deepEqual(saved().adventure, adventure);
+    await showLevelList();
     await click(root.querySelector(".sidebar-setting"));
     assert.match(root.querySelector(".setting-status").textContent, /已开启/);
     assert.notEqual(storage.getItem(legacyKey), null);
@@ -282,6 +287,9 @@ test("animal tiles and collection goals use the new branding while preserving sa
     assert.ok(piece(index).getAttribute("aria-label").includes(names[tile.type]));
   });
   assert.match(root.querySelector('.mini-goal[aria-label^="收集"]').getAttribute("aria-label"), /^收集柴犬：/);
+  assert.equal(root.querySelector(".level-header .level-icon"), null);
+  assert.ok(root.querySelector(".level-header .level-goals .mini-goal"));
+  assert.equal(root.querySelector(".scoreboard .mini-goal"), null);
   assert.deepEqual(saved().adventure, adventure);
 });
 
@@ -434,8 +442,10 @@ test("valid exchange settles, saves, and spends one move; mode switching preserv
   assert.equal(next.moves, original.moves - 1);
   assert.ok(next.score >= 180);
   assert.equal(findMatches(next.board).length, 0);
+  await showLevelList();
   await click(button("每日挑战"));
   assert.match(root.querySelector("h1").textContent, /每日挑战/);
+  await showLevelList();
   await click(button("闯关"));
   assert.deepEqual(saved().adventure, next);
   assert.deepEqual(
@@ -453,6 +463,9 @@ test("collection challenge progress displays its higher target and survives relo
   await mount({ adventure });
   const label = root.querySelector('.mini-goal[aria-label^="收集"]');
   assert.match(label.getAttribute("aria-label"), new RegExp(`24 / ${config.count}$`));
+  assert.equal(label.querySelector(".goal-remaining").textContent, "12");
+  assert.equal(label.querySelector("small"), null);
+  assert.equal(root.querySelector('.game-details [data-goal="collect"] .goal-remaining').textContent, "12");
   assert.equal(label.classList.contains("done"), false);
   assert.equal(saved().adventure.status, "playing");
   const snapshot = saved();
@@ -467,6 +480,8 @@ test("collection challenge progress displays its higher target and survives relo
 test("the toolbar only offers hints and shuffle, and restarting requires the pause menu and confirmation", async () => {
   await mount();
   const hintButton = [...root.querySelectorAll(".tools button")][0];
+  assert.equal(hintButton.getAttribute("aria-label"), "提示，剩余 3 次");
+  assert.equal(hintButton.querySelector(".tool-badge").textContent, "3");
   await click(hintButton);
   assert.equal(root.querySelectorAll(".hinted").length, 2);
   await click(hintButton);
@@ -474,7 +489,9 @@ test("the toolbar only offers hints and shuffle, and restarting requires the pau
   assert.equal(saved().adventure.hints, 0);
   assert.equal(hintButton.disabled, true);
   assert.equal(root.querySelectorAll(".tools button").length, 2);
-  assert.equal(root.querySelectorAll(".tools .tool-divider").length, 1);
+  assert.equal(root.querySelectorAll(".tools .tool-divider").length, 0);
+  assert.equal(hintButton.getAttribute("aria-label"), "提示，剩余 0 次");
+  assert.equal(hintButton.querySelector(".tool-badge").textContent, "0");
   assert.equal(button("重新开始"), undefined);
   await click(root.querySelector('[aria-label="暂停游戏"]'));
   await click(button("重新开始"));
@@ -873,6 +890,8 @@ test("a winning finale animates all stripes without rotating, queues rainbows, a
     await click(piece(2));
     await until(() => piece(0).classList.contains("clearing"));
     assertDisplayedScore(adventure.score + initialWave.score, config);
+    assert.equal(root.querySelector(".chain-count").textContent, "");
+    assert.equal(root.querySelector(".chain-score").textContent, `+${initialWave.score}`);
     await until(() => [40, 48, 50, 56].every((index) => piece(index).classList.contains("clearing")));
     for (const index of [40, 56]) assert.equal(piece(index).dataset.special, "column");
     for (const index of [48, 50]) assert.equal(piece(index).dataset.special, "row");
@@ -885,7 +904,14 @@ test("a winning finale animates all stripes without rotating, queues rainbows, a
     let displayedScore = adventure.score + initialWave.score + firstFinale.score;
     assertDisplayedScore(displayedScore, config);
     const scoreChanges = [displayedScore];
+    const chainSizes = new Map();
     await until(() => {
+      const count = root.querySelector(".chain-count");
+      if (count?.textContent) {
+        assert.match(count.textContent, /^\d+ 连击$/);
+        chainSizes.set(Number.parseInt(count.textContent), count.style.fontSize);
+        assert.match(root.querySelector(".chain-score").textContent, /^\+\d+$/);
+      }
       const current = Number(root.querySelector(".score-label strong").firstChild.textContent.replaceAll(",", ""));
       assert.ok(current >= displayedScore, "displayed score never falls between finale waves or at final commit");
       if (current !== displayedScore) scoreChanges.push(current);
@@ -896,6 +922,10 @@ test("a winning finale animates all stripes without rotating, queues rainbows, a
       return saved().adventure.status === "won";
     }, 600);
     assert.ok(scoreChanges.length >= 4, "queued specials and later cascades each update the score before settlement");
+    assert.equal(chainSizes.get(2), "1.375rem");
+    assert.equal(chainSizes.get(5), "1.75rem");
+    for (const [chain, size] of chainSizes)
+      if (chain > 5) assert.equal(size, "1.75rem");
     assertDisplayedScore(totalScore(saved().adventure), config);
     assert.equal(root.querySelector(".board").getAttribute("aria-busy"), "true");
     assert.equal(root.querySelector(".chain-label"), null);
@@ -999,7 +1029,10 @@ for (const daily of [false, true])
     Math.random = () => [0.25, 0.45, 0.75][draw++] ?? 0.6;
     try {
       await mount(profile);
-      if (daily) await click(button("每日挑战"));
+      if (daily) {
+        await showLevelList();
+        await click(button("每日挑战"));
+      }
       assert.equal(root.querySelectorAll(".score-star.filled").length, 1);
       const thresholds = [...root.querySelectorAll(".score-star")].map((node) =>
         Number(node.dataset.scoreTarget),
@@ -1018,10 +1051,8 @@ for (const daily of [false, true])
         root.querySelector(".result-score strong").textContent,
         "19,380",
       );
-      assert.match(
-        root.querySelector(".score-breakdown").textContent,
-        /10 × 1500 = \+15,000/,
-      );
+      assert.equal(root.querySelector(".score-breakdown"), null);
+      assert.doesNotMatch(root.querySelector(".result-score").textContent, /消除得分|步数奖励/);
       assert.equal(root.querySelectorAll(".result-stars .earned").length, 3);
       assert.deepEqual(saved().levelStars, daily ? {} : { 1: 3 });
       assert.equal(saved().stats.best, 19380);
@@ -1185,7 +1216,8 @@ test("a four-match reward animates adjacent ice breaking and saves both the stri
     assert.equal(saved().adventure.collected[5], 0);
     assert.match(root.querySelector('.mini-goal[aria-label^="收集"]').getAttribute("aria-label"), /4 \/ 22$/);
     assert.equal(root.querySelector(".ice-goal").getAttribute("aria-label"), "解冻冰层：1 / 2");
-    assert.match(root.querySelectorAll(".goal-count")[1].textContent, /4\s*\/\s*22/);
+    assert.equal(root.querySelector('.game-details [data-goal="collect"] .goal-remaining').textContent, "18");
+    assert.equal(root.querySelector('.mini-goal[data-goal="collect"] .goal-remaining').textContent, "18");
     await settled();
     const next = saved().adventure;
     assert.equal(next.board[18].ice, 1);
@@ -1632,9 +1664,21 @@ for (const [level, kind, floorCount] of [[1, "collect", 0], [2, "spread", 16], [
     assert.equal(root.querySelectorAll(".cell").length, 64);
     assert.equal(root.querySelectorAll(".mini-goal[data-goal]").length, 1);
     assert.equal(root.querySelector(".mini-goal[data-goal]").dataset.goal, kind);
+    assert.equal(root.querySelector(".mini-goal[data-goal] .goal-remaining").textContent,
+      String(kind === "collect" ? levelConfig(level).count : kind === "spread" ? 12 : 2));
     assert.equal(root.querySelector(".game-details [data-goal]").dataset.goal, kind);
     assert.equal(root.querySelectorAll(kind === "spread" ? ".paint-target" : kind === "reveal" ? ".hidden-picture" : ".delivery-exit").length, floorCount);
-    if (kind === "deliver") assert.equal(root.querySelectorAll(".delivery-token").length, 2);
+    if (kind === "deliver") {
+      const targets = [...root.querySelectorAll(".board .delivery-token")];
+      assert.equal(targets.length, 2);
+      for (const target of targets) {
+        assert.ok(Number(target.closest(".cell").dataset.index) < 8);
+        assert.ok(target.querySelector('[data-delivery-theme="egg"]'));
+        assert.equal(target.querySelector("[data-animal]"), null);
+      }
+      assert.ok(root.querySelector('.mini-goal [data-delivery-theme="egg"]'));
+      assert.ok(root.querySelector('.game-details [data-delivery-theme="egg"]'));
+    }
     const snapshot = saved();
     act(() => render(null, root));
     root.remove();
@@ -1672,6 +1716,7 @@ for (const kind of ["spread", "reveal"])
       if (kind === "spread") {
         assert.equal(root.querySelectorAll(".painted").length, 3);
         assert.match(root.querySelector(".mini-goal[data-goal]").getAttribute("aria-label"), /3 \/ 3/);
+        assert.equal(root.querySelector(".mini-goal[data-goal] .goal-remaining").textContent, "0");
       } else assert.equal(root.querySelectorAll(".revealed").length, 2);
       assert.deepEqual(saved().adventure, adventure);
       await settled();
@@ -1705,7 +1750,7 @@ test("cargo animates its arrival, updates the main goal live, refills and comple
     assert.deepEqual(saved().adventure, adventure);
     await settled();
     assert.equal(saved().adventure.objective.delivered, 1);
-    assert.equal(root.querySelectorAll(".delivery-token").length, 0);
+    assert.equal(root.querySelectorAll(".board .delivery-token").length, 0);
     assert.equal(saved().adventure.status, "won");
     assert.equal(saved().adventure.moves, adventure.moves - 1);
   } finally {
@@ -1734,4 +1779,48 @@ test("a failed asynchronous read preserves progress and retries instead of creat
     assert.match(root.querySelector('h1').textContent, /43/);
     assert.deepEqual(boardTypes(), profile.adventure.board.map(tile => tile.type));
   } finally { globalThis.localStorage = native; }
+});
+
+test("gameplay omits both navigation bars, while the level list restores them", async () => {
+  await mount({ adventure: createGame(4, false, seededRandom(42)) });
+  const original = saved().adventure;
+  assert.equal(root.querySelector(".sidebar"), null);
+  assert.equal(root.querySelector(".mobile-nav"), null);
+  assert.ok(root.querySelector(".app-shell.in-level"));
+  await showLevelList();
+  assert.ok(root.querySelector(".sidebar"));
+  assert.ok(root.querySelector(".mobile-nav"));
+  assert.ok(root.querySelector(".app-shell.has-level-navigation"));
+  await click(root.querySelector('[data-level="4"]'));
+  assert.equal(root.querySelector(".sidebar"), null);
+  assert.equal(root.querySelector(".mobile-nav"), null);
+  assert.deepEqual(saved().adventure, original);
+  await showLevelList();
+  await click(root.querySelector('[aria-label="返回游戏"]'));
+  assert.equal(root.querySelector(".level-selection"), null);
+  assert.equal(root.querySelector(".sidebar"), null);
+  assert.equal(root.querySelector(".mobile-nav"), null);
+  assert.deepEqual(saved().adventure, original);
+});
+
+test("list settings, records and help close back to the list, including after a completed game", async () => {
+  const adventure = createGame(4, false, seededRandom(42));
+  adventure.status = "won";
+  await mount({ adventure });
+  await click(button("选择关卡") ?? button("返回选关"));
+  assert.ok(root.querySelector(".level-selection"));
+  await click(root.querySelector(".sidebar-setting"));
+  assert.ok(root.querySelector(".modal-settings"));
+  assert.ok(root.querySelector(".level-selection"));
+  await click(button("玩法说明"));
+  assert.ok(root.querySelector(".modal-help"));
+  await click(root.querySelector('[aria-label="关闭弹窗"]'));
+  assert.ok(root.querySelector(".level-selection"));
+  assert.equal(root.querySelector('[role="dialog"]'), null);
+  await click(button("统计"));
+  assert.ok(root.querySelector(".modal-records"));
+  act(() => window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape" })));
+  await act(flush);
+  assert.ok(root.querySelector(".level-selection"));
+  assert.equal(root.querySelector('[role="dialog"]'), null);
 });

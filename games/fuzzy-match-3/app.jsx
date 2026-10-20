@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { Icon, Animal, Ice, Delivery, GoalFloor } from "./art.jsx";
 import { advanceObjective, collectDeliveries, isDelivery, objectiveProgress } from "./objectives.js";
-import { TILE_THEME } from "./theme.js";
+import { DELIVERY_THEME, TILE_THEME } from "./theme.js";
 import { planFalls } from "./falling.js";
 import {
   adjacent,
@@ -175,6 +175,7 @@ function FuzzyGame({ initialProfile, storage }) {
   const [profile, setProfile] = useState(() => initialProfile);
   const [mode, setMode] = useState("adventure");
   const [view, setView] = useState(null);
+  const [levelsOpen, setLevelsOpen] = useState(false);
   const [levelPage, setLevelPage] = useState(0);
   const [selected, setSelected] = useState(null);
   const [hint, setHint] = useState([]);
@@ -203,7 +204,7 @@ function FuzzyGame({ initialProfile, storage }) {
   const levelsHeadingRef = useRef();
   const audio = useRef(null);
   const live = useRef({ profile, mode, active, board, view });
-  live.current = { profile, mode, active, board, view };
+  live.current = { profile, mode, active, board, view, levelsOpen };
 
   const delay = (ms, { animation = true } = {}) =>
     new Promise((resolve) => {
@@ -252,7 +253,13 @@ function FuzzyGame({ initialProfile, storage }) {
     setProfile((p) => ({ ...p, [live.current.mode]: next }));
   }
   function dismiss() {
-    setView(null);
+    const current = live.current;
+    if (current.levelsOpen && current.view !== "levels") {
+      setView("levels");
+    } else {
+      setLevelsOpen(false);
+      setView(null);
+    }
   }
 
   useEffect(() => {
@@ -287,9 +294,8 @@ function FuzzyGame({ initialProfile, storage }) {
       if (e.key === "Escape") {
         setSelected(null);
         clearHint();
-        setView((v) =>
-          v ? null : live.current.active.status === "playing" ? "pause" : null,
-        );
+        if (live.current.view) dismiss();
+        else if (live.current.active.status === "playing") setView("pause");
       }
     };
     window.addEventListener("keydown", onKey);
@@ -473,7 +479,8 @@ function FuzzyGame({ initialProfile, storage }) {
       setChainLabel(
         wave.score
           ? {
-              label: `${chain > 1 ? `${chain} 连消 · ` : ""}+${wave.score}`,
+              chain,
+              score: wave.score,
               key: `${token}-${chain}-${Date.now()}`,
             }
           : null,
@@ -687,6 +694,7 @@ function FuzzyGame({ initialProfile, storage }) {
   }
   function switchMode(nextMode) {
     if (lock.current) return;
+    setLevelsOpen(false);
     const date = todayKey();
     let nextProfile = profile;
     if (nextMode === "daily" && date !== profile.date) {
@@ -728,6 +736,7 @@ function FuzzyGame({ initialProfile, storage }) {
   const lastLevel = Math.min(MAX_LEVEL, firstLevel + LEVELS_PER_PAGE - 1);
   function showLevels() {
     if (lock.current) return;
+    setLevelsOpen(true);
     setLevelPage(Math.floor((unlockedLevel - 1) / LEVELS_PER_PAGE));
     setSelected(null);
     clearHint();
@@ -735,6 +744,7 @@ function FuzzyGame({ initialProfile, storage }) {
   }
   function openLevel(level, restart = false) {
     if (lock.current || level < 1 || level > unlockedLevel) return;
+    setLevelsOpen(false);
     const latest = profile.adventure;
     const nextMode =
       level < latest.level || (level === latest.level && latest.status === "won")
@@ -764,19 +774,21 @@ function FuzzyGame({ initialProfile, storage }) {
   const displayObjective = turnProgress?.objective ?? active.objective;
   const goal = objectiveProgress({ ...active, collected: displayCollected, objective: displayObjective }, config);
   const goalLabel = goal.kind === "collect" ? `收集${TILE_THEME[config.targetType].name}`
-    : ({ spread: "涂满地板", reveal: "揭开图案", deliver: "护送到底部" })[goal.kind];
+    : ({ spread: "涂满地板", reveal: "揭开图案", deliver: `护送${DELIVERY_THEME.name}到底部` })[goal.kind];
   const goalArt = () => goal.kind === "collect" ? <Animal type={config.targetType} />
+    : goal.kind === "deliver" ? <Delivery />
     : <span class="objective-icon"><Icon name={goal.kind === "spread" ? "paint" : goal.kind} size={27} /></span>;
   const goalDone = goal.complete;
+  const remainingGoal = Math.max(0, goal.total - goal.current);
   const remainingIce = turnProgress?.remainingIce ?? iceLayers(board);
   const iceGoal = active.iceGoal || 0;
   const displayScore = earnedScore + moveBonus(active);
-  const bonus = moveBonus(active);
   const starMax = config.starTargets[2];
   const nextScoreTarget = config.starTargets.find((target) => displayScore < target) ?? starMax;
   const stars = config.starTargets.map((target) => displayScore >= target);
   const modal = view === "levels" ? null : view || (result ? active.status : null);
-  const navMode = mode === "replay" || view === "levels" ? "adventure" : mode;
+  const resultModal = modal === "won" || modal === "lost";
+  const navMode = mode === "replay" || levelsOpen ? "adventure" : mode;
   const navItem = (item, mobile = false) => (
     <button
       key={item.id}
@@ -802,8 +814,8 @@ function FuzzyGame({ initialProfile, storage }) {
   );
 
   return (
-    <div class="app-shell">
-      <aside class="sidebar">
+    <div class={`app-shell ${levelsOpen ? "has-level-navigation" : "in-level"}`}>
+      {levelsOpen && <aside class="sidebar">
         <a href="../" class="brand" aria-label="绒绒消消乐，返回游戏首页">
           <span class="brand-mark">
             <Animal type={0} />
@@ -822,24 +834,24 @@ function FuzzyGame({ initialProfile, storage }) {
             <Icon name="gear" size={19} /> 设置
           </button>
         </div>
-      </aside>
+      </aside>}
 
       <main class="main-content">
         <header class="topbar">
           <button
             class="icon-button pause-button"
-            aria-label={view === "levels" ? "返回游戏" : "暂停游戏"}
-            disabled={busy || (result && view !== "levels")}
-            onClick={() => view === "levels" ? dismiss() : setView("pause")}
+            aria-label={levelsOpen ? "返回游戏" : "暂停游戏"}
+            disabled={busy || (result && !levelsOpen)}
+            onClick={() => levelsOpen ? dismiss() : setView("pause")}
           >
-            <Icon name={view === "levels" ? "back" : "pause"} size={24} />
+            <Icon name={levelsOpen ? "back" : "pause"} size={24} />
           </button>
           <a class="topbar-title" href="../">
             绒绒消消乐
           </a>
         </header>
-        <section class={`play-area ${view === "levels" ? "level-selection-area" : ""}`}>
-          {view === "levels" ? (
+        <section class={`play-area ${levelsOpen ? "level-selection-area" : ""}`}>
+          {levelsOpen ? (
             <section class="level-selection" aria-labelledby="levels-title">
               <div class="level-selection-header">
                 <h1 id="levels-title" tabIndex={-1} ref={levelsHeadingRef}>关卡选择</h1>
@@ -869,7 +881,7 @@ function FuzzyGame({ initialProfile, storage }) {
                       <strong>{level}</strong>
                       {locked ? <Icon name="lock" size={16} /> : (
                         <span class="level-stars" aria-hidden="true">
-                          {[1, 2, 3].map((star) => <Icon key={star} name="star" size={15} class={best >= star ? "earned" : ""} />)}
+                          {[1, 2, 3].map((star) => <Icon key={star} name="star" size={15} earned={best >= star} class={best >= star ? "earned" : ""} />)}
                         </span>
                       )}
                     </button>
@@ -881,9 +893,6 @@ function FuzzyGame({ initialProfile, storage }) {
             <section class="game-card" aria-label="三消游戏">
               <div class="level-header">
                 <div class="level-title">
-                  <span class="level-icon">
-                    <Icon name={mode === "daily" ? "sun" : "map"} size={20} />
-                  </span>
                   <div>
                     <h1>
                       {mode === "daily"
@@ -894,6 +903,25 @@ function FuzzyGame({ initialProfile, storage }) {
                       <time dateTime={profile.date}>{profile.date}</time>
                     )}
                   </div>
+                </div>
+                <div class="level-goals">
+                  <div
+                    class={`mini-goal ${goalDone ? "done" : ""}`}
+                    data-goal={goal.kind}
+                    aria-label={`${goalLabel}：${goal.current} / ${goal.total}`}
+                  >
+                    {goalArt()}
+                    <span class="goal-remaining" aria-hidden="true">{remainingGoal}</span>
+                  </div>
+                  {iceGoal > 0 && (
+                    <div
+                      class={`mini-goal ice-goal ${remainingIce === 0 ? "done" : ""}`}
+                      aria-label={`解冻冰层：${iceGoal - remainingIce} / ${iceGoal}`}
+                    >
+                      <Ice />
+                      <span class="goal-remaining" aria-hidden="true">{remainingIce}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               <div class="scoreboard">
@@ -930,6 +958,7 @@ function FuzzyGame({ initialProfile, storage }) {
                         key={i}
                         name="star"
                         size={15}
+                        earned={displayScore >= target}
                         class={
                           displayScore >= target
                             ? "score-star filled"
@@ -941,31 +970,6 @@ function FuzzyGame({ initialProfile, storage }) {
                     ))}
                   </div>
                 </div>
-                <div
-                  class={`mini-goal ${goalDone ? "done" : ""}`}
-                  data-goal={goal.kind}
-                  aria-label={`${goalLabel}：${goal.current} / ${goal.total}`}
-                >
-                  {goalArt()}
-                  <span>
-                    {goal.current}
-                    <small>/{goal.total}</small>
-                  </span>
-                  {goalDone && <Icon name="check" size={12} />}
-                </div>
-                {iceGoal > 0 && (
-                  <div
-                    class={`mini-goal ice-goal ${remainingIce === 0 ? "done" : ""}`}
-                    aria-label={`解冻冰层：${iceGoal - remainingIce} / ${iceGoal}`}
-                  >
-                    <Ice />
-                    <span>
-                      {iceGoal - remainingIce}
-                      <small>/{iceGoal}</small>
-                    </span>
-                    {remainingIce === 0 && <Icon name="check" size={12} />}
-                  </div>
-                )}
               </div>
               <div class="board-wrap">
                 <div
@@ -1006,7 +1010,7 @@ function FuzzyGame({ initialProfile, storage }) {
                           : undefined
                       }
                       class={`cell ${piece.pending ? "rainbow-armed" : ""} ${piece.ice ? "frozen" : ""} ${breaking.includes(index) ? "ice-breaking" : ""} ${selected === index ? "selected" : ""} ${hint.includes(index) ? "hinted" : ""} ${clearing.includes(index) ? "clearing" : ""} ${converting.includes(index) ? "converting" : ""} ${piece.special ? "special-cell" : ""} ${exchange && (index === exchange.a || index === exchange.b) ? "exchanging" : ""}`}
-                      aria-label={`第 ${Math.floor(index / 8) + 1} 行第 ${(index % 8) + 1} 列，${isDelivery(piece) ? "护送目标" : piece.special === "color" ? "彩虹道具" : TILE_THEME[piece.type].name}${piece.special && piece.special !== "color" ? "，条纹棋子" : ""}${piece.ice ? `，${piece.ice} 层冰封` : ""}${piece.pending ? "，待触发" : ""}`}
+                      aria-label={`第 ${Math.floor(index / 8) + 1} 行第 ${(index % 8) + 1} 列，${isDelivery(piece) ? DELIVERY_THEME.name : piece.special === "color" ? "彩虹道具" : TILE_THEME[piece.type].name}${piece.special && piece.special !== "color" ? "，条纹棋子" : ""}${piece.ice ? `，${piece.ice} 层冰封` : ""}${piece.pending ? "，待触发" : ""}`}
                       aria-pressed={selected === index}
                       disabled={
                         busy || !!modal || !!piece.ice || !!piece.pending
@@ -1025,7 +1029,7 @@ function FuzzyGame({ initialProfile, storage }) {
                       }}
                       onKeyDown={(e) => keyTile(e, index)}
                     >
-                      {isDelivery(piece) ? <Delivery type={config.targetType} /> : <Animal type={piece.type} special={piece.special} />}
+                      {isDelivery(piece) ? <Delivery /> : <Animal type={piece.type} special={piece.special} />}
                       {piece.ice > 0 && <Ice layers={piece.ice} />}
                     </button>
                   ) : (
@@ -1044,31 +1048,38 @@ function FuzzyGame({ initialProfile, storage }) {
                     key={chainLabel.key}
                     aria-hidden="true"
                   >
-                    {chainLabel.label}
+                    <span
+                      class="chain-count"
+                      style={{ fontSize: `${1.25 + Math.min(chainLabel.chain - 1, 4) * 0.125}rem` }}
+                    >
+                      {chainLabel.chain > 1 ? `${chainLabel.chain} 连击` : ""}
+                    </span>
+                    <span class="chain-score">+{chainLabel.score}</span>
                   </div>
                 )}
               </div>
               <div class="tools">
                 <button
+                  aria-label={`提示，剩余 ${active.hints} 次`}
+                  title="提示"
                   onClick={useHint}
                   disabled={busy || result || active.hints === 0}
                 >
                   <span class="tool-icon">
                     <Icon name="hint" />
                   </span>
-                  <span>提示</span>
-                  <b>{active.hints}</b>
+                  <b class="tool-badge" aria-hidden="true">{active.hints}</b>
                 </button>
-                <span class="tool-divider" />
                 <button
+                  aria-label={`重排，剩余 ${active.shuffles} 次`}
+                  title="重排"
                   onClick={useShuffle}
                   disabled={busy || result || active.shuffles === 0}
                 >
                   <span class="tool-icon">
                     <Icon name="shuffle" />
                   </span>
-                  <span>重排</span>
-                  <b>{active.shuffles}</b>
+                  <b class="tool-badge" aria-hidden="true">{active.shuffles}</b>
                 </button>
               </div>
             </section>
@@ -1085,6 +1096,7 @@ function FuzzyGame({ initialProfile, storage }) {
                   >
                     <span class="goal-icon ice-goal-icon">
                       <Ice />
+                      <span class="goal-remaining" aria-hidden="true">{remainingIce}</span>
                     </span>
                     <div>
                       <strong>解冻全部冰层</strong>
@@ -1096,15 +1108,12 @@ function FuzzyGame({ initialProfile, storage }) {
                         />
                       </div>
                     </div>
-                    <span class="goal-count">
-                      {iceGoal - remainingIce}
-                      <small> / {iceGoal}</small>
-                    </span>
                   </div>
                 )}
                 <div class={`goal-item ${goalDone ? "completed" : ""}`} data-goal={goal.kind}>
                   <span class="goal-icon">
                     {goalArt()}
+                    <span class="goal-remaining" aria-hidden="true">{remainingGoal}</span>
                   </span>
                   <div>
                     <strong>{goalLabel}</strong>
@@ -1116,10 +1125,6 @@ function FuzzyGame({ initialProfile, storage }) {
                       />
                     </div>
                   </div>
-                  <span class="goal-count">
-                    {goal.current}
-                    <small> / {goal.total}</small>
-                  </span>
                 </div>
                 <div class={`goal-item ${progress === 100 ? "completed" : ""}`}>
                   <span class="goal-icon star-goal">
@@ -1137,7 +1142,7 @@ function FuzzyGame({ initialProfile, storage }) {
           </div>}
         </section>
       </main>
-      <nav class="mobile-nav" aria-label="移动导航">
+      {levelsOpen && <nav class="mobile-nav" aria-label="移动导航">
         {nav.map((item) => navItem(item, true))}
         <button
           class={`nav-item ${view === "settings" ? "active" : ""}`}
@@ -1147,12 +1152,12 @@ function FuzzyGame({ initialProfile, storage }) {
           <Icon name="gear" size={22} />
           <span>设置</span>
         </button>
-      </nav>
+      </nav>}
       {modal && (
         <div
           class="modal-backdrop"
           onClick={(event) => {
-            if (event.target === event.currentTarget && !result) dismiss();
+            if (event.target === event.currentTarget && !resultModal) dismiss();
           }}
         >
           <section
@@ -1192,7 +1197,7 @@ function FuzzyGame({ initialProfile, storage }) {
               }
             }}
           >
-            {!result && (
+            {!resultModal && (
               <button
                 class="icon-button modal-close"
                 aria-label="关闭弹窗"
@@ -1233,7 +1238,7 @@ function FuzzyGame({ initialProfile, storage }) {
                     <span>04</span>
                     <p>
                       <strong>过关目标</strong>
-                      完成本关目标、解冻冰层并达到目标分数即可过关。普通关依次轮换收集、涂色、揭图和护送：在已涂色地板上消除可扩散颜色；消除遮挡格揭开整幅图案；篮子不参与匹配或爆炸，落到底部即完成护送。第 10 关起，每逢 5 的倍数需收集 36 个目标棋子。每颗棋子基础 60
+                      完成本关目标、解冻冰层并达到目标分数即可过关。普通关依次轮换收集、涂色、揭图和护送：在已涂色地板上消除可扩散颜色；消除遮挡格揭开整幅图案；蛋从第一排生成，不参与匹配或爆炸，落到底部即完成护送。第 10 关起，每逢 5 的倍数需收集 36 个目标棋子。每颗棋子基础 60
                       分，连消最高 5 倍。同轮消除 3 格到 64 格，面积倍率先快后慢地从 1 倍提升到 2 倍，消除分四舍五入到十位，生成道具的格子也计入基础分和面积。四连每组额外 +80，五连或交叉图案每组额外 +200，同组只取最高一档。图案奖励每轮均可获得，不乘面积或连消倍率。通关后每剩余一步奖励{" "}
                       {MOVE_BONUS} 分，计入最终星级。 本关二星{" "}
                       {format(config.starTargets[1])} 分，三星 {format(starMax)}{" "}
@@ -1246,7 +1251,7 @@ function FuzzyGame({ initialProfile, storage }) {
                   方向键移动，回车选择，Shift + 方向键交换。
                 </p>
                 <button class="primary-button" onClick={dismiss}>
-                  返回游戏 <Icon name="arrow" size={18} />
+                  {levelsOpen ? "返回选关" : "返回游戏"} <Icon name="arrow" size={18} />
                 </button>
               </>
             )}
@@ -1366,6 +1371,7 @@ function FuzzyGame({ initialProfile, storage }) {
                       key={i}
                       name="star"
                       size={32}
+                      earned={filled}
                       class={filled ? "earned" : ""}
                     />
                   ))}
@@ -1373,14 +1379,6 @@ function FuzzyGame({ initialProfile, storage }) {
                 <div class="result-score">
                   <span>最终得分</span>
                   <strong>{format(displayScore)}</strong>
-                  <div class="score-breakdown">
-                    <span>消除得分</span>
-                    <span>{format(active.score)}</span>
-                    <span>步数奖励</span>
-                    <span>
-                      {active.moves} × {MOVE_BONUS} = +{format(bonus)}
-                    </span>
-                  </div>
                 </div>
                 <button
                   class="primary-button"

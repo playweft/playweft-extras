@@ -195,10 +195,34 @@ a {
   overflow: hidden;
 }
 .level-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  margin-bottom: 20px;
+}
+.level-goals {
+  grid-column: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  justify-content: center;
+  gap: 20px;
+  min-height: 36px;
+}
+.game-card .level-goals .mini-goal {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+}
+.level-goals .mini-goal .tile-art {
+  width: 30px;
+  height: 32px;
+  filter: none;
 }
 .level-title {
   display: flex;
@@ -423,20 +447,42 @@ a {
 .chain-label {
   position: absolute;
   left: 50%;
-  top: 45%;
+  top: 40%;
   transform: translate(-50%, -50%);
   z-index: 3;
-  background: #fff8e5f2;
-  border: 2px solid #e8c17b;
-  box-shadow: 0 4px 28px #ab7b3730;
-  color: #b78336;
-  border-radius: 30px;
-  font-weight: 750;
-  font-size: 1.5rem;
-  padding: 12px 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 88px;
+  color: #ffe39a;
+  font-weight: 850;
+  text-align: center;
+  -webkit-text-stroke: 2px #704326;
+  paint-order: stroke fill;
+  text-shadow: 0 2px 3px #211c3959;
   white-space: nowrap;
   pointer-events: none;
   animation: chain-in 0.3s ease-out;
+}
+.chain-count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 48px;
+  height: 48px;
+  line-height: 1.2;
+  color: #fff7df;
+}
+.chain-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  height: 40px;
+  font-size: 1.75rem;
+  line-height: 1.2;
 }
 .tools {
   display: flex;
@@ -526,6 +572,7 @@ a {
   margin: 18px 0;
 }
 .goal-icon {
+  position: relative;
   width: 40px;
   height: 43px;
   border-radius: 12px;
@@ -1368,10 +1415,6 @@ a {
     padding-left: 12px;
     padding-right: 12px;
   }
-  .chain-label {
-    font-size: 1.25rem;
-    padding: 10px 18px;
-  }
   .mini-goal {
     padding-left: 10px;
   }
@@ -1781,19 +1824,6 @@ a {
   }
 }
 
-.score-breakdown {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 9px 12px;
-  margin-top: 10px;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  text-align: left;
-}
-.score-breakdown > span:nth-child(even) {
-  text-align: right;
-}
-
 .ice-shell {
   display: block;
   pointer-events: none;
@@ -2012,8 +2042,8 @@ a {
 }
 .cell { z-index: 1; }
 .floor-cell { position: relative; overflow: hidden; }
-.paint-target { background: #64617655; box-shadow: inset 0 0 0 1px #e7e6f024; }
-.paint-target.painted { background: #7caa9478; box-shadow: inset 0 0 0 1px #b8dfc44d; }
+.paint-target { background: #64617655; }
+.paint-target.painted { background: #7caa9478; }
 .hidden-picture { background: #b5a17c88; box-shadow: inset 0 0 0 1px #ebd9b344; }
 .hidden-picture:not(.revealed):after {
   content: ""; position: absolute; inset: 20%;
@@ -2026,9 +2056,11 @@ a {
 .delivery-exit { box-shadow: inset 0 -4px #dec28aaa; }
 .delivery-exit > svg { position: absolute; bottom: 0; left: calc(50% - 7px); color: #ffe4a9; }
 .delivery-token { position: relative; display: block; width: 94%; height: 94%; pointer-events: none; }
-.cell .delivery-token > .tile-art { position: absolute; inset: -2% 10% auto; width: 80%; height: 80%; }
-.delivery-basket { position: absolute; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 2px 1px #211c394d); }
+.delivery-token > .tile-art { width: 100%; height: 100%; filter: drop-shadow(0 2px 1px #211c394d); }
+.mini-goal > .delivery-token { width: 30px; height: 32px; }
+.goal-icon > .delivery-token { width: 34px; height: 38px; }
 .cell.clearing .delivery-token { animation: tile-pop .24s ease-in forwards; }
+.cell.clearing .delivery-token > .tile-art { animation: none; }
 .objective-icon { display: inline-flex; align-items: center; justify-content: center; color: #84956c; }
 .mini-goal > .objective-icon { height: 32px; }
 
@@ -2062,3 +2094,184 @@ a {
 .storage-failure p { font-size: 15px; line-height: 1.6; white-space: pre-wrap; }
 .storage-failure code { display: block; margin-bottom: 16px; }
 .storage-failure button { border: 0; padding: 10px 18px; border-radius: 8px; background: #ffffff26; color: #fff; }
+
+/* Clear sky fades into soft morning haze below the board. */
+:root {
+  color: #f8fcff;
+  background: #1089d6;
+  background-image:
+    radial-gradient(ellipse 75% 35% at 72% 110%, #fff0d67a, #fff0d61f 48%, transparent 75%),
+    radial-gradient(ellipse 110% 24% at 12% 96%, #ffffff26, transparent 75%),
+    linear-gradient(180deg, #1089d6 0%, #5aafdf 58%, #b5d8ec 100%);
+  background-attachment: fixed;
+}
+.sidebar {
+  background: #164b6699;
+  border-right-color: #ffffff14;
+}
+.sidebar .nav-item,
+.sidebar-setting,
+.topbar .pause-button {
+  color: #f8fcff;
+}
+.sidebar .nav-item:hover:not(:disabled),
+.sidebar .nav-item.active,
+.topbar .pause-button:hover:not(:disabled) {
+  background: #ffffff18;
+  color: #fff;
+}
+.sidebar .nav-item.active:before { background: #ffe0a2; }
+.game-card,
+.goal-card,
+.level-selection {
+  background: #16465f70;
+  box-shadow: 0 12px 36px #10364826;
+}
+.level-title h1,
+.level-title h1:first-letter,
+.level-title time,
+.moves-stat > span,
+.score-label > span,
+.moves-stat > strong,
+.score-label strong,
+.score-label small,
+.game-card .mini-goal > span,
+.game-card .mini-goal small,
+.game-card .mini-goal.done > span,
+.game-card .objective-icon,
+.tools > button,
+.tools .tool-icon,
+.tools b,
+.goal-card .panel-label,
+.goal-card .panel-label svg,
+.goal-card h3,
+.goal-card .goal-item strong,
+.goal-card .goal-count,
+.goal-card .goal-count small,
+.goal-card .goal-item.completed strong,
+.goal-card .goal-item.completed .goal-count,
+.goal-card .objective-icon {
+  color: #fff;
+}
+.level-icon {
+  background: #ffffff18;
+  color: #fff;
+}
+.moves-stat,
+.game-card .mini-goal { border-color: #ffffff26; }
+.moves-stat > strong.low-moves { color: #ffe0a2; }
+.score-track,
+.goal-track { background: #133f5973; }
+.score-track > span,
+.goal-track > span { background: #f0c979; }
+.score-star { color: #d7ebf4; fill: #527e94; }
+.score-star.filled { color: #ffe2a0; fill: #f0c979; }
+.tools {
+  background: transparent;
+  border-color: #ffffff1f;
+}
+.tools > button:hover:not(:disabled) { background: #ffffff18; }
+.tools b { background: #123e5666; }
+.tool-divider { background: #ffffff26; }
+.goal-icon { background: #ffffff14; }
+.goal-card .goal-check { color: #c7e5ef; }
+.goal-card .goal-item.completed .goal-check { color: #ffe0a2; }
+.game-card .mini-goal > svg:not(.tile-art):not(.ice-shell) {
+  background: #215a72;
+  color: #ffe0a2;
+}
+.mobile-nav {
+  background: #20566ee8;
+  border-top-color: #ffffff18;
+  box-shadow: 0 -3px 24px #10364814;
+}
+.mobile-nav .nav-item { color: #f8fcff; }
+.mobile-nav .nav-item.active { color: #ffe0a2; }
+.mobile-nav .nav-item.active:before { background: #ffe0a2; }
+.mobile-nav .nav-item.active svg { fill: #ffe0a218; }
+.modal-backdrop { background: #0c2c4a66; }
+.modal { color: #384b3f; }
+.level-pagination,
+.level-selection .icon-button { color: #fff; }
+.level-pagination .icon-button:hover:not(:disabled) { background: #ffffff18; }
+@media (max-width: 760px) {
+  .game-card,
+  .level-selection {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
+.storage-gate { background: #1089d6; }
+.help-page .help-back,
+.help-page .help-rules p,
+.help-page .help-rules strong { color: #fff; }
+.help-page .help-rules > div > span { color: #ffe0a2; background: #16465f70; }
+
+/* Navigation belongs to the level list; gameplay uses the entire viewport. */
+.app-shell.in-level .main-content {
+  margin-left: 0;
+  width: 100%;
+  padding-bottom: 0;
+}
+
+.tools {
+  justify-content: center;
+  gap: 32px;
+  padding-block: 16px 20px;
+  border-top: 0;
+}
+.tools > button {
+  position: relative;
+  flex: 0 0 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  padding: 0;
+  border-radius: 50%;
+  background: #e9f7ff;
+  color: #23445a;
+  box-shadow: inset 0 1px 0 #ffffffb3, 0 4px 12px #123e562e;
+  overflow: visible;
+}
+.tools > button:hover:not(:disabled) { background: #fff; }
+.tools .tool-icon { color: inherit; }
+.tools .tool-icon svg { width: 24px; height: 24px; }
+.tools .tool-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  border: 2px solid #087fa8;
+  border-radius: 50%;
+  background: #ffe0a2;
+  color: #23445a;
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Remaining tasks sit over the artwork without a badge background. */
+.game-card .mini-goal > .goal-remaining,
+.goal-icon > .goal-remaining {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  z-index: 3;
+  color: #fff;
+  font-size: .875rem;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  -webkit-text-stroke: 2.5px #243746;
+  paint-order: stroke fill;
+  text-shadow: 0 1px 1px #172b3b66;
+  pointer-events: none;
+}

@@ -8,7 +8,10 @@ import { audit } from "../scripts/fuzzy-match-3-balance.mjs";
 const patterned = () => Array.from({ length: 64 }, (_, index) => ({
   id: index + 100, type: (Math.floor(index / 8) * 2 + index % 8) % 6, special: null,
 }));
-const hit = (cleared, effectGroups = [cleared], creations = new Map()) => ({ cleared, effectGroups, creations });
+const hit = (cleared, groups = [cleared], creations = new Map()) => ({
+  cleared, creations,
+  effectGroups: groups.map(indices => ({ sources: indices, indices })),
+});
 
 test("four normal objectives rotate without challenge levels consuming a slot", () => {
   let normal = 0;
@@ -37,15 +40,38 @@ test("all goal families create stable playable boards and survive JSON save/rest
   }
 });
 
+test("delivery targets spawn only in the first row and preserve every frozen cell", () => {
+  for (let level = 1; level <= 1000; level++) {
+    const config = levelConfig(level);
+    const game = createGame(level, false, seededRandom(level), { goalKind: "deliver" });
+    const positions = game.board.flatMap((piece, index) => isDelivery(piece) ? [index] : []);
+    assert.equal(positions.length, game.objective.total, `level ${level}`);
+    assert.ok(positions.every(index => index < 8 && !config.iceCells.includes(index)), `level ${level}`);
+    config.iceCells.forEach((index, order) => {
+      assert.equal(game.board[index].ice, order < config.doubleIce ? 2 : 1);
+    });
+    assert.equal(findMatches(game.board).length, 0);
+    assert.ok(findMove(game.board));
+    assert.ok(validGame(game));
+  }
+});
+
+test("restoring delivery progress preserves targets that have already fallen", () => {
+  const game = createGame(4, false, seededRandom(42));
+  const start = game.board.findIndex(isDelivery);
+  game.board = swap(game.board, start, start + 16);
+  assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
+});
+
 test("painting spreads only through affected connected effects, with retained rewards counting", () => {
   const game = { objective: { kind: "spread", cells: [0, 1, 2, 3, 4, 5, 6], painted: [0] } };
   const wave = hit([0, 1, 3, 4, 5], [[0, 1, 2], [3, 4, 5]], new Map([[2, "row"]]));
   assert.deepEqual(advanceObjective(game, wave).painted, [0, 1, 2]);
   assert.deepEqual(game.objective.painted, [0]);
-  wave.effectGroups.push([2, 3, 4]);
+  wave.effectGroups.push({ sources: [2], indices: [2, 3, 4] });
   assert.deepEqual(advanceObjective(game, wave).painted, [0, 1, 2, 3, 4, 5]);
   // The ray touches 6, but its ice absorbed the wave, so it is not painted.
-  wave.effectGroups.push([0, 6]);
+  wave.effectGroups.push({ sources: [0], indices: [0, 6] });
   assert.ok(!advanceObjective(game, wave).painted.includes(6));
 });
 
@@ -61,6 +87,93 @@ test("real matches and triggered rays carry paint while independent matches do n
   assert.ok(objective.painted.includes(57));
   assert.ok(!objective.painted.includes(51));
   assert.ok(!objective.painted.includes(53));
+});
+
+test("a legal stripe exchange off painted floor does not pick paint up along its ray", () => {
+  for (const [from, to, direction, partners] of [
+    [24, 25, "row", [17, 33]],
+    [18, 26, "column", [25, 27]],
+  ]) {
+    const board = patterned();
+    board[from].special = direction;
+    for (const index of partners) board[index].type = board[from].type;
+    assert.equal(findMatches(board).length, 0);
+    assert.ok(canSwap(board, from, to));
+    const exchanged = swap(board, from, to);
+    const wave = resolveWave(exchanged, { exchange: [from, to] });
+    assert.ok(wave.cleared.includes(from)); // The ray crosses the old painted position.
+    assert.ok(wave.cleared.includes(to));
+    const objective = { kind: "spread", cells: Array.from({ length: 64 }, (_, i) => i), painted: [from] };
+    assert.deepEqual(advanceObjective({ board: exchanged, objective }, wave).painted, [from]);
+    assert.deepEqual(objective.painted, [from]); // Floor never follows the moved piece.
+
+    const result = advanceObjective({ board: exchanged, objective: { ...objective, painted: [to] } }, wave);
+    const line = Array.from({ length: 8 }, (_, i) => direction === "row"
+      ? Math.floor(to / 8) * 8 + i : i * 8 + to % 8);
+    assert.ok(line.every(index => result.painted.includes(index)));
+  }
+});
+
+test("chained stripes carry paint forwards from their origin without backflow from crossed cells", () => {
+  const board = patterned();
+  board[25].special = "row";
+  board[27].special = "column";
+  const wave = resolveWave(board, { forced: [25] });
+  const objective = { kind: "spread", cells: Array.from({ length: 64 }, (_, i) => i), painted: [24, 35] };
+  assert.deepEqual(advanceObjective({ board, objective }, wave).painted, [24, 35]);
+  const result = advanceObjective({ board, objective: { ...objective, painted: [25] } }, wave);
+  assert.ok([24, 27, 31, 3, 59].every(index => result.painted.includes(index)));
+});
+
+test("double-stripe crosses also require paint at their activation positions", () => {
+  const board = patterned();
+  board[24].special = board[25].special = "row";
+  const exchanged = swap(board, 24, 25);
+  const wave = resolveWave(exchanged, { exchange: [24, 25] });
+  const objective = { kind: "spread", cells: Array.from({ length: 64 }, (_, i) => i), painted: [8] };
+  assert.ok(wave.cleared.includes(8));
+  assert.deepEqual(advanceObjective({ board: exchanged, objective }, wave).painted, [8]);
+  const result = advanceObjective({ board: exchanged, objective: { ...objective, painted: [24] } }, wave);
+  assert.ok([0, 1, 25, 31, 56, 57].every(index => result.painted.includes(index)));
+});
+
+test("color/stripe batches take paint only from the two exchange positions before exploding", () => {
+  for (const pair of [[0, 1], [1, 0]]) {
+    for (const seed of [1, 7, 42]) {
+      const board = patterned();
+      board[0] = { ...board[0], type: null, special: "color" };
+      board[1].special = "row";
+      board[13].ice = 1;
+      assert.equal(findMatches(board).length, 0);
+      const exchanged = swap(board, ...pair);
+      const wave = resolveWave(exchanged, { exchange: pair, random: seededRandom(seed) });
+      assert.ok(wave.transformed.has(7));
+      assert.ok(!wave.transformed.has(13));
+      const objective = { kind: "spread", cells: Array.from({ length: 64 }, (_, i) => i), painted: [7] };
+      // A converted stripe already on painted floor must not color its own ray,
+      // nor allow the batch to pick that color up through its matching targets.
+      assert.deepEqual(advanceObjective({ board: exchanged, objective }, wave).painted, [7]);
+      for (const painted of [[0], [1], [0, 1]]) {
+        const result = advanceObjective({ board: exchanged, objective: { ...objective, painted } }, wave);
+        const expected = [...new Set([...painted, ...wave.cleared, ...wave.creations.keys()])].sort((a, b) => a - b);
+        assert.deepEqual(result.painted, expected);
+        assert.ok(!result.painted.includes(13)); // Ice absorbs the entire wave.
+      }
+    }
+  }
+});
+
+test("paint reaching an exchanged position during the wave does not retroactively color its converted batch", () => {
+  const board = patterned();
+  board[0] = { ...board[0], type: null, special: "color" };
+  board[1].special = "row";
+  board[8].type = board[16].type = board[1].type;
+  assert.equal(findMatches(board).length, 0);
+  const exchanged = swap(board, 0, 1);
+  const wave = resolveWave(exchanged, { exchange: [0, 1], random: seededRandom(42) });
+  const objective = { kind: "spread", cells: Array.from({ length: 64 }, (_, i) => i), painted: [16] };
+  // The ordinary three-match still spreads paint to 0, independently of the combo.
+  assert.deepEqual(advanceObjective({ board: exchanged, objective }, wave).painted, [0, 8, 16]);
 });
 
 test("uncovering counts complete pictures, deduplicates hits and includes conversion cells", () => {

@@ -1,6 +1,6 @@
 /** @jsxImportSource preact */
 import { useId } from "preact/hooks";
-import { TILE_THEME } from "./theme.js";
+import { DELIVERY_THEME, TILE_THEME } from "./theme.js";
 
 import {
   ArrowLeft, ArrowRight, ChartColumnIncreasing, Check, CircleHelp,
@@ -37,7 +37,25 @@ const ICONS = {
   sparkles: Sparkles,
 };
 
-export function Icon({ name, size = 22, ...props }) {
+function UnearnedStar({ size, style, ...props }) {
+  const gradientId = useId();
+  return (
+    <Star size={size} strokeWidth={1.5} aria-hidden="true" {...props}
+      style={{ ...style, fill: `url(#${gradientId})`, stroke: "#808080" }}>
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f2f2f2" />
+          <stop offset="45%" stop-color="#c9c9c9" />
+          <stop offset="100%" stop-color="#929292" />
+        </linearGradient>
+      </defs>
+    </Star>
+  );
+}
+
+export function Icon({ name, size = 22, earned, ...props }) {
+  if (name === "star" && earned === false)
+    return <UnearnedStar size={size} {...props} />;
   const Component = ICONS[name] || CircleHelp;
   return <Component size={size} strokeWidth={1.7} aria-hidden="true" {...props} />;
 }
@@ -214,13 +232,25 @@ export function Animal({ type = 0, special = null, className = "" }) {
 }
 
 
-export function Delivery({ type }) {
+export function Delivery() {
+  const shell = useId();
   return <span class="delivery-token">
-    <Animal type={type} />
-    <svg class="delivery-basket" viewBox="0 0 66 72" aria-hidden="true">
-      <path d="M8 43h50l-6 23H14Z" fill="#deb97d" stroke="#f9e4b9" stroke-width="2" />
-      <path d="M19 46v16m14-16v16m14-16v16M12 53h43" stroke="#a77748" stroke-width="2" />
-      <path d="M33 44v13m-5-5 5 5 5-5" fill="none" stroke="#fff5d9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <svg class="tile-art delivery-art" viewBox="0 0 66 72" data-delivery-theme={DELIVERY_THEME.id} aria-hidden="true">
+      <defs>
+        <radialGradient id={shell} cx="32%" cy="28%" r="78%">
+          <stop offset="0" stop-color="#fffdf3" />
+          <stop offset=".6" stop-color="#f6e8cc" />
+          <stop offset="1" stop-color="#d9bc8e" />
+        </radialGradient>
+      </defs>
+      <path d="M33 6C23 6 12 27 12 43c0 15 9 24 21 24s21-9 21-24C54 27 43 6 33 6Z" fill={`url(#${shell})`} stroke="#fff2d6" stroke-width="1.5" />
+      <path d="M26 18c-4 5-7 12-8 19" fill="none" stroke="#fffef7" stroke-width="4" stroke-linecap="round" opacity=".7" />
+      <g fill="#bc9667" opacity=".35">
+        <ellipse cx="39" cy="23" rx="1.4" ry="1.8" />
+        <circle cx="45" cy="39" r="1.2" />
+        <ellipse cx="25" cy="48" rx="1.7" ry="1.2" />
+        <circle cx="39" cy="56" r="1.5" />
+      </g>
     </svg>
   </span>;
 }

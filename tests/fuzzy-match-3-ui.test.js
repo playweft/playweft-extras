@@ -618,6 +618,43 @@ test("invalid exchanges animate forward and back before unlocking without changi
   assert.deepEqual(saved().adventure, original);
 });
 
+test("animation locks preserve button brightness while exhausted tools remain dimmed", async () => {
+  const adventure = createGame(1, false, seededRandom(42));
+  adventure.hints = 0;
+  await mount({ adventure });
+  const style = document.createElement("style");
+  style.textContent = await readFile(new URL("../games/fuzzy-match-3/styles.css", import.meta.url), "utf8");
+  document.head.append(style);
+  try {
+    const pause = root.querySelector(".pause-button");
+    const [hint, shuffle] = root.querySelectorAll(".tools button");
+    const opacity = node => window.getComputedStyle(node).opacity || "1";
+    assert.equal(opacity(pause), "1");
+    assert.equal(opacity(shuffle), "1");
+    assert.equal(opacity(hint), "0.4");
+    const [a, b] = findMove(adventure.board);
+    await click(piece(a));
+    await click(piece(b));
+    assert.equal(pause.disabled, true);
+    assert.equal(shuffle.disabled, true);
+    assert.equal(opacity(pause), "1");
+    assert.equal(opacity(shuffle), "1");
+    assert.equal(opacity(hint), "0.4");
+    await click(shuffle);
+    await click(pause);
+    assert.equal(root.querySelector('[role="dialog"]'), null);
+    await settled();
+    assert.equal(saved().adventure.shuffles, 2);
+    assert.equal(pause.disabled, false);
+    assert.equal(shuffle.disabled, false);
+    assert.equal(hint.disabled, true);
+    assert.equal(opacity(shuffle), "1");
+    assert.equal(opacity(hint), "0.4");
+  } finally {
+    style.remove();
+  }
+});
+
 for (const pointerType of ["mouse", "touch"])
   test(`${pointerType} sliding exchanges on pointermove, before release, and ignores the synthetic click`, async () => {
     await mount();

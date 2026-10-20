@@ -110,6 +110,26 @@ async function load(storage) {
 }
 const format = (n) => n.toLocaleString("zh-CN");
 
+function GameButton({
+  locked = false,
+  disabled = false,
+  class: className = "",
+  children,
+  ...props
+}) {
+  return (
+    <button
+      type="button"
+      {...props}
+      class={`game-button ${className}`.trim()}
+      disabled={locked || disabled}
+      data-state={disabled ? "unavailable" : locked ? "locked" : undefined}
+    >
+      {children}
+    </button>
+  );
+}
+
 function StorageGate({ error, retry, saving = false }) {
   const button = useRef();
   useLayoutEffect(() => {
@@ -838,14 +858,15 @@ function FuzzyGame({ initialProfile, storage }) {
 
       <main class="main-content">
         <header class="topbar">
-          <button
+          <GameButton
             class="icon-button pause-button"
             aria-label={levelsOpen ? "返回游戏" : "暂停游戏"}
-            disabled={busy || (result && !levelsOpen)}
+            locked={busy}
+            disabled={!!result && !levelsOpen}
             onClick={() => levelsOpen ? dismiss() : setView("pause")}
           >
             <Icon name={levelsOpen ? "back" : "pause"} size={24} />
-          </button>
+          </GameButton>
           <a class="topbar-title" href="../">
             绒绒消消乐
           </a>
@@ -1059,28 +1080,30 @@ function FuzzyGame({ initialProfile, storage }) {
                 )}
               </div>
               <div class="tools">
-                <button
+                <GameButton
                   aria-label={`提示，剩余 ${active.hints} 次`}
                   title="提示"
                   onClick={useHint}
-                  disabled={busy || result || active.hints === 0}
+                  locked={busy}
+                  disabled={!!result || active.hints === 0}
                 >
                   <span class="tool-icon">
                     <Icon name="hint" />
                   </span>
                   <b class="tool-badge" aria-hidden="true">{active.hints}</b>
-                </button>
-                <button
+                </GameButton>
+                <GameButton
                   aria-label={`重排，剩余 ${active.shuffles} 次`}
                   title="重排"
                   onClick={useShuffle}
-                  disabled={busy || result || active.shuffles === 0}
+                  locked={busy}
+                  disabled={!!result || active.shuffles === 0}
                 >
                   <span class="tool-icon">
                     <Icon name="shuffle" />
                   </span>
                   <b class="tool-badge" aria-hidden="true">{active.shuffles}</b>
-                </button>
+                </GameButton>
               </div>
             </section>
             <aside class="game-details">
@@ -1258,21 +1281,23 @@ function FuzzyGame({ initialProfile, storage }) {
             {modal === "pause" && (
               <>
                 <span class="modal-symbol">
-                  <Icon name="pause" size={34} />
+                  <Icon name="pause" size={28} />
                 </span>
                 <h2 id="dialog-title">已暂停</h2>
                 <button class="primary-button" onClick={dismiss}>
-                  <Icon name="play" size={18} /> 继续游戏
+                  <Icon name="play" size={22} /> 继续游戏
                 </button>
-                <button
-                  class="secondary-button"
-                  onClick={() => setView("restart")}
-                >
-                  重新开始
-                </button>
-                <button class="secondary-button" onClick={showLevels}>
-                  <Icon name="map" size={18} /> 返回选关
-                </button>
+                <div class="modal-actions">
+                  <button
+                    class="secondary-button"
+                    onClick={() => setView("restart")}
+                  >
+                    <Icon name="restart" size={20} /> 重新开始
+                  </button>
+                  <button class="secondary-button" onClick={showLevels}>
+                    <Icon name="map" size={20} /> 返回选关
+                  </button>
+                </div>
               </>
             )}
             {modal === "restart" && (
@@ -1389,12 +1414,14 @@ function FuzzyGame({ initialProfile, storage }) {
                   {mode === "daily" ? "返回闯关" : "下一关"}
                   <Icon name="arrow" size={18} />
                 </button>
-                <button class="secondary-button" onClick={() => newGame()}>
-                  再玩一次
-                </button>
-                <button class="secondary-button" onClick={showLevels}>
-                  返回选关
-                </button>
+                <div class="modal-actions">
+                  <button class="secondary-button" onClick={() => newGame()}>
+                    <Icon name="restart" size={20} /> 再玩一次
+                  </button>
+                  <button class="secondary-button" onClick={showLevels}>
+                    <Icon name="map" size={20} /> 返回选关
+                  </button>
+                </div>
               </>
             )}
             {modal === "lost" && (

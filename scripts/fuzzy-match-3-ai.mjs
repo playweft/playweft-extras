@@ -60,10 +60,10 @@ export function simulateTurn(
       (count, i) => count + wave.collected[i],
     );
     next.objective = advanceObjective(next, wave);
-    board = refill(wave.board, random);
+    board = refill(wave.board, random, undefined, next.objective);
     for (let arrival; (arrival = collectDeliveries(next, board));) {
       next.objective = arrival.objective;
-      board = refill(arrival.board, random);
+      board = refill(arrival.board, random, undefined, next.objective);
     }
     if (wave.cleared.length || wave.iceHits.size) chain++;
   }

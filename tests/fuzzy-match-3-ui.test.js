@@ -1767,33 +1767,36 @@ for (const kind of ["spread", "reveal"])
     }
   });
 
-test("cargo animates its arrival, updates the main goal live, refills and completes normally", async () => {
-  const adventure = createRotatingGame(4, false, seededRandom(1));
-  const template = patternedGame();
-  adventure.board = template.board;
-  adventure.iceGoal = 0;
-  adventure.objective = { kind: "deliver", total: 1, delivered: 0, exits: [2] };
-  for (const i of [48, 49, 58]) adventure.board[i].type = 5;
-  adventure.board[50] = { ...adventure.board[50], kind: "delivery", type: null };
-  adventure.score = levelConfig(4).target;
-  const oldRandom = Math.random;
-  Math.random = seededRandom(4);
-  try {
-    await mount({ adventure });
-    await click(piece(50));
-    await click(piece(58));
-    await until(() => root.querySelector(".cell.clearing .delivery-token"));
-    assert.match(root.querySelector(".mini-goal[data-goal]").getAttribute("aria-label"), /1 \/ 1/);
-    assert.deepEqual(saved().adventure, adventure);
-    await settled();
-    assert.equal(saved().adventure.objective.delivered, 1);
-    assert.equal(root.querySelectorAll(".board .delivery-token").length, 0);
-    assert.equal(saved().adventure.status, "won");
-    assert.equal(saved().adventure.moves, adventure.moves - 1);
-  } finally {
-    Math.random = oldRandom;
-  }
-});
+for (const total of [1, 3])
+  test(`cargo animates its arrival and refills toward its ${total}-target goal`, async () => {
+    const adventure = createRotatingGame(4, false, seededRandom(1));
+    const template = patternedGame();
+    adventure.board = template.board;
+    adventure.iceGoal = 0;
+    adventure.objective = { kind: "deliver", total, delivered: 0, exits: [2] };
+    for (const i of [48, 49, 58]) adventure.board[i].type = 5;
+    adventure.board[50] = { ...adventure.board[50], kind: "delivery", type: null };
+    if (total === 3)
+      adventure.board[7] = { ...adventure.board[7], kind: "delivery", type: null };
+    adventure.score = levelConfig(4).target;
+    const oldRandom = Math.random;
+    Math.random = seededRandom(4);
+    try {
+      await mount({ adventure });
+      await click(piece(50));
+      await click(piece(58));
+      await until(() => root.querySelector(".cell.clearing .delivery-token"));
+      assert.match(root.querySelector(".mini-goal[data-goal]").getAttribute("aria-label"), new RegExp(`1 / ${total}`));
+      assert.deepEqual(saved().adventure, adventure);
+      await settled();
+      assert.equal(saved().adventure.objective.delivered, 1);
+      assert.equal(root.querySelectorAll(".board .delivery-token").length, total === 3 ? 2 : 0);
+      assert.equal(saved().adventure.status, total === 3 ? "playing" : "won");
+      assert.equal(saved().adventure.moves, adventure.moves - 1);
+    } finally {
+      Math.random = oldRandom;
+    }
+  });
 
 test("a failed asynchronous read preserves progress and retries instead of creating level one", async () => {
   const native = globalThis.localStorage;

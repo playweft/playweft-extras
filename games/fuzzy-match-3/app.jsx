@@ -194,6 +194,7 @@ export function FuzzyMatch3App({ storage }) {
 function FuzzyGame({ initialProfile, storage }) {
   const [profile, setProfile] = useState(() => initialProfile);
   const [mode, setMode] = useState("adventure");
+  const [scoreTrackKey, setScoreTrackKey] = useState(0);
   const [view, setView] = useState(null);
   const [levelsOpen, setLevelsOpen] = useState(false);
   const [levelPage, setLevelPage] = useState(0);
@@ -522,7 +523,7 @@ function FuzzyGame({ initialProfile, storage }) {
       const drops = [];
       nextBoard = refill(wave.board, Math.random, (piece, from, to) => {
         drops.push({ id: piece.id, from, to });
-      });
+      }, next.objective);
       const motion = planFalls(drops);
       setBoard(nextBoard);
       setFalling(motion);
@@ -541,7 +542,7 @@ function FuzzyGame({ initialProfile, storage }) {
         const deliveryDrops = [];
         nextBoard = refill(arrival.board, Math.random, (piece, from, to) => {
           deliveryDrops.push({ id: piece.id, from, to });
-        });
+        }, next.objective);
         const deliveryMotion = planFalls(deliveryDrops);
         setBoard(nextBoard);
         setClearing([]);
@@ -714,6 +715,7 @@ function FuzzyGame({ initialProfile, storage }) {
   }
   function switchMode(nextMode) {
     if (lock.current) return;
+    setScoreTrackKey((key) => key + 1);
     setLevelsOpen(false);
     const date = todayKey();
     let nextProfile = profile;
@@ -736,6 +738,7 @@ function FuzzyGame({ initialProfile, storage }) {
       return;
     }
     const next = dailyGame(profile.date);
+    setScoreTrackKey((key) => key + 1);
     setBoard(next.board);
     updateGame(next);
     setView(null);
@@ -764,6 +767,7 @@ function FuzzyGame({ initialProfile, storage }) {
   }
   function openLevel(level, restart = false) {
     if (lock.current || level < 1 || level > unlockedLevel) return;
+    setScoreTrackKey((key) => key + 1);
     setLevelsOpen(false);
     const latest = profile.adventure;
     const nextMode =
@@ -961,6 +965,7 @@ function FuzzyGame({ initialProfile, storage }) {
                     </strong>
                   </div>
                   <div
+                    key={scoreTrackKey}
                     class="score-track"
                     role="progressbar"
                     aria-label="星级得分进度"

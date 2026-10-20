@@ -1,12 +1,18 @@
 import { SIZE, TYPE_COUNT } from "./constants.js";
-import { createObjective, goalKindForLevel, isDelivery, objectiveProgress, validObjective } from "./objectives.js";
+import {
+  createObjective,
+  deliverySpawnCount,
+  goalKindForLevel,
+  isDelivery,
+  objectiveProgress,
+  validObjective,
+} from "./objectives.js";
 export { SIZE, TYPE_COUNT } from "./constants.js";
 export const MOVE_BONUS = 1500;
 const PATTERN_BONUSES = { row: 80, column: 80, color: 200 };
 let nextId = 0;
 const tile = (type) => ({ id: ++nextId, type, special: null });
-const perpendicular = (direction) =>
-  direction === "row" ? "column" : "row";
+const perpendicular = (direction) => (direction === "row" ? "column" : "row");
 const ICE_LAYOUTS = [
   [1, 62, 8, 55, 6, 57, 15, 48],
   [9, 54, 14, 49, 17, 46, 22, 41],
@@ -103,7 +109,13 @@ export function findMatches(board) {
           finish();
           run = [];
         }
-        if (piece && !piece.ice && piece.special !== "color" && !isDelivery(piece)) run.push(index);
+        if (
+          piece &&
+          !piece.ice &&
+          piece.special !== "color" &&
+          !isDelivery(piece)
+        )
+          run.push(index);
       }
       finish();
     }
@@ -146,7 +158,10 @@ export function createBoard(random = Math.random) {
   for (let attempt = 0; attempt < 100; attempt++) {
     const board = [];
     for (let i = 0; i < SIZE * SIZE; i++) {
-      const allowed = Array.from({ length: TYPE_COUNT }, (_, type) => type).filter(
+      const allowed = Array.from(
+        { length: TYPE_COUNT },
+        (_, type) => type,
+      ).filter(
         (type) =>
           !(
             i % SIZE >= 2 &&
@@ -206,7 +221,8 @@ function matchReward(group) {
 function mostCommonType(board) {
   const counts = Array(TYPE_COUNT).fill(0);
   for (const piece of board)
-    if (piece && piece.special !== "color" && !isDelivery(piece)) counts[piece.type]++;
+    if (piece && piece.special !== "color" && !isDelivery(piece))
+      counts[piece.type]++;
   return counts.indexOf(Math.max(...counts));
 }
 
@@ -296,8 +312,8 @@ export function resolveWave(
   );
   if (!cleared.size && !finaleColorClears.length) return null;
   const groups = matchGroups(lines);
-  const effectGroups = groups.map(group => {
-    const indices = [...new Set(group.flatMap(line => line.indices))];
+  const effectGroups = groups.map((group) => {
+    const indices = [...new Set(group.flatMap((line) => line.indices))];
     return { sources: indices, indices };
   });
   const colorTargets = new Map();
@@ -322,7 +338,8 @@ export function resolveWave(
   ) {
     for (const group of groups) {
       const indices = [...new Set(group.flatMap((line) => line.indices))];
-      if (activated.length && !indices.includes(colorClearPartnerIndex)) continue;
+      if (activated.length && !indices.includes(colorClearPartnerIndex))
+        continue;
       const { longest, special } = matchReward(group);
       if (!special) continue;
       const intersections = indices.filter(
@@ -333,7 +350,8 @@ export function resolveWave(
         indices.includes(index) &&
         (!board[index].special || index === colorClearPartnerIndex);
       const index =
-        (colorClearPartnerIndex !== undefined && eligible(colorClearPartnerIndex)
+        (colorClearPartnerIndex !== undefined &&
+        eligible(colorClearPartnerIndex)
           ? colorClearPartnerIndex
           : undefined) ??
         preferred.find(eligible) ??
@@ -391,7 +409,10 @@ export function resolveWave(
         col = index % SIZE;
       effectGroups.push({
         sources: [index],
-        indices: Array.from({ length: SIZE }, (_, i) => [row * SIZE + i, i * SIZE + col]).flat(),
+        indices: Array.from({ length: SIZE }, (_, i) => [
+          row * SIZE + i,
+          i * SIZE + col,
+        ]).flat(),
       });
       for (let i = 0; i < SIZE; i++) {
         stripeHit(row * SIZE + i, "row");
@@ -420,7 +441,9 @@ export function resolveWave(
         // Converted stripes inherit paint from the exchanged pair as one batch.
         sources: transformed.has(index) ? exchange : [index],
         initial: transformed.has(index),
-        indices: Array.from({ length: SIZE }, (_, i) => direction === "row" ? row * SIZE + i : i * SIZE + col),
+        indices: Array.from({ length: SIZE }, (_, i) =>
+          direction === "row" ? row * SIZE + i : i * SIZE + col,
+        ),
       });
       for (let i = 0; i < SIZE; i++)
         stripeHit(
@@ -433,7 +456,8 @@ export function resolveWave(
       const affected = [index];
       board.forEach((piece, i) => {
         if (
-          piece && !isDelivery(piece) &&
+          piece &&
+          !isDelivery(piece) &&
           !protectedColorClear(i) &&
           (target === "all" || piece.type === target)
         ) {
@@ -490,15 +514,20 @@ export function resolveWave(
     return null;
   });
   const patternBonus = groups.reduce(
-    (total, group) => total + (PATTERN_BONUSES[matchReward(group).special] || 0),
+    (total, group) =>
+      total + (PATTERN_BONUSES[matchReward(group).special] || 0),
     0,
   );
   // Matched piece converted to rewards earns base points and belongs to the area.
   const areaCount = cleared.size + creations.size;
-  const areaProgress = Math.min(1, Math.max(0, (areaCount - 3) / (SIZE * SIZE - 3)));
+  const areaProgress = Math.min(
+    1,
+    Math.max(0, (areaCount - 3) / (SIZE * SIZE - 3)),
+  );
   const areaMultiplier = 1 + Math.sqrt(areaProgress);
   const clearScore =
-    Math.round((areaCount * 60 * areaMultiplier * Math.min(chain, 5)) / 10) * 10;
+    Math.round((areaCount * 60 * areaMultiplier * Math.min(chain, 5)) / 10) *
+    10;
   return {
     board: next,
     cleared: [...cleared],
@@ -521,8 +550,16 @@ export function resolveWave(
   };
 }
 
-export function refill(board, random = Math.random, onDrop) {
+export function refill(board, random = Math.random, onDrop, objective) {
   const next = [...board];
+  let deliveries = deliverySpawnCount(board, objective);
+  const incoming = () => {
+    if (deliveries > 0) {
+      deliveries--;
+      return { ...tile(null), kind: "delivery" };
+    }
+    return tile(Math.floor(random() * TYPE_COUNT));
+  };
   if (!iceLayers(board)) {
     // Without obstacles, compacting a column is equivalent to entering at its top.
     for (let col = 0; col < SIZE; col++) {
@@ -536,7 +573,7 @@ export function refill(board, random = Math.random, onDrop) {
       for (let row = SIZE - 1; row >= 0; row--) {
         const index = row * SIZE + col;
         const survivor = remaining[SIZE - 1 - row];
-        const piece = survivor?.piece ?? tile(Math.floor(random() * TYPE_COUNT));
+        const piece = survivor?.piece ?? incoming();
         next[index] = piece;
         if (survivor) {
           if (survivor.from !== index) onDrop?.(piece, survivor.from, index);
@@ -581,8 +618,8 @@ export function refill(board, random = Math.random, onDrop) {
       const barrier = barriers[index];
       // The blocking ice keeps its next turn across cascades and saves.
       const preferred = next[barrier].feedSide === "right" ? 1 : 0;
-      const canFeed = sources.map((i) =>
-        i >= 0 && !next[i]?.ice && (Boolean(next[i]) || reachable[i]),
+      const canFeed = sources.map(
+        (i) => i >= 0 && !next[i]?.ice && (Boolean(next[i]) || reachable[i]),
       );
       const side = canFeed[preferred] ? preferred : 1 - preferred;
       const source = sources[side];
@@ -600,7 +637,7 @@ export function refill(board, random = Math.random, onDrop) {
     // Never create piece below ice: inaccessible pockets remain empty.
     for (let col = 0; col < SIZE; col++) {
       if (next[col]) continue;
-      next[col] = tile(Math.floor(random() * TYPE_COUNT));
+      next[col] = incoming();
       onDrop?.(next[col], col - SIZE, col);
       moved = true;
     }
@@ -639,24 +676,25 @@ export function shuffleBoard(board, random = Math.random) {
 }
 
 function threeStarTarget(level) {
-  // Intro levels ramp to the level-4 anchor; later levels approach the ceiling.
+  // Intro levels ramp to level 4; the later curve continues past its level-1000 anchor.
   const fourthTarget = 28500;
   if (level <= 4) {
     const target = 9800 + ((level - 1) / 3) * (fourthTarget - 9800);
     return Math.round(target / 100) * 100;
   }
-  const lastStage = 996;
-  const stage = Math.min(level - 4, lastStage);
-  const progress = (stage * (lastStage + 30)) / ((stage + 30) * lastStage);
+  const anchorStage = 996;
+  const stage = level - 4;
+  const progress = (stage * (anchorStage + 30)) / ((stage + 30) * anchorStage);
   const target = fourthTarget + progress * (35000 - fourthTarget);
   return Math.round(target / 100) * 100;
 }
 
 export function levelConfig(level = 1, daily = false) {
-  // Normalize a slowing difficulty curve to its level-1000 ceiling.
-  const lastStage = 999;
-  const stage = Math.min(level - 1, lastStage);
-  const difficulty = (stage * (lastStage + 30)) / ((stage + 30) * lastStage);
+  // Anchor the slowing difficulty curve at level 1000 without truncating later levels.
+  const anchorStage = 999;
+  const stage = level - 1;
+  const difficulty =
+    (stage * (anchorStage + 30)) / ((stage + 30) * anchorStage);
   const iceCount =
     daily || level < 4 ? 0 : Math.min(8, 2 + Math.floor((level - 4) / 8));
   const doubleIce =
@@ -708,7 +746,12 @@ export function totalScore(game) {
   return game.score + moveBonus(game);
 }
 
-export function createGame(level = 1, daily = false, random = Math.random, options = {}) {
+export function createGame(
+  level = 1,
+  daily = false,
+  random = Math.random,
+  options = {},
+) {
   const config = levelConfig(level, daily);
   let board = createBoard(random);
   config.iceCells.forEach((index, order) => {
@@ -716,8 +759,11 @@ export function createGame(level = 1, daily = false, random = Math.random, optio
   });
   const objective = createObjective(options.goalKind ?? config.goalKind, level);
   if (objective.kind === "deliver") {
-    const columns = [2, 5, 0, 7, 3, 4, 1, 6].filter(col => !board[col].ice);
-    for (const index of columns.slice(0, objective.total)) {
+    const columns = [2, 5, 0, 7, 3, 4, 1, 6].filter((col) => !board[col].ice);
+    for (const index of columns.slice(
+      0,
+      deliverySpawnCount(board, objective),
+    )) {
       board[index] = { ...tile(null), kind: "delivery" };
     }
   }
@@ -762,10 +808,16 @@ export function validGame(game, { allowDeadBoard = false } = {}) {
         (f &&
           Number.isSafeInteger(f.id) &&
           (isDelivery(f)
-            ? f.type === null && f.special === null && !f.ice && f.pending === undefined
-            : f.kind === undefined && (f.special === "color"
-              ? f.type === null
-              : Number.isInteger(f.type) && f.type >= 0 && f.type < TYPE_COUNT)) &&
+            ? f.type === null &&
+              f.special === null &&
+              !f.ice &&
+              f.pending === undefined
+            : f.kind === undefined &&
+              (f.special === "color"
+                ? f.type === null
+                : Number.isInteger(f.type) &&
+                  f.type >= 0 &&
+                  f.type < TYPE_COUNT)) &&
           [null, "row", "column", "color"].includes(f.special) &&
           Number.isInteger(f.ice ?? 0) &&
           (f.ice ?? 0) >= 0 &&
@@ -788,7 +840,9 @@ export function validGame(game, { allowDeadBoard = false } = {}) {
   if (
     new Set(pieces.map((f) => f.id)).size !== pieces.length ||
     (pendingColorClear(game.board) < 0 && findMatches(game.board).length) ||
-    (!allowDeadBoard && pendingColorClear(game.board) < 0 && !findMove(game.board))
+    (!allowDeadBoard &&
+      pendingColorClear(game.board) < 0 &&
+      !findMove(game.board))
   )
     return false;
   if (

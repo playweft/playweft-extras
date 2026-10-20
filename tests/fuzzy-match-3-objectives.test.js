@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createGame, findMatches, findMove, canSwap, gameStatus, levelConfig, refill, resolveWave, restoreGame, seededRandom, shuffleBoard, swap, validGame } from "../games/fuzzy-match-3/game.js";
-import { GOAL_KINDS, advanceObjective, collectDeliveries, createObjective, goalKindForLevel, isDelivery, objectiveProgress } from "../games/fuzzy-match-3/objectives.js";
+import { GOAL_KINDS, advanceObjective, collectDeliveries, createObjective, goalKindForLevel, isDelivery, objectiveProgress, validObjective } from "../games/fuzzy-match-3/objectives.js";
 import { chooseMove, simulateTurn } from "../scripts/fuzzy-match-3-ai.mjs";
 import { audit } from "../scripts/fuzzy-match-3-balance.mjs";
 
@@ -45,7 +45,7 @@ test("delivery targets spawn only in the first row and preserve every frozen cel
     const config = levelConfig(level);
     const game = createGame(level, false, seededRandom(level), { goalKind: "deliver" });
     const positions = game.board.flatMap((piece, index) => isDelivery(piece) ? [index] : []);
-    assert.equal(positions.length, game.objective.total, `level ${level}`);
+    assert.equal(positions.length, Math.min(2, game.objective.total), `level ${level}`);
     assert.ok(positions.every(index => index < 8 && !config.iceCells.includes(index)), `level ${level}`);
     config.iceCells.forEach((index, order) => {
       assert.equal(game.board[index].ice, order < config.doubleIce ? 2 : 1);
@@ -61,6 +61,62 @@ test("restoring delivery progress preserves targets that have already fallen", (
   const start = game.board.findIndex(isDelivery);
   game.board = swap(game.board, start, start + 16);
   assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
+});
+
+test("delivery reserves and legacy boards with all targets survive save/restore", () => {
+  const game = createGame(101, false, seededRandom(42), { goalKind: "deliver" });
+  assert.equal(game.objective.total, 3);
+  assert.equal(game.board.filter(isDelivery).length, 2);
+  assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
+  const extra = game.board.findIndex(piece => !piece.ice && !isDelivery(piece));
+  game.board[extra] = { ...game.board[extra], type: null, special: null, kind: "delivery" };
+  assert.equal(game.board.filter(isDelivery).length, 3);
+  assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
+});
+
+for (const simultaneous of [false, true])
+  test(`delivery arrival replenishes only the remaining reserve (${simultaneous ? "two arrivals" : "one arrival"})`, () => {
+    const board = patterned();
+    const positions = [56, simultaneous ? 57 : 7];
+    for (const index of positions)
+      board[index] = { ...board[index], type: null, kind: "delivery" };
+    const objective = { kind: "deliver", total: 3, delivered: 0, exits: [0, 1] };
+    const original = structuredClone(board);
+    const arrival = collectDeliveries({ objective }, board);
+    assert.equal(arrival.objective.delivered, simultaneous ? 2 : 1);
+    const drops = [];
+    const next = refill(arrival.board, seededRandom(8), (piece, from, to) => {
+      if (isDelivery(piece)) drops.push({ id: piece.id, from, to });
+    }, arrival.objective);
+    const spawned = next.filter(piece => isDelivery(piece) && !positions.some(i => board[i].id === piece.id));
+    assert.equal(spawned.length, 1);
+    assert.equal(next.filter(isDelivery).length, simultaneous ? 1 : 2);
+    assert.deepEqual(drops.filter(drop => drop.id === spawned[0].id)[0], {
+      id: spawned[0].id, from: -8, to: 0,
+    });
+    assert.deepEqual(board, original);
+    assert.ok(validObjective({ board: next, objective: arrival.objective }));
+    const arrived = next.map(piece => isDelivery(piece) ? { ...piece, type: 0, kind: undefined } : piece);
+    arrived[0] = null;
+    const completed = { ...objective, delivered: 3 };
+    assert.equal(refill(arrived, seededRandom(9), undefined, completed).filter(isDelivery).length, 0);
+  });
+
+test("delivery reserves wait for a free top entrance without overwriting ice", () => {
+  const board = patterned();
+  for (let col = 0; col < 8; col++) board[col].ice = 1;
+  for (const index of [56, 57])
+    board[index] = { ...board[index], type: null, kind: "delivery" };
+  const objective = { kind: "deliver", total: 3, delivered: 0, exits: [0, 1] };
+  const arrival = collectDeliveries({ objective }, board);
+  const blocked = refill(arrival.board, seededRandom(8), undefined, arrival.objective);
+  assert.equal(blocked.filter(isDelivery).length, 0);
+  for (let col = 0; col < 8; col++) assert.equal(blocked[col], board[col]);
+  assert.ok(validObjective({ board: blocked, objective: arrival.objective }));
+  blocked[0] = null;
+  const opened = refill(blocked, seededRandom(9), undefined, arrival.objective);
+  assert.equal(opened.filter(isDelivery).length, 1);
+  assert.ok(validObjective({ board: opened, objective: arrival.objective }));
 });
 
 test("painting spreads only through affected connected effects, with retained rewards counting", () => {
@@ -234,6 +290,20 @@ test("a legal cargo exchange delivers only at a matching bottom exit and continu
   assert.equal(next.status, "won");
   assert.ok(validGame(next));
   assert.equal(game.objective.delivered, 0);
+});
+
+test("AI turns replenish a delivery reserve and the resulting progress resumes unchanged", () => {
+  const game = arrivingGame();
+  game.objective.total = 3;
+  game.board[7] = { ...game.board[7], type: null, kind: "delivery" };
+  const snapshot = structuredClone(game);
+  const next = simulateTurn(game, [50, 58], { random: seededRandom(4) });
+  assert.equal(next.objective.delivered, 1);
+  assert.equal(next.board.filter(isDelivery).length, 2);
+  assert.equal(next.board[7].id, game.board[7].id);
+  assert.ok(next.board.some(piece => isDelivery(piece) && !game.board.some(old => old.id === piece.id)));
+  assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(next))), next);
+  assert.deepEqual(game, snapshot);
 });
 
 test("cargo falls with ordinary gravity and is not consumed by a stripe", () => {

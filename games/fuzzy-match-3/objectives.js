@@ -2,6 +2,13 @@ import { SIZE, TYPE_COUNT } from "./constants.js";
 
 export const GOAL_KINDS = ["collect", "spread", "reveal", "deliver"];
 export const isDelivery = (piece) => piece?.kind === "delivery";
+const MAX_ACTIVE_DELIVERIES = 2;
+
+export function deliverySpawnCount(board, goal) {
+  if (goal?.kind !== "deliver") return 0;
+  const active = board.filter(isDelivery).length;
+  return Math.max(0, Math.min(MAX_ACTIVE_DELIVERIES, goal.total - goal.delivered) - active);
+}
 
 export function goalKindForLevel(level, daily = false) {
   if (daily || (level >= 10 && level % 5 === 0)) return "collect";
@@ -131,7 +138,10 @@ export function validObjective(game) {
   }
   return Number.isInteger(goal.total) && goal.total >= 1 && goal.total <= 4 &&
     Number.isInteger(goal.delivered) && goal.delivered >= 0 && goal.delivered <= goal.total &&
-    indicesValid(goal.exits, SIZE) && deliveries + goal.delivered === goal.total;
+    indicesValid(goal.exits, SIZE) &&
+    // Unspawned targets stay in reserve; legacy boards may already contain all targets.
+    deliveries + goal.delivered >= Math.min(MAX_ACTIVE_DELIVERIES, goal.total) &&
+    deliveries + goal.delivered <= goal.total;
 }
 
 /** A comparable progress value for move ranking, with partial uncovering and downward travel. */

@@ -695,13 +695,13 @@ test("completion scoring rewards early finishes, survives serialization, and nev
   );
 });
 
-test("level difficulty stays bounded through level 10000 with round, ordered score goals", () => {
+test("level difficulty extends gradually through level 10000 with round, ordered score goals", () => {
   let previousTarget = 0;
   let previousStars = [0, 0, 0];
   for (let level = 1; level <= 10000; level++) {
     const config = levelConfig(level);
     assert.ok(config.moves >= 23 && config.moves <= 32);
-    assert.ok(config.target >= previousTarget && config.target <= 18000);
+    assert.ok(config.target >= previousTarget && config.target <= 18500);
     assert.equal(config.starTargets[0], config.target);
     assert.ok(
       Math.abs(config.starTargets[1] - (config.target + config.starTargets[2]) / 2) <= 50,
@@ -735,12 +735,17 @@ test("level difficulty stays bounded through level 10000 with round, ordered sco
   assert.equal(late.moves, 23);
   assert.equal(late.count, 36);
   assert.deepEqual(late.starTargets, [18000, 26500, 35000]);
-  for (const level of [1001, 2000, 10000]) {
+  for (const [level, targets] of [
+    [1001, [18000, 26500, 35000]],
+    [2000, [18300, 26700, 35100]],
+    [5000, [18400, 26800, 35200]],
+    [10000, [18500, 26900, 35200]],
+  ]) {
     const config = levelConfig(level);
     assert.ok(config.moves >= late.moves && config.moves <= late.moves + 2);
     if (level % 5 === 0) assert.equal(config.count, 36);
     else assert.equal(config.count, 24);
-    assert.deepEqual(config.starTargets, late.starTargets);
+    assert.deepEqual(config.starTargets, targets);
   }
   const daily = levelConfig(1, true);
   assert.deepEqual(levelConfig(1000, true), daily);

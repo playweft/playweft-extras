@@ -229,14 +229,21 @@ export function createPupdokuController({
     cancelInput();
     clearHighlights();
     const level = state.level;
-    publish({ completion: { phase: 'pups', level }, message: '本关完成。' });
+    const perfect =
+      state.game.hearts === 3 &&
+      !state.game.hasMistake &&
+      state.game.hints === 0 &&
+      !state.game.hasMarked &&
+      !state.game.cells.some((value) => value === 1 || value === 3);
+    const completion = (phase) => ({ phase, level, perfect });
+    publish({ completion: completion('pups'), message: '本关完成。' });
     completionTimer = schedule(() => {
-      publish({ completion: { phase: 'enter', level } });
+      publish({ completion: completion('enter') });
       completionTimer = schedule(() => {
-        publish({ completion: { phase: 'hold', level } });
+        publish({ completion: completion('hold') });
         const nextLevel = prepareLevel();
         completionTimer = schedule(() => {
-          publish({ completion: { phase: 'exit', level } });
+          publish({ completion: completion('exit') });
           void newGame(nextLevel);
           completionTimer = schedule(
             () => publish({ completion: null }),
@@ -279,7 +286,8 @@ export function createPupdokuController({
     clearHighlights();
     const game = state.game,
       cellsBefore = [...game.cells],
-      historyBefore = [...game.history];
+      historyBefore = [...game.history],
+      hasMarkedBefore = game.hasMarked;
     const changed = markCells(game, indices, value);
     commit(changed ? { message: DEFAULT_MESSAGE } : {});
     if (changed)
@@ -287,6 +295,9 @@ export function createPupdokuController({
         if (state.game !== game || disposed) return;
         game.cells = cellsBefore;
         game.history = historyBefore;
+        // Only the gesture recognizer rolls back its provisional first tap.
+        // A real undo must retain the fact that the player marked a cell.
+        game.hasMarked = hasMarkedBefore;
         commit();
       };
   }
@@ -472,7 +483,14 @@ export function createPupdokuController({
     cancelInput();
     clearHighlights();
     if (!state.game || state.generationError) return newGame();
-    commit({ game: createGame(state.game.puzzle), message: DEFAULT_MESSAGE });
+    const previous = state.game;
+    const game = {
+      ...createGame(previous.puzzle),
+      hasMarked: previous.hasMarked,
+      hasMistake: previous.hasMistake || previous.hearts < 3,
+      hints: previous.hints,
+    };
+    commit({ game, message: DEFAULT_MESSAGE });
   }
   function start() {
     if (disposed || state.storageError) return;

@@ -1602,6 +1602,8 @@ export function createGame(puzzle) {
     history: [],
     hearts: 3,
     hints: 0,
+    hasMarked: false,
+    hasMistake: false,
   };
 }
 
@@ -1630,12 +1632,14 @@ export function move(game, index, tool) {
         ? conflicts(game.puzzle, game.cells, index)
         : [];
   if (errors.length) {
+    game.hasMistake = true;
     game.hearts--;
     const changed = game.cells[index] !== 3;
     game.cells[index] = 3;
     return { changed, errors };
   }
   if (game.cells[index] === next) return { changed: false };
+  if (next === 1) game.hasMarked = true;
   game.history.push([...game.cells]);
   if (game.history.length > 150) game.history.shift();
   game.cells[index] = next;
@@ -1662,6 +1666,7 @@ export function markCells(game, indices, value, recordHistory = true) {
       game.cells[index] !== value,
   );
   if (!targets.length) return false;
+  if (value === 1) game.hasMarked = true;
   if (recordHistory) {
     game.history.push([...game.cells]);
     if (game.history.length > 150) game.history.shift();
@@ -1858,8 +1863,15 @@ export function restoreGame(saved, onError = () => {}) {
     puzzle,
     cells: [...saved.cells],
     hearts: saved.hearts,
+    hasMistake: saved.hasMistake === true || saved.hearts < 3,
     hints:
       Number.isSafeInteger(saved.hints) && saved.hints >= 0 ? saved.hints : 0,
+    // Older in-progress saves cannot prove that no marks were used and undone.
+    hasMarked:
+      typeof saved.hasMarked === 'boolean'
+        ? saved.hasMarked
+        : saved.cells.some((value) => value !== 0) ||
+          (Array.isArray(saved.history) && saved.history.length > 0),
     history: Array.isArray(saved.history)
       ? saved.history
           .filter((cells) => !cellsError(cells))

@@ -476,8 +476,44 @@ export function PupdokuApp({ controller }) {
           }}
         >
           <div class="completion-content">
-            <span class="completion-pup" aria-hidden="true">
-              🐶
+            <span
+              class={`completion-pup${completion.perfect ? ' perfect' : ''}`}
+              role="img"
+              aria-label={
+                completion.perfect
+                  ? '无失误、无标记、无提示通关的皇冠小狗'
+                  : '小狗'
+              }
+            >
+              <span aria-hidden="true">🐶</span>
+              {completion.perfect && (
+                <>
+                  <svg
+                    class="completion-crown"
+                    viewBox="0 0 64 48"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="m7 12 14 10L32 5l11 17 14-10-5 29H12Z"
+                      fill="#ffd45a"
+                      stroke="#fff0ad"
+                      stroke-width="3"
+                      stroke-linejoin="round"
+                    />
+                    <path d="M13 34h38" stroke="#e99b27" stroke-width="4" />
+                    <path d="m32 22 5 6-5 6-5-6Z" fill="#fff9db" />
+                  </svg>
+                  <svg
+                    class="completion-sparkles"
+                    viewBox="0 0 160 140"
+                    aria-hidden="true"
+                  >
+                    <path d="m18 40 3 9 9 3-9 3-3 9-3-9-9-3 9-3Z" />
+                    <path d="m141 75 4 12 12 4-12 4-4 12-4-12-12-4 12-4Z" />
+                    <path d="m44 116 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" />
+                  </svg>
+                </>
+              )}
             </span>
             <h2>全部找到啦！</h2>
             <p>第 {completion.level} 关完成</p>

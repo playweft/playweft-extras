@@ -1464,3 +1464,151 @@ test('async saving coalesces pending snapshots in order and a failed commit retr
   assert.equal(ui.controller.canEdit(), true);
   assert.equal(ui.el('level').textContent, 'Level 256');
 });
+
+test('placing only correct pups by double tap earns a crowned completion and keeps it through the fade', async () => {
+  const board = puzzle.generatePuzzle(8, 31);
+  const ui = await mount(
+    JSON.stringify({ game: puzzle.createGame(board), level: 29 }),
+  );
+  for (const [row, column] of board.solution.entries()) {
+    const index = row * board.size + column;
+    ui.tap(index, 'touch');
+    ui.tap(index, 'touch');
+    assert.equal(
+      ui.controller.getSnapshot().game.hasMarked,
+      false,
+      'the provisional first-tap X does not count',
+    );
+  }
+  assert.equal(ui.controller.getSnapshot().completion.perfect, true);
+  ui.advance(COMPLETION_TIMING.pups);
+  assert.ok(
+    ui
+      .el('completion')
+      .querySelector('.completion-pup.perfect .completion-crown'),
+  );
+  assert.match(
+    ui
+      .el('completion')
+      .querySelector('[role="img"]')
+      .getAttribute('aria-label'),
+    /无失误、无标记、无提示/,
+  );
+  assert.equal(
+    ui.el('completion').querySelector('h2').textContent,
+    '全部找到啦！',
+  );
+  ui.advance(COMPLETION_TIMING.fadeIn + COMPLETION_TIMING.hold);
+  assert.equal(ui.controller.getSnapshot().completion.phase, 'exit');
+  assert.equal(ui.controller.getSnapshot().completion.perfect, true);
+});
+
+test('a real X, an undone hint or a wrong pup each prevents the special completion', async () => {
+  const board = puzzle.generatePuzzle(8, 31);
+  const wrong = (board.solution[0] + 1) % board.size;
+  for (const action of ['mark', 'keyboard-stroke', 'hint', 'wrong']) {
+    const ui = await mount(
+      JSON.stringify({ game: puzzle.createGame(board), level: 3 }),
+    );
+    act(() => {
+      if (action === 'mark') ui.controller.toggleMark(wrong);
+      if (action === 'keyboard-stroke') {
+        ui.controller.startKeyboardStroke(wrong);
+        ui.controller.endKeyboardStroke();
+      }
+      if (action === 'hint') ui.controller.hint();
+      if (action === 'wrong') ui.controller.keyboardAction(wrong, 'd');
+      ui.controller.undo();
+      for (const [row, column] of board.solution.entries())
+        ui.controller.keyboardAction(row * board.size + column, 'd');
+    });
+    assert.equal(ui.controller.getSnapshot().completion.perfect, false, action);
+    ui.advance(COMPLETION_TIMING.pups);
+    assert.equal(
+      ui.el('completion').querySelector('.completion-crown'),
+      null,
+      action,
+    );
+  }
+});
+
+test('perfect-run eligibility survives saving and restarting preserves prior marks', async () => {
+  const board = puzzle.generatePuzzle(8, 31);
+  const ui = await mount(
+    JSON.stringify({ game: puzzle.createGame(board), level: 4 }),
+  );
+  act(() => ui.controller.keyboardAction(board.solution[0], 'd'));
+  const resumed = await mount(ui.storage.get('playweft:pupdoku:v1'));
+  act(() => {
+    for (const [row, column] of board.solution.entries())
+      resumed.controller.keyboardAction(row * board.size + column, 'd');
+  });
+  assert.equal(resumed.controller.getSnapshot().completion.perfect, true);
+  const marked = await mount(
+    JSON.stringify({ game: puzzle.createGame(board), level: 4 }),
+  );
+  act(() => {
+    marked.controller.toggleMark((board.solution[0] + 1) % board.size);
+    marked.controller.undo();
+  });
+  const restored = await mount(marked.storage.get('playweft:pupdoku:v1'));
+  assert.equal(restored.controller.getSnapshot().game.hasMarked, true);
+  act(() => restored.controller.restart());
+  assert.equal(restored.controller.getSnapshot().game.hasMarked, true);
+  act(() => {
+    for (const [row, column] of board.solution.entries())
+      restored.controller.keyboardAction(row * board.size + column, 'd');
+  });
+  assert.equal(restored.controller.getSnapshot().completion.perfect, false);
+  const legacy = puzzle.createGame(board);
+  delete legacy.hasMarked;
+  legacy.cells[board.solution[0]] = 2;
+  assert.equal(
+    puzzle.restoreGame(legacy).hasMarked,
+    true,
+    'old partial saves cannot establish a mark-free history',
+  );
+});
+
+test('restart preserves mistakes and hints through reload while restoring lives and clearing the board', async () => {
+  const board = puzzle.generatePuzzle(8, 31);
+  for (const action of ['wrong', 'hint', 'clean']) {
+    const ui = await mount(
+      JSON.stringify({ game: puzzle.createGame(board), level: 12 }),
+    );
+    act(() => {
+      if (action === 'wrong')
+        ui.controller.keyboardAction((board.solution[0] + 1) % board.size, 'd');
+      if (action === 'hint') ui.controller.hint();
+    });
+    ui.click('restart');
+    const reset = ui.controller.getSnapshot().game;
+    assert.equal(reset.hearts, 3);
+    assert.ok(reset.cells.every((value) => value === 0));
+    assert.equal(reset.history.length, 0);
+    assert.equal(reset.hasMistake, action === 'wrong');
+    assert.equal(reset.hints > 0, action === 'hint');
+    const resumed = await mount(ui.storage.get('playweft:pupdoku:v1'));
+    resumed.click('restart');
+    act(() => {
+      for (const [row, column] of board.solution.entries())
+        resumed.controller.keyboardAction(row * board.size + column, 'd');
+    });
+    assert.equal(
+      resumed.controller.getSnapshot().completion.perfect,
+      action === 'clean',
+      action,
+    );
+    resumed.advance(
+      COMPLETION_TIMING.pups +
+        COMPLETION_TIMING.fadeIn +
+        COMPLETION_TIMING.hold,
+    );
+    await resumed.finish();
+    const next = resumed.controller.getSnapshot();
+    assert.equal(next.level, 13);
+    assert.equal(next.game.hasMarked, false);
+    assert.equal(next.game.hasMistake, false);
+    assert.equal(next.game.hints, 0);
+  }
+});

@@ -1,0 +1,1998 @@
+{
+  "generatedAt": "2026-10-21T16:15:42.847Z",
+  "startedAt": "2026-10-21T16:09:17.165Z",
+  "completedAt": "2026-10-21T16:15:16.920Z",
+  "commit": "8861d65ef84c3fda0836a8d7e3e5681b91cd0cdc",
+  "sourceSha256": {
+    "games/fuzzy-match-3/game.js": "7b1adb7854735364f5dbbbb740c023ed72e822cab9f3b804ac378375ea1dda2b",
+    "games/fuzzy-match-3/objectives.js": "864f43f7a2f884b6a70154fb159c0a010d0dc87739ebee81da9edfceb1354a4d",
+    "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+    "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+  },
+  "protocol": {
+    "strategy": "strong",
+    "policy": "Four candidates, three independent sampled futures per candidate, two turns deep",
+    "games": 5000,
+    "gamesPerType": 1000,
+    "levelRange": [
+      290,
+      310
+    ],
+    "sampling": "Four actual nearby levels per normal goal, 250 games per level; five challenge levels, 200 games per level. Each goal family uses consecutive game seeds 10001–11000, partitioned among its selected levels.",
+    "tools": "No hints or manual shuffles; automatic dead-board reshuffles retained",
+    "denominator": "All games, including losses, for winRate and threeRate. threeAmongWins uses wins only.",
+    "randomness": "Actual refill and decision/prediction randomness use independent seeded streams",
+    "finale": "Win-triggered special cleanup included; exhausted moves do not trigger a finale; winning unused moves award 1500 points each",
+    "delivery": "Three total targets, initially two active; remaining reserve enters from the top after an arrival",
+    "uncertainty": "Wilson 95% intervals, treating independent game seeds as Bernoulli samples; differences between selected level layouts are retained in perLevel results",
+    "failureReasons": "Marginal unmet counts overlap when a failed game misses multiple goals; combinations are disjoint. Score means the raw one-star completion threshold, before any winning move bonus.",
+    "interpretation": "Current strong AI simulation, not a human-player completion estimate; game parameters were not modified."
+  },
+  "perType": {
+    "collect": {
+      "levels": [
+        294,
+        299,
+        304,
+        309
+      ],
+      "games": 1000,
+      "wins": 956,
+      "losses": 44,
+      "winRate": 0.956,
+      "winRate95": [
+        0.9414479081796453,
+        0.9670619603095666
+      ],
+      "threes": 614,
+      "threeRate": 0.614,
+      "threeRate95": [
+        0.5834442946391768,
+        0.6436831724831261
+      ],
+      "threeAmongWins": 0.6422594142259415,
+      "failureReasons": {
+        "losses": 44,
+        "unmet": {
+          "score": 37,
+          "collection": 10,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 8
+        },
+        "combinations": {
+          "score": 26,
+          "ice": 4,
+          "score+ice": 4,
+          "collection": 3,
+          "score+collection": 7,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    "spread": {
+      "levels": [
+        291,
+        296,
+        301,
+        306
+      ],
+      "games": 1000,
+      "wins": 593,
+      "losses": 407,
+      "winRate": 0.593,
+      "winRate95": [
+        0.562250802021724,
+        0.6230373948412075
+      ],
+      "threes": 490,
+      "threeRate": 0.49,
+      "threeRate95": [
+        0.4591134662984696,
+        0.5209630716732583
+      ],
+      "threeAmongWins": 0.8263069139966274,
+      "failureReasons": {
+        "losses": 407,
+        "unmet": {
+          "score": 75,
+          "collection": 0,
+          "spread": 407,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 4
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 331,
+          "score+spread": 72,
+          "spread+ice": 1,
+          "score+spread+ice": 3,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    "reveal": {
+      "levels": [
+        292,
+        297,
+        302,
+        307
+      ],
+      "games": 1000,
+      "wins": 944,
+      "losses": 56,
+      "winRate": 0.944,
+      "winRate95": [
+        0.9279763237468875,
+        0.9566253903083978
+      ],
+      "threes": 605,
+      "threeRate": 0.605,
+      "threeRate95": [
+        0.5743542580369126,
+        0.6348420932599453
+      ],
+      "threeAmongWins": 0.6408898305084746,
+      "failureReasons": {
+        "losses": 56,
+        "unmet": {
+          "score": 44,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 15,
+          "deliver": 0,
+          "ice": 6
+        },
+        "combinations": {
+          "score": 35,
+          "ice": 2,
+          "score+ice": 4,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 10,
+          "score+reveal": 5,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    "deliver": {
+      "levels": [
+        293,
+        298,
+        303,
+        308
+      ],
+      "games": 1000,
+      "wins": 767,
+      "losses": 233,
+      "winRate": 0.767,
+      "winRate95": [
+        0.7398066130145089,
+        0.7921498231403588
+      ],
+      "threes": 432,
+      "threeRate": 0.432,
+      "threeRate95": [
+        0.40161554299484964,
+        0.4629049152128995
+      ],
+      "threeAmongWins": 0.5632333767926988,
+      "failureReasons": {
+        "losses": 233,
+        "unmet": {
+          "score": 106,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 216,
+          "ice": 15
+        },
+        "combinations": {
+          "score": 17,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 125,
+          "score+deliver": 76,
+          "deliver+ice": 2,
+          "score+deliver+ice": 13
+        }
+      }
+    },
+    "challenge": {
+      "levels": [
+        290,
+        295,
+        300,
+        305,
+        310
+      ],
+      "games": 1000,
+      "wins": 859,
+      "losses": 141,
+      "winRate": 0.859,
+      "winRate95": [
+        0.8360530673212659,
+        0.8791992194937056
+      ],
+      "threes": 592,
+      "threeRate": 0.592,
+      "threeRate95": [
+        0.5612430287912437,
+        0.6220528218688605
+      ],
+      "threeAmongWins": 0.689173457508731,
+      "failureReasons": {
+        "losses": 141,
+        "unmet": {
+          "score": 29,
+          "collection": 135,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 10
+        },
+        "combinations": {
+          "score": 4,
+          "ice": 2,
+          "score+ice": 0,
+          "collection": 108,
+          "score+collection": 19,
+          "collection+ice": 2,
+          "score+collection+ice": 6,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    }
+  },
+  "perLevel": [
+    {
+      "kind": "collect",
+      "level": 294,
+      "seedStart": 10001,
+      "config": {
+        "moves": 24,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6,
+          57,
+          15,
+          48
+        ],
+        "icePairs": 0,
+        "target": 17000,
+        "targetType": 5,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 236,
+      "losses": 14,
+      "winRate": 0.944,
+      "winRate95": [
+        0.9082084818368784,
+        0.966352661805456
+      ],
+      "threes": 140,
+      "threeRate": 0.56,
+      "threeRate95": [
+        0.4980198439170466,
+        0.6201640944129987
+      ],
+      "threeAmongWins": 0.5932203389830508,
+      "failureReasons": {
+        "losses": 14,
+        "unmet": {
+          "score": 11,
+          "collection": 2,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 4
+        },
+        "combinations": {
+          "score": 8,
+          "ice": 2,
+          "score+ice": 2,
+          "collection": 1,
+          "score+collection": 1,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "collect",
+      "level": 299,
+      "seedStart": 10251,
+      "config": {
+        "moves": 25,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 17100,
+        "targetType": 4,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 241,
+      "losses": 9,
+      "winRate": 0.964,
+      "winRate95": [
+        0.9330088524397113,
+        0.980946937312638
+      ],
+      "threes": 161,
+      "threeRate": 0.644,
+      "threeRate95": [
+        0.5828767221362727,
+        0.7007647298558357
+      ],
+      "threeAmongWins": 0.6680497925311203,
+      "failureReasons": {
+        "losses": 9,
+        "unmet": {
+          "score": 8,
+          "collection": 3,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 1
+        },
+        "combinations": {
+          "score": 5,
+          "ice": 1,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 3,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "collect",
+      "level": 304,
+      "seedStart": 10501,
+      "config": {
+        "moves": 24,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          2,
+          61,
+          16,
+          47,
+          5,
+          58,
+          23,
+          40
+        ],
+        "icePairs": 0,
+        "target": 17100,
+        "targetType": 3,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 237,
+      "losses": 13,
+      "winRate": 0.948,
+      "winRate95": [
+        0.9130774345624312,
+        0.9693626383019062
+      ],
+      "threes": 145,
+      "threeRate": 0.58,
+      "threeRate95": [
+        0.5180598018274972,
+        0.6395187826125629
+      ],
+      "threeAmongWins": 0.6118143459915611,
+      "failureReasons": {
+        "losses": 13,
+        "unmet": {
+          "score": 10,
+          "collection": 2,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 3
+        },
+        "combinations": {
+          "score": 8,
+          "ice": 1,
+          "score+ice": 2,
+          "collection": 2,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "collect",
+      "level": 309,
+      "seedStart": 10751,
+      "config": {
+        "moves": 25,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          11,
+          52,
+          25,
+          38,
+          12,
+          51,
+          30,
+          33
+        ],
+        "icePairs": 4,
+        "target": 17100,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 242,
+      "losses": 8,
+      "winRate": 0.968,
+      "winRate95": [
+        0.9381368887054249,
+        0.9836978302689277
+      ],
+      "threes": 168,
+      "threeRate": 0.672,
+      "threeRate95": [
+        0.6115824662757826,
+        0.7272114902703469
+      ],
+      "threeAmongWins": 0.6942148760330579,
+      "failureReasons": {
+        "losses": 8,
+        "unmet": {
+          "score": 8,
+          "collection": 3,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 5,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 3,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "spread",
+      "level": 291,
+      "seedStart": 10001,
+      "config": {
+        "moves": 26,
+        "goalKind": "spread",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          18,
+          45,
+          21,
+          42,
+          26,
+          37,
+          29,
+          34
+        ],
+        "icePairs": 6,
+        "target": 17000,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 157,
+      "losses": 93,
+      "winRate": 0.628,
+      "winRate95": [
+        0.5665711761893972,
+        0.6855545589146992
+      ],
+      "threes": 128,
+      "threeRate": 0.512,
+      "threeRate95": [
+        0.45032599170719884,
+        0.5733107959588102
+      ],
+      "threeAmongWins": 0.8152866242038217,
+      "failureReasons": {
+        "losses": 93,
+        "unmet": {
+          "score": 16,
+          "collection": 0,
+          "spread": 93,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 77,
+          "score+spread": 16,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "spread",
+      "level": 296,
+      "seedStart": 10251,
+      "config": {
+        "moves": 25,
+        "goalKind": "spread",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 17000,
+        "targetType": 1,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 145,
+      "losses": 105,
+      "winRate": 0.58,
+      "winRate95": [
+        0.5180598018274972,
+        0.6395187826125629
+      ],
+      "threes": 122,
+      "threeRate": 0.488,
+      "threeRate95": [
+        0.42668920404118976,
+        0.5496740082928011
+      ],
+      "threeAmongWins": 0.8413793103448276,
+      "failureReasons": {
+        "losses": 105,
+        "unmet": {
+          "score": 22,
+          "collection": 0,
+          "spread": 105,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 1
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 83,
+          "score+spread": 21,
+          "spread+ice": 0,
+          "score+spread+ice": 1,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "spread",
+      "level": 301,
+      "seedStart": 10501,
+      "config": {
+        "moves": 25,
+        "goalKind": "spread",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          10,
+          53,
+          24,
+          39,
+          13,
+          50,
+          31,
+          32
+        ],
+        "icePairs": 2,
+        "target": 17100,
+        "targetType": 0,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 148,
+      "losses": 102,
+      "winRate": 0.592,
+      "winRate95": [
+        0.5301320093936375,
+        0.6510833627124317
+      ],
+      "threes": 120,
+      "threeRate": 0.48,
+      "threeRate95": [
+        0.4188413078841016,
+        0.5417640460058832
+      ],
+      "threeAmongWins": 0.8108108108108109,
+      "failureReasons": {
+        "losses": 102,
+        "unmet": {
+          "score": 16,
+          "collection": 0,
+          "spread": 102,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 1
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 86,
+          "score+spread": 15,
+          "spread+ice": 0,
+          "score+spread+ice": 1,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "spread",
+      "level": 306,
+      "seedStart": 10751,
+      "config": {
+        "moves": 24,
+        "goalKind": "spread",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          2,
+          61,
+          16,
+          47,
+          5,
+          58,
+          23,
+          40
+        ],
+        "icePairs": 0,
+        "target": 17100,
+        "targetType": 5,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 143,
+      "losses": 107,
+      "winRate": 0.572,
+      "winRate95": [
+        0.5100318342948803,
+        0.6317888917011739
+      ],
+      "threes": 120,
+      "threeRate": 0.48,
+      "threeRate95": [
+        0.4188413078841016,
+        0.5417640460058832
+      ],
+      "threeAmongWins": 0.8391608391608392,
+      "failureReasons": {
+        "losses": 107,
+        "unmet": {
+          "score": 21,
+          "collection": 0,
+          "spread": 107,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 2
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 85,
+          "score+spread": 20,
+          "spread+ice": 1,
+          "score+spread+ice": 1,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "reveal",
+      "level": 292,
+      "seedStart": 10001,
+      "config": {
+        "moves": 24,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6,
+          57,
+          15,
+          48
+        ],
+        "icePairs": 0,
+        "target": 17000,
+        "targetType": 3,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 229,
+      "losses": 21,
+      "winRate": 0.916,
+      "winRate95": [
+        0.875004257077684,
+        0.9444043820106295
+      ],
+      "threes": 141,
+      "threeRate": 0.564,
+      "threeRate95": [
+        0.5020198636060832,
+        0.6240430039459649
+      ],
+      "threeAmongWins": 0.6157205240174672,
+      "failureReasons": {
+        "losses": 21,
+        "unmet": {
+          "score": 17,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 5,
+          "deliver": 0,
+          "ice": 3
+        },
+        "combinations": {
+          "score": 13,
+          "ice": 1,
+          "score+ice": 2,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 3,
+          "score+reveal": 2,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "reveal",
+      "level": 297,
+      "seedStart": 10251,
+      "config": {
+        "moves": 25,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 17000,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 234,
+      "losses": 16,
+      "winRate": 0.936,
+      "winRate95": [
+        0.8985776859091057,
+        0.9602255992892228
+      ],
+      "threes": 155,
+      "threeRate": 0.62,
+      "threeRate95": [
+        0.5584442321707381,
+        0.6779236444893522
+      ],
+      "threeAmongWins": 0.6623931623931624,
+      "failureReasons": {
+        "losses": 16,
+        "unmet": {
+          "score": 12,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 6,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 10,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 4,
+          "score+reveal": 2,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "reveal",
+      "level": 302,
+      "seedStart": 10501,
+      "config": {
+        "moves": 25,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          10,
+          53,
+          24,
+          39,
+          13,
+          50,
+          31,
+          32
+        ],
+        "icePairs": 2,
+        "target": 17100,
+        "targetType": 1,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 244,
+      "losses": 6,
+      "winRate": 0.976,
+      "winRate95": [
+        0.94863720404899,
+        0.9889553733693685
+      ],
+      "threes": 161,
+      "threeRate": 0.644,
+      "threeRate95": [
+        0.5828767221362727,
+        0.7007647298558357
+      ],
+      "threeAmongWins": 0.6598360655737705,
+      "failureReasons": {
+        "losses": 6,
+        "unmet": {
+          "score": 4,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 2,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 4,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 2,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "reveal",
+      "level": 307,
+      "seedStart": 10751,
+      "config": {
+        "moves": 24,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          2,
+          61,
+          16,
+          47,
+          5,
+          58,
+          23,
+          40
+        ],
+        "icePairs": 0,
+        "target": 17100,
+        "targetType": 0,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 237,
+      "losses": 13,
+      "winRate": 0.948,
+      "winRate95": [
+        0.9130774345624312,
+        0.9693626383019062
+      ],
+      "threes": 148,
+      "threeRate": 0.592,
+      "threeRate95": [
+        0.5301320093936375,
+        0.6510833627124317
+      ],
+      "threeAmongWins": 0.6244725738396625,
+      "failureReasons": {
+        "losses": 13,
+        "unmet": {
+          "score": 11,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 2,
+          "deliver": 0,
+          "ice": 3
+        },
+        "combinations": {
+          "score": 8,
+          "ice": 1,
+          "score+ice": 2,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 1,
+          "score+reveal": 1,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "deliver",
+      "level": 293,
+      "seedStart": 10001,
+      "config": {
+        "moves": 24,
+        "goalKind": "deliver",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6,
+          57,
+          15,
+          48
+        ],
+        "icePairs": 0,
+        "target": 17000,
+        "targetType": 4,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 180,
+      "losses": 70,
+      "winRate": 0.72,
+      "winRate95": [
+        0.6613345904453013,
+        0.7720065167648643
+      ],
+      "threes": 94,
+      "threeRate": 0.376,
+      "threeRate95": [
+        0.31825876924195456,
+        0.4374944248759521
+      ],
+      "threeAmongWins": 0.5222222222222223,
+      "failureReasons": {
+        "losses": 70,
+        "unmet": {
+          "score": 23,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 69,
+          "ice": 9
+        },
+        "combinations": {
+          "score": 1,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 45,
+          "score+deliver": 15,
+          "deliver+ice": 2,
+          "score+deliver+ice": 7
+        }
+      }
+    },
+    {
+      "kind": "deliver",
+      "level": 298,
+      "seedStart": 10251,
+      "config": {
+        "moves": 25,
+        "goalKind": "deliver",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 17000,
+        "targetType": 3,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 190,
+      "losses": 60,
+      "winRate": 0.76,
+      "winRate95": [
+        0.7033784234651377,
+        0.8087519759650581
+      ],
+      "threes": 100,
+      "threeRate": 0.4,
+      "threeRate95": [
+        0.34122728621763343,
+        0.46179948323229125
+      ],
+      "threeAmongWins": 0.5263157894736842,
+      "failureReasons": {
+        "losses": 60,
+        "unmet": {
+          "score": 30,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 53,
+          "ice": 3
+        },
+        "combinations": {
+          "score": 7,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 30,
+          "score+deliver": 20,
+          "deliver+ice": 0,
+          "score+deliver+ice": 3
+        }
+      }
+    },
+    {
+      "kind": "deliver",
+      "level": 303,
+      "seedStart": 10501,
+      "config": {
+        "moves": 25,
+        "goalKind": "deliver",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          10,
+          53,
+          24,
+          39,
+          13,
+          50,
+          31,
+          32
+        ],
+        "icePairs": 2,
+        "target": 17100,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 192,
+      "losses": 58,
+      "winRate": 0.768,
+      "winRate95": [
+        0.7118582531392634,
+        0.8160300047349385
+      ],
+      "threes": 118,
+      "threeRate": 0.472,
+      "threeRate95": [
+        0.4110089576615158,
+        0.5338385377844631
+      ],
+      "threeAmongWins": 0.6145833333333334,
+      "failureReasons": {
+        "losses": 58,
+        "unmet": {
+          "score": 28,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 54,
+          "ice": 3
+        },
+        "combinations": {
+          "score": 4,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 30,
+          "score+deliver": 21,
+          "deliver+ice": 0,
+          "score+deliver+ice": 3
+        }
+      }
+    },
+    {
+      "kind": "deliver",
+      "level": 308,
+      "seedStart": 10751,
+      "config": {
+        "moves": 25,
+        "goalKind": "deliver",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          11,
+          52,
+          25,
+          38,
+          12,
+          51,
+          30,
+          33
+        ],
+        "icePairs": 4,
+        "target": 17100,
+        "targetType": 1,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 250,
+      "wins": 205,
+      "losses": 45,
+      "winRate": 0.82,
+      "winRate95": [
+        0.7676470766122656,
+        0.8626672611479753
+      ],
+      "threes": 120,
+      "threeRate": 0.48,
+      "threeRate95": [
+        0.4188413078841016,
+        0.5417640460058832
+      ],
+      "threeAmongWins": 0.5853658536585366,
+      "failureReasons": {
+        "losses": 45,
+        "unmet": {
+          "score": 25,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 40,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 5,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 20,
+          "score+deliver": 20,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "challenge",
+      "level": 290,
+      "seedStart": 10001,
+      "config": {
+        "moves": 26,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          18,
+          45,
+          21,
+          42,
+          26,
+          37,
+          29,
+          34
+        ],
+        "icePairs": 6,
+        "target": 17000,
+        "targetType": 1,
+        "count": 36,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 200,
+      "wins": 175,
+      "losses": 25,
+      "winRate": 0.875,
+      "winRate95": [
+        0.8219846471534161,
+        0.9138808484078432
+      ],
+      "threes": 130,
+      "threeRate": 0.65,
+      "threeRate95": [
+        0.5816333576186576,
+        0.712712840605846
+      ],
+      "threeAmongWins": 0.7428571428571429,
+      "failureReasons": {
+        "losses": 25,
+        "unmet": {
+          "score": 3,
+          "collection": 24,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 1,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 22,
+          "score+collection": 2,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "challenge",
+      "level": 295,
+      "seedStart": 10201,
+      "config": {
+        "moves": 24,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6,
+          57,
+          15,
+          48
+        ],
+        "icePairs": 0,
+        "target": 17000,
+        "targetType": 0,
+        "count": 36,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "games": 200,
+      "wins": 166,
+      "losses": 34,
+      "winRate": 0.83,
+      "winRate95": [
+        0.7718399896049648,
+        0.8757216464889435
+      ],
+      "threes": 111,
+      "threeRate": 0.555,
+      "threeRate95": [
+        0.4857317563236392,
+        0.6221951830253456
+      ],
+      "threeAmongWins": 0.6686746987951807,
+      "failureReasons": {
+        "losses": 34,
+        "unmet": {
+          "score": 10,
+          "collection": 32,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 7
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 2,
+          "score+ice": 0,
+          "collection": 21,
+          "score+collection": 6,
+          "collection+ice": 1,
+          "score+collection+ice": 4,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "challenge",
+      "level": 300,
+      "seedStart": 10401,
+      "config": {
+        "moves": 25,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          10,
+          53,
+          24,
+          39,
+          13,
+          50,
+          31,
+          32
+        ],
+        "icePairs": 2,
+        "target": 17100,
+        "targetType": 5,
+        "count": 36,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 200,
+      "wins": 176,
+      "losses": 24,
+      "winRate": 0.88,
+      "winRate95": [
+        0.8276563857409517,
+        0.9180206497611246
+      ],
+      "threes": 110,
+      "threeRate": 0.55,
+      "threeRate95": [
+        0.48075488574571107,
+        0.6173605136624569
+      ],
+      "threeAmongWins": 0.625,
+      "failureReasons": {
+        "losses": 24,
+        "unmet": {
+          "score": 7,
+          "collection": 24,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 2
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 16,
+          "score+collection": 6,
+          "collection+ice": 1,
+          "score+collection+ice": 1,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "challenge",
+      "level": 305,
+      "seedStart": 10601,
+      "config": {
+        "moves": 24,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          2,
+          61,
+          16,
+          47,
+          5,
+          58,
+          23,
+          40
+        ],
+        "icePairs": 0,
+        "target": 17100,
+        "targetType": 4,
+        "count": 36,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 200,
+      "wins": 168,
+      "losses": 32,
+      "winRate": 0.84,
+      "winRate95": [
+        0.7828581380609876,
+        0.8843265779145542
+      ],
+      "threes": 114,
+      "threeRate": 0.57,
+      "threeRate95": [
+        0.500703604055383,
+        0.636657955116052
+      ],
+      "threeAmongWins": 0.6785714285714286,
+      "failureReasons": {
+        "losses": 32,
+        "unmet": {
+          "score": 7,
+          "collection": 30,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 1
+        },
+        "combinations": {
+          "score": 2,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 25,
+          "score+collection": 4,
+          "collection+ice": 0,
+          "score+collection+ice": 1,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "kind": "challenge",
+      "level": 310,
+      "seedStart": 10801,
+      "config": {
+        "moves": 25,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          11,
+          52,
+          25,
+          38,
+          12,
+          51,
+          30,
+          33
+        ],
+        "icePairs": 4,
+        "target": 17100,
+        "targetType": 3,
+        "count": 36,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "games": 200,
+      "wins": 174,
+      "losses": 26,
+      "winRate": 0.87,
+      "winRate95": [
+        0.8163353692726989,
+        0.9097185863477437
+      ],
+      "threes": 127,
+      "threeRate": 0.635,
+      "threeRate95": [
+        0.5663157405897017,
+        0.6985958378123518
+      ],
+      "threeAmongWins": 0.7298850574712644,
+      "failureReasons": {
+        "losses": 26,
+        "unmet": {
+          "score": 2,
+          "collection": 25,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 1,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 24,
+          "score+collection": 1,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    }
+  ],
+  "status": "baseline-before-spread-easing",
+  "currentChange": {
+    "goal": "spread",
+    "ice": "Removed from newly generated spread levels",
+    "initialFloor": "Four center cells plus one cell at each corner of the target area",
+    "moves": "Original opening budgets retained",
+    "otherGoals": "Unchanged",
+    "existingSaves": "Existing floor progress and frozen pieces preserved",
+    "calibration": "Further calibration stopped at user request; chosen change was not claimed to reach 86%"
+  },
+  "spreadScreening": {
+    "gamesPerVariant": 100,
+    "levels": [
+      291,
+      296,
+      301,
+      306
+    ],
+    "seedStart": 20001,
+    "seedEnd": 20100,
+    "preserveOriginalMoves": true,
+    "denominator": "All games",
+    "variants": [
+      {
+        "label": "Unchanged baseline",
+        "games": 100,
+        "wins": 59,
+        "threes": 51,
+        "winRate": 0.59,
+        "threeRate": 0.51,
+        "tuning": {
+          "kind": "spread",
+          "iceCount": 8,
+          "doubleIce": 3,
+          "preserveMoves": true,
+          "corners": false
+        }
+      },
+      {
+        "label": "Baseline ice plus four single corner seeds",
+        "games": 100,
+        "wins": 67,
+        "threes": 52,
+        "winRate": 0.67,
+        "threeRate": 0.52,
+        "tuning": {
+          "kind": "spread",
+          "iceCount": 8,
+          "doubleIce": 3,
+          "preserveMoves": true,
+          "corners": true
+        }
+      },
+      {
+        "label": "No ice plus four single corner seeds",
+        "games": 100,
+        "wins": 74,
+        "threes": 61,
+        "winRate": 0.74,
+        "threeRate": 0.61,
+        "tuning": {
+          "kind": "spread",
+          "iceCount": 0,
+          "doubleIce": 0,
+          "preserveMoves": true,
+          "corners": true
+        }
+      }
+    ]
+  }
+}

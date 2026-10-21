@@ -1,0 +1,728 @@
+{
+  "startedAt": "2026-10-21T17:00:32.933Z",
+  "commit": "8861d65ef84c3fda0836a8d7e3e5681b91cd0cdc",
+  "workingTree": true,
+  "sourceSha256": {
+    "games/fuzzy-match-3/constants.js": "0ef4db3ea2044185a505601e626412a86ef7c44dc4d40affdc876472a8cd3b5e",
+    "games/fuzzy-match-3/game.js": "7fd686693658a7cd68732c0aab5ee02600b03cfae195bdb85516ab16954892d2",
+    "games/fuzzy-match-3/objectives.js": "b11f99ac4d2220e8e33273d9d9798231095c771f9731dc46ad2d6e1549cf2911",
+    "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+    "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+  },
+  "completedAt": "2026-10-21T17:05:25.283Z",
+  "protocol": {
+    "purpose": "Measure current normal-level difficulty near level 300 without changing gameplay or AI parameters.",
+    "levels": [
+      296,
+      297,
+      298,
+      299
+    ],
+    "strategy": "strong",
+    "policy": "Four candidate moves, three independent sampled futures per move, two turns deep.",
+    "gamesPerType": 1000,
+    "totalGames": 4000,
+    "seedStart": 810001,
+    "seedEnd": 811000,
+    "tools": "No hints or manual shuffles; automatic dead-board reshuffles retained.",
+    "finale": "Winning special cleanup and 1500 points per unused move included; exhausted losing games do not start a finale.",
+    "randomness": "Prediction and actual refill use separate random streams. Each type reuses the same 1000 independent game seeds.",
+    "denominator": "All attempts, including losses, for winRate and threeRate; AI estimates are not measured human success rates.",
+    "challengeComparison": "Reference from fuzzy-match-3-challenge-300.json, using different seeds (710001–711000) and nearby layouts. No paired causal comparison is claimed.",
+    "uncertainty": "Wilson 95% intervals per type. Overall rate is an equally weighted descriptive mean."
+  },
+  "perType": {
+    "collect": {
+      "level": 297,
+      "config": {
+        "moves": 25,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 17000,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "collect"
+      },
+      "games": 1000,
+      "wins": 960,
+      "losses": 40,
+      "winRate": 0.96,
+      "winRate95": [
+        0.9459900625744302,
+        0.9704891907260906
+      ],
+      "threes": 619,
+      "threeRate": 0.619,
+      "threeRate95": [
+        0.588498978327013,
+        0.6485902198094261
+      ],
+      "failureReasons": {
+        "losses": 40,
+        "unmet": {
+          "score": 34,
+          "collection": 12,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 4
+        },
+        "combinations": {
+          "score": 25,
+          "ice": 2,
+          "score+ice": 1,
+          "collection": 4,
+          "score+collection": 7,
+          "collection+ice": 0,
+          "score+collection+ice": 1,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "challengeReference": {
+        "level": 305,
+        "games": 1000,
+        "winRate": 0.828,
+        "threeRate": 0.528,
+        "config": {
+          "moves": 24,
+          "goalKind": "collect",
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            2,
+            61,
+            16,
+            47,
+            5,
+            58,
+            23,
+            40
+          ],
+          "icePairs": 0,
+          "target": 17100,
+          "targetType": 4,
+          "count": 36,
+          "starTargets": [
+            17100,
+            25900,
+            34600
+          ]
+        }
+      },
+      "reproduce": "node scripts/fuzzy-match-3-balance.mjs --level 297 --games 1000 --seed 810001 --strategy strong"
+    },
+    "spread": {
+      "level": 298,
+      "config": {
+        "moves": 25,
+        "goalKind": "spread",
+        "iceCount": 0,
+        "doubleIce": 0,
+        "iceCells": [],
+        "icePairs": 0,
+        "target": 17000,
+        "targetType": 3,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "spread",
+        "cells": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63
+        ],
+        "painted": [
+          0,
+          7,
+          27,
+          28,
+          35,
+          36,
+          56,
+          63
+        ]
+      },
+      "games": 1000,
+      "wins": 779,
+      "losses": 221,
+      "winRate": 0.779,
+      "winRate95": [
+        0.7522423161766015,
+        0.8036222744121927
+      ],
+      "threes": 632,
+      "threeRate": 0.632,
+      "threeRate95": [
+        0.6016569549774633,
+        0.6613327437957297
+      ],
+      "failureReasons": {
+        "losses": 221,
+        "unmet": {
+          "score": 41,
+          "collection": 0,
+          "spread": 220,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 1,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 180,
+          "score+spread": 40,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "challengeReference": {
+        "level": 290,
+        "games": 1000,
+        "winRate": 0.828,
+        "threeRate": 0.678,
+        "config": {
+          "moves": 26,
+          "goalKind": "spread",
+          "iceCount": 0,
+          "doubleIce": 0,
+          "iceCells": [],
+          "icePairs": 0,
+          "target": 17000,
+          "targetType": 1,
+          "count": 36,
+          "starTargets": [
+            17000,
+            25800,
+            34600
+          ]
+        }
+      },
+      "reproduce": "node scripts/fuzzy-match-3-balance.mjs --level 298 --games 1000 --seed 810001 --strategy strong"
+    },
+    "reveal": {
+      "level": 299,
+      "config": {
+        "moves": 25,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 17100,
+        "targetType": 4,
+        "count": 24,
+        "starTargets": [
+          17100,
+          25900,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "reveal",
+        "groups": [
+          {
+            "cells": [
+              9,
+              10,
+              17,
+              18
+            ],
+            "type": 5
+          },
+          {
+            "cells": [
+              28,
+              29,
+              36,
+              37
+            ],
+            "type": 0
+          },
+          {
+            "cells": [
+              49,
+              50,
+              57,
+              58
+            ],
+            "type": 1
+          }
+        ],
+        "revealed": []
+      },
+      "games": 1000,
+      "wins": 959,
+      "losses": 41,
+      "winRate": 0.959,
+      "winRate95": [
+        0.9448517110985959,
+        0.9696351959990976
+      ],
+      "threes": 592,
+      "threeRate": 0.592,
+      "threeRate95": [
+        0.5612430287912437,
+        0.6220528218688605
+      ],
+      "failureReasons": {
+        "losses": 41,
+        "unmet": {
+          "score": 38,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 9,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 32,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 3,
+          "score+reveal": 6,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "challengeReference": {
+        "level": 295,
+        "games": 1000,
+        "winRate": 0.808,
+        "threeRate": 0.488,
+        "config": {
+          "moves": 24,
+          "goalKind": "reveal",
+          "iceCount": 8,
+          "doubleIce": 3,
+          "iceCells": [
+            1,
+            62,
+            8,
+            55,
+            6,
+            57,
+            15,
+            48
+          ],
+          "icePairs": 0,
+          "target": 17000,
+          "targetType": 0,
+          "count": 36,
+          "starTargets": [
+            17000,
+            25800,
+            34600
+          ]
+        }
+      },
+      "reproduce": "node scripts/fuzzy-match-3-balance.mjs --level 299 --games 1000 --seed 810001 --strategy strong"
+    },
+    "deliver": {
+      "level": 296,
+      "config": {
+        "moves": 25,
+        "goalKind": "deliver",
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          9,
+          54
+        ],
+        "icePairs": 0,
+        "target": 17000,
+        "targetType": 1,
+        "count": 24,
+        "starTargets": [
+          17000,
+          25800,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "deliver",
+        "total": 3,
+        "delivered": 0,
+        "exits": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "games": 1000,
+      "wins": 851,
+      "losses": 149,
+      "winRate": 0.851,
+      "winRate95": [
+        0.8275875218326485,
+        0.8717259953597054
+      ],
+      "threes": 517,
+      "threeRate": 0.517,
+      "threeRate95": [
+        0.48602179171422133,
+        0.5478480937338415
+      ],
+      "failureReasons": {
+        "losses": 149,
+        "unmet": {
+          "score": 59,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 129,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 20,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 90,
+          "score+deliver": 39,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "challengeReference": {
+        "level": 300,
+        "games": 1000,
+        "winRate": 0.829,
+        "threeRate": 0.505,
+        "config": {
+          "moves": 25,
+          "goalKind": "deliver",
+          "iceCount": 2,
+          "doubleIce": 0,
+          "iceCells": [
+            10,
+            53
+          ],
+          "icePairs": 0,
+          "target": 17100,
+          "targetType": 5,
+          "count": 36,
+          "starTargets": [
+            17100,
+            25900,
+            34600
+          ]
+        }
+      },
+      "reproduce": "node scripts/fuzzy-match-3-balance.mjs --level 296 --games 1000 --seed 810001 --strategy strong"
+    }
+  },
+  "overall": {
+    "games": 4000,
+    "wins": 3549,
+    "winRate": 0.88725,
+    "threes": 2360,
+    "threeRate": 0.59
+  },
+  "deliveryExperiments": {
+    "level": 296,
+    "gameplayChangesApplied": true,
+    "strategy": "strong",
+    "protocol": "Same seeds starting at 810001, same 25 opening moves, same three delivery targets, score and star thresholds; only ice and the two frozen pieces changed in an isolated runtime.",
+    "iceRemoval": "Retain the original opening move budget; truncate the frozen cell list [9, 54] to zero or one cell.",
+    "frozenStripes": "Two single-layer frozen cells retained at [9, 54]. The first contains a row stripe, the second a column stripe. Thawing preserves the stripe without automatically firing it; all existing trigger rules remain in force.",
+    "variants": [
+      {
+        "name": "Two frozen ordinary pieces (current)",
+        "games": 1000,
+        "wins": 851,
+        "winRate": 0.851,
+        "winRate95": [
+          0.8275875218326485,
+          0.8717259953597054
+        ],
+        "threes": 517,
+        "threeRate": 0.517,
+        "unmet": {
+          "score": 59,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 129,
+          "ice": 0
+        }
+      },
+      {
+        "name": "One frozen ordinary piece (screen)",
+        "games": 300,
+        "wins": 259,
+        "winRate": 0.8633333333333333,
+        "winRate95": [
+          0.8198437047874653,
+          0.8976354027475134
+        ],
+        "threes": 184,
+        "threeRate": 0.6133333333333333,
+        "unmet": {
+          "score": 22,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 34,
+          "ice": 0
+        }
+      },
+      {
+        "name": "No ice",
+        "games": 1000,
+        "wins": 868,
+        "winRate": 0.868,
+        "winRate95": [
+          0.8456047044505801,
+          0.8875786981898366
+        ],
+        "threes": 557,
+        "threeRate": 0.557,
+        "unmet": {
+          "score": 57,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 110,
+          "ice": 0
+        }
+      },
+      {
+        "name": "Two frozen stripes (one row, one column)",
+        "games": 1000,
+        "wins": 911,
+        "winRate": 0.911,
+        "winRate95": [
+          0.891742264575647,
+          0.9271120247863402
+        ],
+        "threes": 644,
+        "threeRate": 0.644,
+        "unmet": {
+          "score": 26,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 84,
+          "ice": 0
+        }
+      }
+    ],
+    "matchedScreen300": [
+      {
+        "name": "Two ice",
+        "games": 300,
+        "wins": 256,
+        "winRate": 0.8533333333333334,
+        "winRate95": [
+          0.8088365903800316,
+          0.888895385754902
+        ],
+        "threes": 170,
+        "threeRate": 0.5666666666666667,
+        "unmet": {
+          "score": 18,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 40,
+          "ice": 0
+        }
+      },
+      {
+        "name": "One ice",
+        "games": 300,
+        "wins": 259,
+        "winRate": 0.8633333333333333,
+        "winRate95": [
+          0.8198437047874653,
+          0.8976354027475134
+        ],
+        "threes": 184,
+        "threeRate": 0.6133333333333333,
+        "unmet": {
+          "score": 22,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 34,
+          "ice": 0
+        }
+      },
+      {
+        "name": "No ice",
+        "games": 300,
+        "wins": 266,
+        "winRate": 0.8866666666666667,
+        "winRate95": [
+          0.8457997619361538,
+          0.917755985532264
+        ],
+        "threes": 164,
+        "threeRate": 0.5466666666666666,
+        "unmet": {
+          "score": 13,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 27,
+          "ice": 0
+        }
+      }
+    ],
+    "interpretation": "Single-layout AI experiment, not a measured human win rate. One-ice data are a 300-game screen; the other three variants use the same 1000 seeds. Differences are descriptive; per-game paired outcomes were not retained.",
+    "appliedVariant": "Two frozen stripes (one row, one column), only for normal delivery levels."
+  },
+  "subsequentChanges": [
+    {
+      "change": "Normal delivery levels now place a row stripe and a column stripe inside their two initial frozen cells. Challenge levels and existing saves are unchanged.",
+      "calibrationImpact": "The normal-level table above is the pre-change baseline. The adopted delivery variant is the separately measured 91.1% frozen-stripe result in deliveryExperiments.",
+      "verification": "Production behavior matched the measured isolated variant over 25 full games, seeds 810001–810025 at level 296."
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createGame, findMatches, findMove, canSwap, gameStatus, levelConfig, refill, resolveWave, restoreGame, seededRandom, shuffleBoard, swap, validGame } from "../games/fuzzy-match-3/game.js";
-import { GOAL_KINDS, advanceObjective, collectDeliveries, createObjective, goalKindForLevel, isDelivery, objectiveProgress, validObjective } from "../games/fuzzy-match-3/objectives.js";
+import { advanceObjective, collectDeliveries, createObjective, goalKindForLevel, isChallengeLevel, isDelivery, objectiveProgress, validObjective } from "../games/fuzzy-match-3/objectives.js";
 import { chooseMove, simulateTurn } from "../scripts/fuzzy-match-3-ai.mjs";
 import { audit } from "../scripts/fuzzy-match-3-balance.mjs";
 
@@ -13,19 +13,61 @@ const hit = (cleared, groups = [cleared], creations = new Map()) => ({
   effectGroups: groups.map(indices => ({ sources: indices, indices })),
 });
 
-test("four normal objectives rotate without challenge levels consuming a slot", () => {
-  let normal = 0;
-  for (let level = 1; level <= 1000; level++) {
+test("objectives repeat every twenty levels with rotating challenges and no adjacent repeats", () => {
+  assert.deepEqual(Array.from({ length: 5 }, (_, i) => goalKindForLevel(i + 1)),
+    ["collect", "spread", "reveal", "deliver", "collect"]);
+  const blocks = [
+    ["spread", "reveal", "deliver", "collect", "spread"],
+    ["reveal", "deliver", "collect", "spread", "reveal"],
+    ["deliver", "collect", "spread", "reveal", "deliver"],
+    ["collect", "spread", "reveal", "deliver", "collect"],
+  ];
+  blocks.forEach((expected, block) => assert.deepEqual(
+    Array.from({ length: 5 }, (_, offset) => goalKindForLevel(6 + block * 5 + offset)), expected));
+  for (let level = 1; level <= 10000; level++) {
     const config = levelConfig(level);
+    assert.equal(isChallengeLevel(level), level >= 10 && level % 5 === 0);
+    assert.equal(isChallengeLevel(level, true), false);
+    assert.equal(config.goalKind, goalKindForLevel(level + 20));
+    if (level > 1) assert.notEqual(config.goalKind, goalKindForLevel(level - 1));
     if (level >= 10 && level % 5 === 0) {
-      assert.equal(config.goalKind, "collect");
-      assert.equal(config.count, 36);
-    } else assert.equal(config.goalKind, GOAL_KINDS[normal++ % 4]);
+      const normal = Array.from({ length: 4 }, (_, offset) => goalKindForLevel(level - 4 + offset));
+      assert.equal(new Set(normal).size, 4);
+      assert.deepEqual(Array.from({ length: 4 }, (_, offset) => goalKindForLevel(level + offset * 5)), normal);
+      if (config.goalKind === "collect") assert.equal(config.count, 36);
+    }
     assert.equal(goalKindForLevel(level, true), "collect");
   }
-  assert.deepEqual(Array.from({ length: 12 }, (_, i) => goalKindForLevel(i + 1)),
-    ["collect", "spread", "reveal", "deliver", "collect", "spread", "reveal", "deliver", "collect", "collect", "spread", "reveal"]);
   assert.equal(levelConfig(1, true).count, 15);
+});
+
+test("reveal challenges use four pictures before level 100 and five later without changing normal goals", () => {
+  for (const level of [15, 35, 55, 75, 95, 115, 135, 295, 315, 995]) {
+    const count = level < 100 ? 4 : 5;
+    const game = createGame(level, false, seededRandom(level));
+    assert.equal(game.objective.kind, "reveal");
+    assert.deepEqual(game.objective.groups.map(group => group.cells[0]), [9, 28, 49, 14, 54].slice(0, count));
+    const cells = game.objective.groups.flatMap(group => group.cells);
+    assert.equal(cells.length, count * 4);
+    assert.equal(new Set(cells).size, count * 4);
+    assert.equal(objectiveProgress(game, levelConfig(level)).total, count);
+    assert.ok(validGame(game));
+    assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
+    assert.equal(createObjective("reveal", level, true).groups.length, level < 20 ? 2 : 3);
+  }
+  for (const level of [103, 111, 291, 299])
+    assert.equal(createGame(level, false, seededRandom(level)).objective.groups.length, 3);
+  for (const [level, groups] of [[3, 2], [7, 2], [11, 2], [19, 2], [23, 3], [99, 3]])
+    assert.equal(createGame(level, false, seededRandom(level)).objective.groups.length, groups);
+});
+
+test("saved reveal challenges keep their original pictures and progress", () => {
+  for (const level of [15, 35, 295]) {
+    const game = createGame(level, false, seededRandom(42));
+    game.objective = createObjective("reveal", level, true);
+    game.objective.revealed = [...game.objective.groups[0].cells];
+    assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
+  }
 });
 
 test("all goal families create stable playable boards and survive JSON save/restore", () => {
@@ -38,6 +80,36 @@ test("all goal families create stable playable boards and survive JSON save/rest
       assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
     }
   }
+});
+
+test("spread goals start at their center and four target-area corners without ice", () => {
+  for (const level of [2, 22, 102, 290, 302, 1002]) {
+    const config = levelConfig(level);
+    assert.equal(config.goalKind, "spread");
+    assert.deepEqual([config.iceCount, config.doubleIce, config.icePairs], [0, 0, 0]);
+    assert.deepEqual(config.iceCells, []);
+    const game = createGame(level, false, seededRandom(level));
+    assert.equal(game.iceGoal, 0);
+    assert.ok(game.board.every(piece => !piece.ice));
+    const { cells, painted } = game.objective;
+    const first = Math.min(...cells), last = Math.max(...cells);
+    assert.deepEqual(painted, [27, 28, 35, 36, first, first - first % 8 + last % 8,
+      last - last % 8 + first % 8, last].sort((a, b) => a - b));
+    assert.equal(objectiveProgress(game, config).current, 8);
+    assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
+  }
+  assert.deepEqual([291, 296, 301, 306].map(level => levelConfig(level).moves), [26, 25, 25, 24]);
+});
+
+test("existing spread saves retain their floor progress and frozen pieces", () => {
+  const game = createGame(290, false, seededRandom(42));
+  // This level used to be a spread goal; resuming it must retain that saved goal.
+  game.level = 291;
+  assert.equal(goalKindForLevel(game.level), "reveal");
+  game.objective.painted = [27, 28, 35, 36, 44];
+  game.board[18] = { ...game.board[18], ice: 1 };
+  game.iceGoal = 1;
+  assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
 });
 
 test("delivery targets spawn only in the first row and preserve every frozen cell", () => {
@@ -54,6 +126,36 @@ test("delivery targets spawn only in the first row and preserve every frozen cel
     assert.ok(findMove(game.board));
     assert.ok(validGame(game));
   }
+});
+
+test("normal delivery games start with two frozen stripes that survive thawing until triggered", () => {
+  for (const level of [4, 16, 104, 296, 304, 1004]) {
+    const config = levelConfig(level);
+    const game = createGame(level, false, seededRandom(level));
+    assert.equal(game.objective.kind, "deliver");
+    const frozen = config.iceCells.map(index => game.board[index]);
+    assert.deepEqual(frozen.map(piece => piece.special), ["row", "column"]);
+    assert.ok(frozen.every(piece => piece.ice === 1));
+    assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
+    const index = config.iceCells[0];
+    const thaw = resolveWave(game.board, { forced: [index] });
+    assert.equal(thaw.board[index].ice, 0);
+    assert.equal(thaw.board[index].special, "row");
+    assert.ok(!thaw.cleared.includes(index));
+    const blast = resolveWave(thaw.board, { forced: [index] });
+    assert.ok(blast.cleared.includes(index));
+  }
+  for (const level of [20, 40, 100, 300, 1000]) {
+    const game = createGame(level, false, seededRandom(level));
+    assert.equal(game.objective.kind, "deliver");
+    assert.ok(game.board.every(piece => !piece.special));
+  }
+});
+
+test("existing normal delivery saves keep their frozen ordinary pieces", () => {
+  const game = createGame(296, false, seededRandom(42));
+  for (const index of levelConfig(296).iceCells) game.board[index].special = null;
+  assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
 });
 
 test("restoring delivery progress preserves targets that have already fallen", () => {
@@ -356,7 +458,7 @@ test("legacy games remain collection games and malformed new goal data is reject
 });
 
 test("AI ranks and advances all four real goal families without mutating its input", () => {
-  for (const level of [1, 2, 3, 4, 101, 102, 103]) {
+  for (const level of [1, 2, 3, 4, 101, 102, 103, 104]) {
     const game = createGame(level, false, seededRandom(42));
     const snapshot = structuredClone(game);
     const pair = chooseMove(game, { random: seededRandom(123) });

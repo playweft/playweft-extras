@@ -11,22 +11,31 @@ export function deliverySpawnCount(board, goal) {
 }
 
 export function goalKindForLevel(level, daily = false) {
-  if (daily || (level >= 10 && level % 5 === 0)) return "collect";
-  const challengesBefore = Math.max(0, Math.floor((level - 1) / 5) - 1);
-  return GOAL_KINDS[(level - 1 - challengesBefore) % GOAL_KINDS.length];
+  // Every level advances the rotation; five-level challenge spacing advances it by one too.
+  return daily ? "collect" : GOAL_KINDS[(level - 1) % GOAL_KINDS.length];
 }
 
-export function createObjective(kind, level) {
+export const isChallengeLevel = (level, daily = false) => !daily && level >= 10 && level % 5 === 0;
+
+export function createObjective(kind, level, daily = false) {
   if (kind === "spread") {
     const side = level < 20 ? 4 : level < 100 ? 6 : SIZE;
     const start = (SIZE - side) / 2;
     const cells = [];
     for (let row = start; row < start + side; row++)
       for (let col = start; col < start + side; col++) cells.push(row * SIZE + col);
-    return { kind, cells, painted: [27, 28, 35, 36] };
+    const end = start + side - 1;
+    const painted = [
+      27, 28, 35, 36,
+      start * SIZE + start, start * SIZE + end,
+      end * SIZE + start, end * SIZE + end,
+    ].sort((a, b) => a - b);
+    return { kind, cells, painted };
   }
   if (kind === "reveal") {
-    const anchors = level < 20 ? [18, 44] : [9, 28, 49];
+    const anchors = isChallengeLevel(level, daily)
+      ? [9, 28, 49, 14, 54].slice(0, level < 100 ? 4 : 5)
+      : level < 20 ? [18, 44] : [9, 28, 49];
     return {
       kind,
       groups: anchors.map((index, i) => ({

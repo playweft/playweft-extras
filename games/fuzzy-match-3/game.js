@@ -3,6 +3,7 @@ import {
   createObjective,
   deliverySpawnCount,
   goalKindForLevel,
+  isChallengeLevel,
   isDelivery,
   objectiveProgress,
   validObjective,
@@ -719,17 +720,28 @@ export function levelConfig(level = 1, daily = false) {
   const target = Math.ceil((scoreBase * 1.2) / 100) * 100;
   const threeStars = daily ? 11000 : threeStarTarget(level);
   const twoStars = Math.round((target + threeStars) / 2 / 100) * 100;
-  const collectionChallenge = !daily && level >= 10 && level % 5 === 0;
+  const collectionChallenge = isChallengeLevel(level, daily);
   const collectionCount = collectionChallenge
     ? 36
     : Math.min(24, 12 + (level - 1) * 2);
+  const goalKind = goalKindForLevel(level, daily);
+  // Ease selected goals without reducing the existing opening move allowance.
+  let iceConfig = { iceCount, doubleIce, iceCells, icePairs };
+  if (goalKind === "spread") {
+    iceConfig = { iceCount: 0, doubleIce: 0, iceCells: [], icePairs: 0 };
+  } else if (goalKind === "deliver") {
+    const cells = iceCells.slice(0, 2);
+    iceConfig = {
+      iceCount: cells.length,
+      doubleIce: 0,
+      iceCells: cells,
+      icePairs: cells.filter((index, i) => cells.slice(i + 1).some(other => adjacent(index, other))).length,
+    };
+  }
   return {
     moves,
-    goalKind: goalKindForLevel(level, daily),
-    iceCount,
-    doubleIce,
-    iceCells,
-    icePairs,
+    goalKind,
+    ...iceConfig,
     target,
     targetType: daily ? 1 : (level - 1) % TYPE_COUNT,
     count: daily ? 15 : collectionCount,
@@ -757,8 +769,13 @@ export function createGame(
   config.iceCells.forEach((index, order) => {
     board[index] = { ...board[index], ice: order < config.doubleIce ? 2 : 1 };
   });
-  const objective = createObjective(options.goalKind ?? config.goalKind, level);
+  const objective = createObjective(options.goalKind ?? config.goalKind, level, daily);
   if (objective.kind === "deliver") {
+    if (!daily && !isChallengeLevel(level)) {
+      config.iceCells.slice(0, 2).forEach((index, order) => {
+        board[index].special = order === 0 ? "row" : "column";
+      });
+    }
     const columns = [2, 5, 0, 7, 3, 4, 1, 6].filter((col) => !board[col].ice);
     for (const index of columns.slice(
       0,

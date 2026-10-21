@@ -751,11 +751,12 @@ test("level difficulty extends gradually through level 10000 with round, ordered
   assert.deepEqual(levelConfig(1000, true), daily);
 });
 
-test("collection challenges start at level ten, repeat every five levels, and remain separate from daily play", () => {
+test("collection challenges retain their higher count within the four-type rotation and stay separate from daily play", () => {
   for (const level of [1, 4, 5, 6, 9, 11, 14, 16, 999, 1001])
     assert.equal(levelConfig(level).count, Math.min(24, 12 + (level - 1) * 2));
-  for (const level of [10, 15, 20, 25, 30, 50, 100, 300, 1000, 2000]) {
+  for (const level of [25, 45, 65, 85, 105, 305, 1005, 2005]) {
     const config = levelConfig(level);
+    assert.equal(config.goalKind, "collect");
     assert.equal(config.count, 36);
     assert.equal(levelConfig(level, true).count, 15);
     const game = createGame(level, false, seededRandom(42));
@@ -1320,7 +1321,7 @@ test("icy levels are stable and playable; shuffling preserves ice anchors and al
 });
 
 test("ice is a completion goal; old saves remain playable without adding new ice", () => {
-  const game = createGame(50, false, seededRandom(8));
+  const game = createGame(49, false, seededRandom(8));
   const config = levelConfig(game.level);
   game.score = config.target;
   game.collected[config.targetType] = config.count;

@@ -60,7 +60,7 @@ test("strong search chooses legal moves reproducibly without mutating the actual
 });
 
 test("strong AI can choose to finish the ice goal instead of an unrelated high-scoring clear", () => {
-  const game = createGame(1000, false, seededRandom(9));
+  const game = createGame(1000, false, seededRandom(9), { goalKind: "collect" });
   game.board = game.board.map((piece, i) => ({
     ...piece,
     ice: 0,

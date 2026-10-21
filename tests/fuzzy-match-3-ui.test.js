@@ -455,8 +455,9 @@ test("valid exchange settles, saves, and spends one move; mode switching preserv
 });
 
 test("collection challenge progress displays its higher target and survives reload", async () => {
-  const adventure = createGame(10, false, seededRandom(42));
-  const config = levelConfig(10);
+  const adventure = createRotatingGame(25, false, seededRandom(42));
+  const config = levelConfig(25);
+  assert.equal(adventure.objective.kind, "collect");
   assert.equal(config.count, 36);
   adventure.score = config.target;
   adventure.collected[config.targetType] = 24;
@@ -1702,7 +1703,7 @@ for (const [level, kind, floorCount] of [[1, "collect", 0], [2, "spread", 16], [
     assert.equal(root.querySelectorAll(".mini-goal[data-goal]").length, 1);
     assert.equal(root.querySelector(".mini-goal[data-goal]").dataset.goal, kind);
     assert.equal(root.querySelector(".mini-goal[data-goal] .goal-remaining").textContent,
-      String(kind === "collect" ? levelConfig(level).count : kind === "spread" ? 12 : 2));
+      String(kind === "collect" ? levelConfig(level).count : kind === "spread" ? 8 : 2));
     assert.equal(root.querySelector(".game-details [data-goal]").dataset.goal, kind);
     assert.equal(root.querySelectorAll(kind === "spread" ? ".paint-target" : kind === "reveal" ? ".hidden-picture" : ".delivery-exit").length, floorCount);
     if (kind === "deliver") {

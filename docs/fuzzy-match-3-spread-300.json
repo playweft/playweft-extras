@@ -1,0 +1,304 @@
+{
+  "generatedAt": "2026-10-21T17:16:11.885Z",
+  "gameplayChangesApplied": false,
+  "protocol": {
+    "level": 298,
+    "kind": "spread",
+    "gamesPerVariant": 1000,
+    "seedStart": 810001,
+    "seedEnd": 811000,
+    "strategy": "strong",
+    "config": {
+      "moves": 25,
+      "goalKind": "spread",
+      "iceCount": 0,
+      "doubleIce": 0,
+      "iceCells": [],
+      "icePairs": 0,
+      "target": 17000,
+      "targetType": 3,
+      "count": 24,
+      "starTargets": [
+        17000,
+        25800,
+        34600
+      ]
+    },
+    "tools": "No hints or manual shuffles; automatic dead-board reshuffles retained.",
+    "finale": "Winning cleanup and unused-move bonus included; failures do not start a finale.",
+    "randomness": "Actual refill and prediction randomness are separate. The rectangle variant samples its orientation once from the game RNG after the initial board, consuming one additional draw. All variants use the same initial game seeds; later refill sequences can diverge.",
+    "scope": "Normal spread level only. Four board corners retained. Target cells, score goals, moves, ice and AI unchanged.",
+    "interpretation": "Single-layout AI estimates; per-variant Wilson 95% intervals. Small percentage-point differences between layouts do not establish a reliable advantage."
+  },
+  "baselineSource": "fuzzy-match-3-normal-300.json",
+  "variants": [
+    {
+      "id": "original",
+      "name": "Original center 2×2 plus four corners",
+      "initialPainted": [
+        [
+          0,
+          7,
+          27,
+          28,
+          35,
+          36,
+          56,
+          63
+        ]
+      ],
+      "games": 1000,
+      "wins": 779,
+      "winRate": 0.779,
+      "winRate95": [
+        0.7522423161766015,
+        0.8036222744121927
+      ],
+      "threes": 632,
+      "threeRate": 0.632,
+      "failureReasons": {
+        "losses": 221,
+        "unmet": {
+          "score": 41,
+          "collection": 0,
+          "spread": 220,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 1,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 180,
+          "score+spread": 40,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      }
+    },
+    {
+      "id": "rectangle",
+      "name": "Random centered 4×2 or 2×4 plus four corners",
+      "initialPainted": [
+        [
+          0,
+          7,
+          26,
+          27,
+          28,
+          29,
+          34,
+          35,
+          36,
+          37,
+          56,
+          63
+        ],
+        [
+          0,
+          7,
+          19,
+          20,
+          27,
+          28,
+          35,
+          36,
+          43,
+          44,
+          56,
+          63
+        ]
+      ],
+      "games": 1000,
+      "wins": 802,
+      "winRate": 0.802,
+      "winRate95": [
+        0.7761657052655129,
+        0.8255228479883074
+      ],
+      "threes": 642,
+      "threeRate": 0.642,
+      "failureReasons": {
+        "losses": 198,
+        "unmet": {
+          "score": 46,
+          "collection": 0,
+          "spread": 194,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "sourceSha256": {
+        "games/fuzzy-match-3/game.js": "35ecfa07ab8178d282b47315dab37c508ecee95e733a0c365580ee180918d556",
+        "games/fuzzy-match-3/objectives.js": "6d9dc5675388ed1711b7a5b80be96e79340be2f7390556f7d6852e0f8cd2abd0",
+        "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+        "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+      }
+    },
+    {
+      "id": "diagonal",
+      "name": "Center 2×2 plus four outward diagonal cells and four corners",
+      "initialPainted": [
+        [
+          0,
+          7,
+          18,
+          21,
+          27,
+          28,
+          35,
+          36,
+          42,
+          45,
+          56,
+          63
+        ]
+      ],
+      "games": 1000,
+      "wins": 817,
+      "winRate": 0.817,
+      "winRate95": [
+        0.7918361923371519,
+        0.8397375539590765
+      ],
+      "threes": 636,
+      "threeRate": 0.636,
+      "failureReasons": {
+        "losses": 183,
+        "unmet": {
+          "score": 41,
+          "collection": 0,
+          "spread": 182,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "sourceSha256": {
+        "games/fuzzy-match-3/game.js": "aaf945e700076579f506274b873ac0114c7f43ce9f38d2c5981368c7db3f9d13",
+        "games/fuzzy-match-3/objectives.js": "e9a7b534577c38e18db65fe774498388f075fd0e3b021106aab3d6091113d21e",
+        "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+        "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+      }
+    },
+    {
+      "id": "sixteen",
+      "name": "Center 4×4 plus four board corners",
+      "initialPainted": [
+        [
+          0,
+          7,
+          18,
+          19,
+          20,
+          21,
+          26,
+          27,
+          28,
+          29,
+          34,
+          35,
+          36,
+          37,
+          42,
+          43,
+          44,
+          45,
+          56,
+          63
+        ]
+      ],
+      "games": 1000,
+      "wins": 798,
+      "winRate": 0.798,
+      "winRate95": [
+        0.7719963323687683,
+        0.8217228360737431
+      ],
+      "threes": 612,
+      "threeRate": 0.612,
+      "failureReasons": {
+        "losses": 202,
+        "unmet": {
+          "score": 49,
+          "collection": 0,
+          "spread": 197,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "sourceSha256": {
+        "games/fuzzy-match-3/game.js": "aaf945e700076579f506274b873ac0114c7f43ce9f38d2c5981368c7db3f9d13",
+        "games/fuzzy-match-3/objectives.js": "b2ef76e172fa522312a5a7e5ce4014960da86b63b7b6aa2dcf2bb40997bfcb09",
+        "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+        "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+      }
+    },
+    {
+      "id": "corner-l",
+      "name": "Four L-shaped three-cell corner patches plus center 2×2",
+      "initialPainted": [
+        [
+          0,
+          1,
+          6,
+          7,
+          8,
+          15,
+          27,
+          28,
+          35,
+          36,
+          48,
+          55,
+          56,
+          57,
+          62,
+          63
+        ]
+      ],
+      "games": 1000,
+      "wins": 876,
+      "winRate": 0.876,
+      "winRate95": [
+        0.8541218223197016,
+        0.8950003499433328
+      ],
+      "threes": 673,
+      "threeRate": 0.673,
+      "failureReasons": {
+        "losses": 124,
+        "unmet": {
+          "score": 42,
+          "collection": 0,
+          "spread": 119,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "sourceSha256": {
+        "games/fuzzy-match-3/game.js": "aaf945e700076579f506274b873ac0114c7f43ce9f38d2c5981368c7db3f9d13",
+        "games/fuzzy-match-3/objectives.js": "aac64aba721a54d3c06c5b3a4d7811cbcc028e7517e8d6b666787196aa89d008",
+        "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+        "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+      }
+    }
+  ],
+  "updatedAt": "2026-10-21T17:21:25.414Z"
+}

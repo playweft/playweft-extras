@@ -701,7 +701,7 @@ test("level difficulty extends gradually through level 10000 with round, ordered
   for (let level = 1; level <= 10000; level++) {
     const config = levelConfig(level);
     assert.ok(config.moves >= 23 && config.moves <= 32);
-    assert.ok(config.target >= previousTarget && config.target <= 18500);
+    assert.ok(config.target >= previousTarget && config.target <= 14800);
     assert.equal(config.starTargets[0], config.target);
     assert.ok(
       Math.abs(config.starTargets[1] - (config.target + config.starTargets[2]) / 2) <= 50,
@@ -734,12 +734,12 @@ test("level difficulty extends gradually through level 10000 with round, ordered
   const late = levelConfig(1000);
   assert.equal(late.moves, 23);
   assert.equal(late.count, 36);
-  assert.deepEqual(late.starTargets, [18000, 26500, 35000]);
+  assert.deepEqual(late.starTargets, [14400, 24700, 35000]);
   for (const [level, targets] of [
-    [1001, [18000, 26500, 35000]],
-    [2000, [18300, 26700, 35100]],
-    [5000, [18400, 26800, 35200]],
-    [10000, [18500, 26900, 35200]],
+    [1001, [14400, 24700, 35000]],
+    [2000, [14600, 24900, 35100]],
+    [5000, [14700, 25000, 35200]],
+    [10000, [14800, 25000, 35200]],
   ]) {
     const config = levelConfig(level);
     assert.ok(config.moves >= late.moves && config.moves <= late.moves + 2);
@@ -772,12 +772,12 @@ test("collection challenges retain their higher count within the four-type rotat
 });
 
 test("two-stage star goals allow either strong combos or efficient play", () => {
-  assert.deepEqual(levelConfig(1).starTargets, [2200, 6000, 9800]);
+  assert.deepEqual(levelConfig(1).starTargets, [1800, 5800, 9800]);
   assert.deepEqual(
     [1, 2, 3, 4].map((level) => levelConfig(level).starTargets[2]),
     [9800, 16000, 22300, 28500],
   );
-  assert.deepEqual(levelConfig(1, true).starTargets, [3600, 7300, 11000]);
+  assert.deepEqual(levelConfig(1, true).starTargets, [2900, 7000, 11000]);
   const game = createGame();
   game.score = 7000;
   const thresholds = levelConfig(game.level).starTargets;

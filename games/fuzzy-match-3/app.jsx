@@ -4,6 +4,8 @@ import { Icon, Animal, Ice, Delivery, GoalFloor } from "./art.jsx";
 import { advanceObjective, collectDeliveries, isDelivery, objectiveProgress } from "./objectives.js";
 import { DELIVERY_THEME, TILE_THEME } from "./theme.js";
 import { planFalls } from "./falling.js";
+import { PRAISE_MS, praiseForTurn } from "./feedback.js";
+import { helpForGoal, recordRetry, restoreRetries, retryKey } from "./assistance.js";
 import {
   adjacent,
   canSwap,
@@ -45,6 +47,21 @@ function dailyGame(date) {
   const seed = Number(date.replaceAll("-", ""));
   return createGame(1, true, seededRandom(seed));
 }
+function recordAttempt(profile, mode, game, restarting = false) {
+  const daily = mode === "daily";
+  const result = recordRetry(profile.retryHelp, retryKey(game, daily, profile.date), game,
+    levelConfig(game.level, daily), { restarting });
+  return { ...profile, retryHelp: result.retries, [mode]: result.game };
+}
+function startAttempt(profile, mode, game) {
+  const daily = mode === "daily";
+  const key = retryKey(game, daily, profile.date);
+  const help = helpForGoal(profile.retryHelp[key], levelConfig(game.level, daily), game.objective.kind);
+  return { ...profile,
+    retryHelp: help ? { ...profile.retryHelp, [key]: help } : profile.retryHelp,
+    [mode]: help ? { ...game, assistance: help } : game,
+  };
+}
 async function load(storage) {
   let data, parseError;
   for (const key of [STORAGE, LEGACY_STORAGE]) {
@@ -63,9 +80,10 @@ async function load(storage) {
   }
   if (!data && parseError) throw parseError;
   const date = todayKey();
-  const adventure = restoreGame(data?.adventure) ?? createGame();
-  const daily =
-    (data?.date === date && restoreGame(data?.daily)) || dailyGame(date);
+  const restoredAdventure = restoreGame(data?.adventure);
+  const restoredDaily = data?.date === date && restoreGame(data?.daily, true);
+  const adventure = restoredAdventure ?? createGame();
+  const daily = restoredDaily || dailyGame(date);
   const levelStars = {};
   for (const [key, stars] of Object.entries(data?.levelStars ?? {})) {
     const level = Number(key);
@@ -84,9 +102,10 @@ async function load(storage) {
       levelStars[adventure.level] || 0,
       earnedStars(adventure),
     );
-  return {
+  let profile = {
     adventure,
     daily,
+    retryHelp: restoreRetries(data?.retryHelp, date),
     levelStars,
     date,
     lastDailyWin:
@@ -107,6 +126,10 @@ async function load(storage) {
       dailyWins: Math.max(0, Number(data?.stats?.dailyWins) || 0),
     },
   };
+  if (!restoredAdventure) profile = startAttempt(profile, "adventure", adventure);
+  if (!restoredDaily) profile = startAttempt(profile, "daily", daily);
+  profile = recordAttempt(profile, "adventure", profile.adventure);
+  return recordAttempt(profile, "daily", profile.daily);
 }
 const format = (n) => n.toLocaleString("zh-CN");
 
@@ -208,6 +231,7 @@ function FuzzyGame({ initialProfile, storage }) {
   const [turnProgress, setTurnProgress] = useState(null);
   const [busy, setBusy] = useState(() => pendingColorClear(profile[mode].board) >= 0);
   const [chainLabel, setChainLabel] = useState(null);
+  const [praise, setPraise] = useState(null);
   const [saved, setSaved] = useState(true);
   const [saveError, setSaveError] = useState(null);
   const [saveAttempt, retrySave] = useState(0);
@@ -411,6 +435,7 @@ function FuzzyGame({ initialProfile, storage }) {
     lock.current = true;
     setBusy(true);
     setSelected(null);
+    setPraise(null);
     clearHint();
     const token = generation.current;
     const origin = boardRef.current
@@ -460,6 +485,8 @@ function FuzzyGame({ initialProfile, storage }) {
   ) {
     let chain = 1;
     let finaleStarted = false;
+    let turnScore = 0;
+    let bestChain = 0;
     for (;;) {
       const initial = !finaleStarted && chain === 1;
       let wave =
@@ -507,6 +534,10 @@ function FuzzyGame({ initialProfile, storage }) {
           : null,
       );
       if (wave.score) tone(chain);
+      if (!finaleStarted && wave.score) {
+        turnScore += wave.score;
+        bestChain = Math.max(bestChain, chain);
+      }
       next.score += wave.score;
       next.collected = next.collected.map(
         (count, i) => count + wave.collected[i],
@@ -523,7 +554,7 @@ function FuzzyGame({ initialProfile, storage }) {
       const drops = [];
       nextBoard = refill(wave.board, Math.random, (piece, from, to) => {
         drops.push({ id: piece.id, from, to });
-      }, next.objective);
+      }, next.objective, next.assistance);
       const motion = planFalls(drops);
       setBoard(nextBoard);
       setFalling(motion);
@@ -542,7 +573,7 @@ function FuzzyGame({ initialProfile, storage }) {
         const deliveryDrops = [];
         nextBoard = refill(arrival.board, Math.random, (piece, from, to) => {
           deliveryDrops.push({ id: piece.id, from, to });
-        }, next.objective);
+        }, next.objective, next.assistance);
         const deliveryMotion = planFalls(deliveryDrops);
         setBoard(nextBoard);
         setClearing([]);
@@ -560,8 +591,7 @@ function FuzzyGame({ initialProfile, storage }) {
     next.board = nextBoard;
     next.status = gameStatus(next, currentMode === "daily");
     setProfile((p) => ({
-      ...p,
-      [currentMode]: next,
+      ...recordAttempt(p, currentMode, next),
       levelStars:
         next.status === "won" && currentMode !== "daily"
           ? {
@@ -597,8 +627,17 @@ function FuzzyGame({ initialProfile, storage }) {
     }));
     setTurnProgress(null);
     setChainLabel(null);
+    // Queued-save recovery and automatic finale waves do not earn a new player reward.
+    const label = initialExchange.length ? praiseForTurn(bestChain, turnScore) : null;
+    setPraise(label);
+    if (label) {
+      void delay(PRAISE_MS, { animation: false }).then(() => {
+        if (token === generation.current)
+          setPraise(current => current === label ? null : current);
+      });
+    }
     if (next.status !== "playing") {
-      await delay(RESULT_PAUSE_MS, { animation: false });
+      await delay(Math.max(RESULT_PAUSE_MS, label ? PRAISE_MS : 0), { animation: false });
       if (token !== generation.current) return;
     }
     lock.current = false;
@@ -720,7 +759,8 @@ function FuzzyGame({ initialProfile, storage }) {
     const date = todayKey();
     let nextProfile = profile;
     if (nextMode === "daily" && date !== profile.date) {
-      nextProfile = { ...profile, daily: dailyGame(date), date };
+      nextProfile = { ...profile, daily: dailyGame(date), date,
+        retryHelp: restoreRetries(profile.retryHelp, date) };
       setProfile(nextProfile);
     }
     setMode(nextMode);
@@ -730,6 +770,7 @@ function FuzzyGame({ initialProfile, storage }) {
     setSelected(null);
     clearHint();
     setChainLabel(null);
+    setPraise(null);
   }
   function newGame(advance = false) {
     if (lock.current) return;
@@ -737,12 +778,14 @@ function FuzzyGame({ initialProfile, storage }) {
       openLevel(Math.min(MAX_LEVEL, active.level + (advance ? 1 : 0)), !advance);
       return;
     }
-    const next = dailyGame(profile.date);
+    const nextProfile = startAttempt(recordAttempt(profile, mode, active, true), mode, dailyGame(profile.date));
+    const next = nextProfile[mode];
     setScoreTrackKey((key) => key + 1);
     setBoard(next.board);
-    updateGame(next);
+    setProfile(nextProfile);
     setView(null);
     setSelected(null);
+    setPraise(null);
     clearHint();
   }
   const unlockedLevel = Math.min(
@@ -762,6 +805,7 @@ function FuzzyGame({ initialProfile, storage }) {
     setLevelsOpen(true);
     setLevelPage(Math.floor((unlockedLevel - 1) / LEVELS_PER_PAGE));
     setSelected(null);
+    setPraise(null);
     clearHint();
     setView("levels");
   }
@@ -774,11 +818,13 @@ function FuzzyGame({ initialProfile, storage }) {
       level < latest.level || (level === latest.level && latest.status === "won")
         ? "replay"
         : "adventure";
-    const next =
-      level === latest.level && latest.status === "playing" && !restart
-        ? latest
-        : createGame(level);
-    setProfile((p) => ({ ...p, [nextMode]: next }));
+    let nextProfile = restart && level === active.level && mode !== "daily"
+      ? recordAttempt(profile, mode, active, true) : profile;
+    const retained = nextMode === "adventure" ? latest : profile.replay;
+    const resume = !restart && retained?.level === level && retained.status === "playing";
+    if (!resume) nextProfile = startAttempt(nextProfile, nextMode, createGame(level));
+    const next = resume ? retained : nextProfile[nextMode];
+    setProfile(nextProfile);
     setMode(nextMode);
     setBoard(next.board);
     setBusy(pendingColorClear(next.board) >= 0);
@@ -786,6 +832,7 @@ function FuzzyGame({ initialProfile, storage }) {
     setSelected(null);
     clearHint();
     setChainLabel(null);
+    setPraise(null);
   }
   const nav = [
     { id: "adventure", icon: "map", title: "闯关", small: "闯关" },
@@ -1081,6 +1128,16 @@ function FuzzyGame({ initialProfile, storage }) {
                       {chainLabel.chain > 1 ? `${chainLabel.chain} 连击` : ""}
                     </span>
                     <span class="chain-score">+{chainLabel.score}</span>
+                  </div>
+                )}
+                {praise && (
+                  <div
+                    class="praise-label"
+                    data-praise={praise.level}
+                    aria-hidden="true"
+                    style={{ "--praise-duration": `${PRAISE_MS}ms` }}
+                  >
+                    {praise.word}
                   </div>
                 )}
               </div>

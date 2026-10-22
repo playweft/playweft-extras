@@ -1,4 +1,5 @@
 import { SIZE, TYPE_COUNT } from "./constants.js";
+import { assistedType, validHelp } from "./assistance.js";
 import {
   createObjective,
   deliverySpawnCount,
@@ -551,7 +552,7 @@ export function resolveWave(
   };
 }
 
-export function refill(board, random = Math.random, onDrop, objective) {
+export function refill(board, random = Math.random, onDrop, objective, assistance) {
   const next = [...board];
   let deliveries = deliverySpawnCount(board, objective);
   const incoming = () => {
@@ -559,6 +560,7 @@ export function refill(board, random = Math.random, onDrop, objective) {
       deliveries--;
       return { ...tile(null), kind: "delivery" };
     }
+    if (assistance) return tile(assistedType(random, assistance));
     return tile(Math.floor(random() * TYPE_COUNT));
   };
   if (!iceLayers(board)) {
@@ -716,8 +718,8 @@ export function levelConfig(level = 1, daily = false) {
   const scoreBase = daily
     ? 3000
     : Math.round((1800 + 13200 * difficulty) / 100) * 100;
-  // Rebase the former 64% completion goal for the 800 → 1500 move bonus.
-  const target = Math.ceil((scoreBase * 1.2) / 100) * 100;
+  // Ease completion by 20% while retaining the independent three-star curve.
+  const target = Math.ceil((scoreBase * 0.96) / 100) * 100;
   const threeStars = daily ? 11000 : threeStarTarget(level);
   const twoStars = Math.round((target + threeStars) / 2 / 100) * 100;
   const collectionChallenge = isChallengeLevel(level, daily);
@@ -791,6 +793,7 @@ export function createGame(
     iceGoal: iceLayers(board),
     level,
     moves: config.moves,
+    initialMoves: config.moves,
     score: 0,
     collected: Array(TYPE_COUNT).fill(0),
     hints: 3,
@@ -870,6 +873,9 @@ export function validGame(game, { allowDeadBoard = false } = {}) {
       (key) => Number.isInteger(game[key]) && game[key] >= 0,
     ) ||
     game.moves > 40 ||
+    (game.initialMoves !== undefined && (!Number.isInteger(game.initialMoves) || game.initialMoves < 1 || game.initialMoves > 40)) ||
+    (game.assistance !== undefined && !validHelp(game.assistance)) ||
+    (game.retryCounted !== undefined && typeof game.retryCounted !== "boolean") ||
     !Number.isInteger(game.iceGoal ?? iceLayers(game.board)) ||
     (game.iceGoal ?? iceLayers(game.board)) < iceLayers(game.board) ||
     (game.iceGoal ?? 0) > 128 ||
@@ -888,10 +894,11 @@ export function validGame(game, { allowDeadBoard = false } = {}) {
 }
 
 /** Preserve existing progress while upgrading the original five-match special. */
-export function restoreGame(saved) {
+export function restoreGame(saved, daily = false) {
   if (!saved || !Array.isArray(saved.board)) return null;
   const game = {
     ...saved,
+    initialMoves: saved.initialMoves ?? Math.max(saved.moves, levelConfig(saved.level, daily).moves),
     objective: saved.objective ?? { kind: "collect" },
     iceGoal: saved.iceGoal ?? iceLayers(saved.board),
     board: saved.board.map((piece) =>

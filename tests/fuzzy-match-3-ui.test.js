@@ -144,6 +144,7 @@ test("legacy saves move to the new key with progress, settings, records and best
   await mount();
   assert.deepEqual(saved(), {
     ...profile,
+    retryHelp: {},
     stats: { wins: 42, best: 34000, eliminated: 1234, dailyWins: 4 },
   });
   assert.equal(localStorage.getItem(legacyKey), null);
@@ -967,6 +968,8 @@ test("a winning finale animates all stripes without rotating, queues rainbows, a
     assertDisplayedScore(totalScore(saved().adventure), config);
     assert.equal(root.querySelector(".board").getAttribute("aria-busy"), "true");
     assert.equal(root.querySelector(".chain-label"), null);
+    assert.equal(root.querySelector(".praise-label"), null,
+      "the automatic finale cannot promote an ordinary three-match into praise");
     assert.equal(root.querySelector('[role="dialog"]'), null);
     assert.equal(root.querySelectorAll(".cell[data-special]").length, 0);
     await act(() => new Promise((resolve) => setTimeout(resolve, 450)));
@@ -1401,12 +1404,65 @@ test("a simultaneous double match displays and saves its area score without inse
     );
     await settled();
     assert.equal(saved().adventure.score, 440);
+    assert.equal(root.querySelector(".praise-label"), null);
     assert.equal(saved().adventure.moves, adventure.moves - 1);
     assert.equal(
       root.querySelector(".board-wrap").nextElementSibling,
       root.querySelector(".tools"),
     );
     assert.equal(root.querySelector('[role="status"]'), null);
+  } finally {
+    Math.random = previousRandom;
+  }
+});
+
+test("three cascades earn one praise after score feedback, without waiting to unlock the board", async () => {
+  const adventure = createGame(1, false, seededRandom(54));
+  adventure.level = 1000;
+  const previousRandom = Math.random;
+  Math.random = seededRandom(17);
+  try {
+    await mount({ adventure });
+    await click(piece(5));
+    await click(piece(13));
+    await until(() => root.querySelector(".chain-count")?.textContent === "3 连击");
+    assert.equal(root.querySelector(".praise-label"), null);
+    await settled();
+    assert.equal(saved().adventure.score, 1080, "the chain qualifies below the first score milestone");
+    assert.equal(root.querySelector(".chain-label"), null);
+    assert.equal(root.querySelectorAll(".praise-label").length, 1);
+    assert.equal(root.querySelector(".praise-label").textContent, "Great!");
+    assert.equal(root.querySelector(".board").getAttribute("aria-busy"), "false");
+    const score = saved().adventure.score;
+    await act(() => new Promise(resolve => setTimeout(resolve, 1050)));
+    assert.equal(root.querySelector(".praise-label"), null);
+    assert.equal(saved().adventure.score, score, "visual praise awards no extra points");
+  } finally {
+    Math.random = previousRandom;
+  }
+});
+
+test("a high-scoring first wave earns praise and the next exchange immediately dismisses it", async () => {
+  const adventure = patternedGame();
+  adventure.level = 1000;
+  adventure.board[0].special = "row";
+  adventure.board[1].special = "column";
+  const previousRandom = Math.random;
+  Math.random = seededRandom(1);
+  try {
+    await mount({ adventure });
+    await click(piece(0));
+    await click(piece(1));
+    await until(() => root.querySelector(".chain-score")?.textContent === "+2060");
+    assert.equal(root.querySelector(".chain-count").textContent, "");
+    assert.equal(root.querySelector(".praise-label"), null);
+    await settled();
+    assert.equal(root.querySelector(".praise-label").textContent, "Great!");
+    const [a, b] = findMove(saved().adventure.board);
+    await click(piece(a));
+    await click(piece(b));
+    assert.equal(root.querySelector(".praise-label"), null);
+    await settled();
   } finally {
     Math.random = previousRandom;
   }
@@ -1864,4 +1920,83 @@ test("list settings, records and help close back to the list, including after a 
   await act(flush);
   assert.ok(root.querySelector(".level-selection"));
   assert.equal(root.querySelector('[role="dialog"]'), null);
+});
+
+test("a natural loss records assistance once across reload and retry, and quick restarts preserve its tier", async () => {
+  const adventure = createGame(1, false, seededRandom(42));
+  adventure.moves = 1;
+  const previousRandom = Math.random;
+  Math.random = seededRandom(17);
+  try {
+    await mount({ adventure });
+    const [a,b] = findMove(adventure.board);
+    await click(piece(a)); await click(piece(b)); await settled();
+    assert.equal(saved().adventure.status, "lost");
+    const help = saved().retryHelp["level:1"];
+    assert.equal(help.failures, 1);
+    assert.notEqual(help.type, levelConfig(1).targetType);
+    assert.equal(saved().adventure.retryCounted, true);
+    const snapshot = saved();
+    act(() => render(null, root)); root.remove(); root = null;
+    await mount(snapshot);
+    assert.deepEqual(saved().retryHelp["level:1"], help);
+    await click(button("重试"));
+    assert.deepEqual(saved().adventure.assistance, help);
+    assert.equal(saved().adventure.retryCounted, undefined);
+    assert.equal(saved().adventure.moves, saved().adventure.initialMoves);
+    await click(root.querySelector('[aria-label="暂停游戏"]'));
+    await click(button("重新开始")); await click(button("重新开始"));
+    assert.deepEqual(saved().retryHelp["level:1"], help);
+    assert.deepEqual(saved().adventure.assistance, help);
+  } finally { Math.random = previousRandom; }
+});
+
+test("late manual restarts qualify while exiting and short attempts do not upgrade assistance", async () => {
+  const adventure = createGame(1, false, seededRandom(42));
+  adventure.moves = adventure.initialMoves - Math.ceil(adventure.initialMoves * .6);
+  await mount({ adventure });
+  await showLevelList();
+  assert.deepEqual(saved().retryHelp, {});
+  await click(root.querySelector('[data-level="1"]'));
+  assert.equal(saved().adventure.moves, adventure.moves);
+  await click(root.querySelector('[aria-label="暂停游戏"]'));
+  await click(button("重新开始")); await click(button("重新开始"));
+  const help = saved().retryHelp["level:1"];
+  assert.equal(help.failures, 1);
+  const snapshot = saved();
+  act(() => render(null, root)); root.remove(); root = null;
+  await mount(snapshot);
+  assert.deepEqual(saved().adventure.assistance, help);
+  await click(root.querySelector('[aria-label="暂停游戏"]'));
+  await click(button("重新开始")); await click(button("重新开始"));
+  assert.deepEqual(saved().retryHelp["level:1"], help);
+  const failed = saved();
+  failed.adventure.moves = 0;
+  failed.adventure.status = "lost";
+  act(() => render(null, root)); root.remove(); root = null;
+  await mount(failed);
+  assert.deepEqual(saved().retryHelp["level:1"], { ...help, failures: 2 });
+  await click(button("重试"));
+  assert.deepEqual(saved().adventure.assistance, { ...help, failures: 2 });
+});
+
+test("winning clears retry help for that level and a replay starts at normal probability", async () => {
+  const adventure = createGame(1, false, seededRandom(42));
+  adventure.score = levelConfig(1).target;
+  adventure.collected = Array(6).fill(100);
+  adventure.assistance = { failures: 3, type: 5 };
+  const other = { failures: 2, type: 3 };
+  const previousRandom = Math.random;
+  Math.random = seededRandom(17);
+  try {
+    await mount({ adventure, retryHelp: { "level:1": adventure.assistance, "level:2": other } });
+    const [a,b] = findMove(adventure.board);
+    await click(piece(a)); await click(piece(b)); await settled();
+    assert.equal(saved().adventure.status, "won");
+    assert.equal(saved().adventure.assistance, undefined);
+    assert.deepEqual(saved().retryHelp, { "level:2": other });
+    await click(button("再玩一次"));
+    assert.equal(saved().replay.assistance, undefined);
+    assert.deepEqual(saved().retryHelp, { "level:2": other });
+  } finally { Math.random = previousRandom; }
 });

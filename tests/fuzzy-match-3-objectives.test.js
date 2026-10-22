@@ -82,8 +82,8 @@ test("all goal families create stable playable boards and survive JSON save/rest
   }
 });
 
-test("spread goals start at their center and four target-area corners without ice", () => {
-  for (const level of [2, 22, 102, 290, 302, 1002]) {
+test("normal spread goals extend each corner while intro and challenge layouts retain eight painted cells", () => {
+  for (const level of [2, 10, 22, 30, 102, 110, 290, 298, 302, 1002]) {
     const config = levelConfig(level);
     assert.equal(config.goalKind, "spread");
     assert.deepEqual([config.iceCount, config.doubleIce, config.icePairs], [0, 0, 0]);
@@ -93,11 +93,26 @@ test("spread goals start at their center and four target-area corners without ic
     assert.ok(game.board.every(piece => !piece.ice));
     const { cells, painted } = game.objective;
     const first = Math.min(...cells), last = Math.max(...cells);
-    assert.deepEqual(painted, [27, 28, 35, 36, first, first - first % 8 + last % 8,
-      last - last % 8 + first % 8, last].sort((a, b) => a - b));
-    assert.equal(objectiveProgress(game, config).current, 8);
+    const topRight = first - first % 8 + last % 8;
+    const bottomLeft = last - last % 8 + first % 8;
+    const expected = [27, 28, 35, 36, first, topRight, bottomLeft, last];
+    if (level >= 20 && !isChallengeLevel(level))
+      expected.push(first + 1, first + 8, topRight - 1, topRight + 8,
+        bottomLeft + 1, bottomLeft - 8, last - 1, last - 8);
+    assert.deepEqual(painted, expected.sort((a, b) => a - b));
+    assert.equal(objectiveProgress(game, config).current, expected.length);
+    assert.ok(expected.length < cells.length, "the initial floor must still need painting");
+    for (const transform of [
+      (row, col) => row * 8 + 7 - col,
+      (row, col) => (7 - row) * 8 + col,
+      (row, col) => col * 8 + 7 - row,
+    ])
+      assert.deepEqual(painted.map(index => transform(Math.floor(index / 8), index % 8)).sort((a, b) => a - b),
+        painted, "initial paint preserves both mirror axes and 90-degree rotation");
     assert.deepEqual(restoreGame(JSON.parse(JSON.stringify(game))), game);
   }
+  assert.deepEqual(createGame(298).objective.painted,
+    [0, 1, 6, 7, 8, 15, 27, 28, 35, 36, 48, 55, 56, 57, 62, 63]);
   assert.deepEqual([291, 296, 301, 306].map(level => levelConfig(level).moves), [26, 25, 25, 24]);
 });
 

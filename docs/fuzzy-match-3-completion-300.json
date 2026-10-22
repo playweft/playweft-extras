@@ -1,0 +1,1353 @@
+{
+  "generatedAt": "2026-10-22T08:44:31.348Z",
+  "sourceSha256": {
+    "games/fuzzy-match-3/constants.js": "0ef4db3ea2044185a505601e626412a86ef7c44dc4d40affdc876472a8cd3b5e",
+    "games/fuzzy-match-3/objectives.js": "bba45a6f390f99da124aa7e5d7a9760f1a9291de863e6f9507c3bf9adc3d5301",
+    "games/fuzzy-match-3/game.js": "a6ac28ddb379b1883701b8c4b3235c949baa6cae2528d3c158db18faca6a4d85",
+    "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+    "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+  },
+  "trialSourceSha256": {
+    "screeningAndSevenTypeValidation": {
+      "games/fuzzy-match-3/constants.js": "0ef4db3ea2044185a505601e626412a86ef7c44dc4d40affdc876472a8cd3b5e",
+      "games/fuzzy-match-3/objectives.js": "15d1f8ae8c9195f797693b2fbfee2da7d2cf05a2fb549b2750a163b89354dfa9",
+      "games/fuzzy-match-3/game.js": "53f70e2810d1157a9c6826424eb72c9be8cbf1ef4914ba4fcab83ca9b1eed8a0",
+      "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+      "scripts/fuzzy-match-3-balance.mjs": "02ad30e1cecdcc90ac5caa34ecb1204abc66ac6ad283dbac736fbc1496be203a"
+    },
+    "diagonalScreening": {
+      "games/fuzzy-match-3/constants.js": "0ef4db3ea2044185a505601e626412a86ef7c44dc4d40affdc876472a8cd3b5e",
+      "games/fuzzy-match-3/objectives.js": "842fb8af0c3eb1ac292979ee11c01548f230b2d94e95dc1d113954d6f8d15e73",
+      "games/fuzzy-match-3/game.js": "53f70e2810d1157a9c6826424eb72c9be8cbf1ef4914ba4fcab83ca9b1eed8a0",
+      "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+      "scripts/fuzzy-match-3-balance.mjs": "02ad30e1cecdcc90ac5caa34ecb1204abc66ac6ad283dbac736fbc1496be203a"
+    },
+    "productionConfirmation": {
+      "games/fuzzy-match-3/constants.js": "0ef4db3ea2044185a505601e626412a86ef7c44dc4d40affdc876472a8cd3b5e",
+      "games/fuzzy-match-3/objectives.js": "bba45a6f390f99da124aa7e5d7a9760f1a9291de863e6f9507c3bf9adc3d5301",
+      "games/fuzzy-match-3/game.js": "a6ac28ddb379b1883701b8c4b3235c949baa6cae2528d3c158db18faca6a4d85",
+      "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+      "scripts/fuzzy-match-3-balance.mjs": "02ad30e1cecdcc90ac5caa34ecb1204abc66ac6ad283dbac736fbc1496be203a"
+    }
+  },
+  "beforeSourceSha256": {
+    "games/fuzzy-match-3/constants.js": "0ef4db3ea2044185a505601e626412a86ef7c44dc4d40affdc876472a8cd3b5e",
+    "games/fuzzy-match-3/objectives.js": "b11f99ac4d2220e8e33273d9d9798231095c771f9731dc46ad2d6e1549cf2911",
+    "games/fuzzy-match-3/game.js": "aaf945e700076579f506274b873ac0114c7f43ce9f38d2c5981368c7db3f9d13",
+    "scripts/fuzzy-match-3-ai.mjs": "089d53a4dc09fc5695e834f383655c18c0bc2f4b9c48c1666c17ac8301c7bc4e",
+    "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+  },
+  "rawResultsSha256": {
+    "fuzzy-completion-paint-raw.json": "9dda57d93c4f23ea363233d0603421d9753fb78fdfe2eeae7f15b62f0eaef4e5",
+    "fuzzy-symmetric-300-raw.json": "3f1c5e2f7f177417d11f49be13b506c99fefe34738af6f6be2aea60abb2c00fd",
+    "fuzzy-completion-validation-raw.json": "3691fcaa7dd175c9cb898459a7e3cbbeef65b999ac1603e7058886545f545176",
+    "fuzzy-completion-confirm-raw.json": "594e333423abd04602130ea473d7b25e00b065e56f0c34fb52a4a74f17a837a8"
+  },
+  "protocol": {
+    "purpose": "Lower completion-score failures and bring ordinary painting win rate above 83% while preserving mirror and 90-degree symmetry.",
+    "strategy": "Unchanged strong AI: 4 candidates × 3 independent futures × 2 turns.",
+    "seedStart": 910001,
+    "seedEnd": 911000,
+    "gamesPerType": 1000,
+    "denominator": "All games, including losses, for both win and three-star rates.",
+    "screeningGames": 4000,
+    "screeningScoreTarget": 13600,
+    "productionValidationGames": 8000,
+    "independentPaintingConfirmationGames": 1000,
+    "uniqueNewSimulations": 12000,
+    "overlap": "The selected 1000-game L-corner screening cell is reused as ordinary painting in the eight-type production comparison; not counted twice in unique simulations.",
+    "confirmation": "Painting confirmation uses separate seeds 810001–811000. This seed range was used by earlier historical experiments but not by the present 910001–911000 candidate selection.",
+    "controls": "No spawn-probability assistance, hints or manual shuffles. Automatic dead-board reshuffles retained. Winning special cleanup and 1500-per-unused-move bonus included.",
+    "uncertainty": "Per-cell Wilson 95% intervals; paired differences use normal approximation across 1000 matched seeds. Candidate selection is exploratory; the separate confirmation checks the selected layout.",
+    "scope": "AI estimates around level 300; not measured human win rates. Retrospective rescue applies new score eligibility to completed old trajectories and does not model earlier wins or changed decisions.",
+    "equivalence": "All eight experimental configurations match final production over two complete games each, including per-game outcomes (16 games compared across three runtimes)."
+  },
+  "changes": {
+    "score": "Completion/one-star multiplier 1.2 → 0.96, approximately 20% lower after rounding up to hundreds. Two stars are the midpoint rounded to hundreds; three-star thresholds unchanged. Applies to normal, challenge and daily modes.",
+    "painting": "From level 20, ordinary painting starts with four corner L shapes (three cells each) plus center 2×2: 16 cells. All layouts preserve horizontal/vertical reflection and 90-degree rotation.",
+    "introAndChallenge": "Introductory 4×4 painting and all painting challenges retain eight initial cells. Existing saved floor progress is preserved; new/restarted games use the new layout.",
+    "unmodified": "No changes to move budgets, ice, collection/reveal/delivery requirements, scoring, AI or production spawn probabilities."
+  },
+  "anchors": {
+    "1": [
+      1800,
+      5800,
+      9800
+    ],
+    "2": [
+      2200,
+      9100,
+      16000
+    ],
+    "3": [
+      2500,
+      12400,
+      22300
+    ],
+    "4": [
+      2900,
+      15700,
+      28500
+    ],
+    "100": [
+      11800,
+      22700,
+      33600
+    ],
+    "298": [
+      13600,
+      24100,
+      34600
+    ],
+    "1000": [
+      14400,
+      24700,
+      35000
+    ],
+    "10000": [
+      14800,
+      25000,
+      35200
+    ]
+  },
+  "daily": [
+    2900,
+    7000,
+    11000
+  ],
+  "aggregate": [
+    {
+      "group": "normal",
+      "before": {
+        "winRate": 0.8987499999999999,
+        "threeRate": 0.62725,
+        "scoreOnlyLosses": 60
+      },
+      "after": {
+        "winRate": 0.9339999999999999,
+        "threeRate": 0.61625,
+        "scoreOnlyLosses": 13
+      }
+    },
+    {
+      "group": "challenge",
+      "before": {
+        "winRate": 0.829,
+        "threeRate": 0.5690000000000001,
+        "scoreOnlyLosses": 50
+      },
+      "after": {
+        "winRate": 0.839,
+        "threeRate": 0.5587500000000001,
+        "scoreOnlyLosses": 12
+      }
+    }
+  ],
+  "perType": [
+    {
+      "level": 297,
+      "kind": "collect",
+      "group": "normal",
+      "config": {
+        "moves": 25,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 13600,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "collect"
+      },
+      "before": {
+        "games": 1000,
+        "wins": 962,
+        "threes": 625,
+        "winRate": 0.962,
+        "threeRate": 0.625,
+        "winRate95": [
+          0.9482727912457906,
+          0.9721911544603846
+        ],
+        "threeRate95": [
+          0.5945690386793249,
+          0.6544742366740776
+        ],
+        "scoreOnlyLosses": 25,
+        "unmet": {
+          "score": 34,
+          "collection": 11,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 3
+        }
+      },
+      "after": {
+        "games": 1000,
+        "wins": 979,
+        "threes": 600,
+        "winRate": 0.979,
+        "threeRate": 0.6,
+        "winRate95": [
+          0.9681094652438844,
+          0.9862243659103536
+        ],
+        "threeRate95": [
+          0.5693088606220993,
+          0.6299257596606225
+        ],
+        "scoreOnlyLosses": 7,
+        "unmet": {
+          "score": 11,
+          "collection": 12,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 4
+        }
+      },
+      "pairedWinChange": {
+        "difference": 0.017,
+        "difference95": [
+          0.007654738553068181,
+          0.02634526144693182
+        ]
+      },
+      "pairedThreeStarChange": {
+        "difference": -0.025,
+        "difference95": [
+          -0.047731734023864755,
+          -0.0022682659761352475
+        ]
+      },
+      "retrospectiveScoreOnlyRescue": {
+        "before": 25,
+        "eligibleWithNewThreshold": 15
+      }
+    },
+    {
+      "level": 298,
+      "kind": "spread",
+      "group": "normal",
+      "config": {
+        "moves": 25,
+        "goalKind": "spread",
+        "iceCount": 0,
+        "doubleIce": 0,
+        "iceCells": [],
+        "icePairs": 0,
+        "target": 13600,
+        "targetType": 3,
+        "count": 24,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "spread",
+        "cells": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63
+        ],
+        "painted": [
+          0,
+          1,
+          6,
+          7,
+          8,
+          15,
+          27,
+          28,
+          35,
+          36,
+          48,
+          55,
+          56,
+          57,
+          62,
+          63
+        ]
+      },
+      "before": {
+        "games": 1000,
+        "wins": 789,
+        "threes": 643,
+        "winRate": 0.789,
+        "threeRate": 0.643,
+        "winRate95": [
+          0.7626290025094167,
+          0.8131590501076498
+        ],
+        "threeRate95": [
+          0.6128087342717188,
+          0.6720967727325735
+        ],
+        "scoreOnlyLosses": 1,
+        "unmet": {
+          "score": 48,
+          "collection": 0,
+          "spread": 210,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "after": {
+        "games": 1000,
+        "wins": 886,
+        "threes": 651,
+        "winRate": 0.886,
+        "threeRate": 0.651,
+        "winRate95": [
+          0.8648069825448822,
+          0.9042386517464244
+        ],
+        "threeRate95": [
+          0.6209297417330122,
+          0.679914534893898
+        ],
+        "scoreOnlyLosses": 0,
+        "unmet": {
+          "score": 7,
+          "collection": 0,
+          "spread": 114,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "pairedWinChange": {
+        "difference": 0.097,
+        "difference95": [
+          0.06564938203405149,
+          0.12835061796594852
+        ]
+      },
+      "pairedThreeStarChange": {
+        "difference": 0.008,
+        "difference95": [
+          -0.031019870423771204,
+          0.047019870423771204
+        ]
+      },
+      "retrospectiveScoreOnlyRescue": {
+        "before": 1,
+        "eligibleWithNewThreshold": 1
+      }
+    },
+    {
+      "level": 299,
+      "kind": "reveal",
+      "group": "normal",
+      "config": {
+        "moves": 25,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 13700,
+        "targetType": 4,
+        "count": 24,
+        "starTargets": [
+          13700,
+          24200,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "reveal",
+        "groups": [
+          {
+            "cells": [
+              9,
+              10,
+              17,
+              18
+            ],
+            "type": 5
+          },
+          {
+            "cells": [
+              28,
+              29,
+              36,
+              37
+            ],
+            "type": 0
+          },
+          {
+            "cells": [
+              49,
+              50,
+              57,
+              58
+            ],
+            "type": 1
+          }
+        ],
+        "revealed": []
+      },
+      "before": {
+        "games": 1000,
+        "wins": 956,
+        "threes": 613,
+        "winRate": 0.956,
+        "threeRate": 0.613,
+        "winRate95": [
+          0.9414479081796453,
+          0.9670619603095666
+        ],
+        "threeRate95": [
+          0.582433759131263,
+          0.6427013617882128
+        ],
+        "scoreOnlyLosses": 26,
+        "unmet": {
+          "score": 34,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 18,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "after": {
+        "games": 1000,
+        "wins": 975,
+        "threes": 605,
+        "winRate": 0.975,
+        "threeRate": 0.605,
+        "winRate95": [
+          0.9633544581334902,
+          0.9830099882094389
+        ],
+        "threeRate95": [
+          0.5743542580369126,
+          0.6348420932599453
+        ],
+        "scoreOnlyLosses": 6,
+        "unmet": {
+          "score": 8,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 19,
+          "deliver": 0,
+          "ice": 1
+        }
+      },
+      "pairedWinChange": {
+        "difference": 0.019,
+        "difference95": [
+          0.008505729557891358,
+          0.02949427044210864
+        ]
+      },
+      "pairedThreeStarChange": {
+        "difference": -0.008,
+        "difference95": [
+          -0.03264415289418303,
+          0.01664415289418303
+        ]
+      },
+      "retrospectiveScoreOnlyRescue": {
+        "before": 26,
+        "eligibleWithNewThreshold": 21
+      }
+    },
+    {
+      "level": 296,
+      "kind": "deliver",
+      "group": "normal",
+      "config": {
+        "moves": 25,
+        "goalKind": "deliver",
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          9,
+          54
+        ],
+        "icePairs": 0,
+        "target": 13600,
+        "targetType": 1,
+        "count": 24,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "deliver",
+        "total": 3,
+        "delivered": 0,
+        "exits": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "before": {
+        "games": 1000,
+        "wins": 888,
+        "threes": 628,
+        "winRate": 0.888,
+        "threeRate": 0.628,
+        "winRate95": [
+          0.8669495617556403,
+          0.9060807649413208
+        ],
+        "threeRate95": [
+          0.5976058983153016,
+          0.6574144156465824
+        ],
+        "scoreOnlyLosses": 8,
+        "unmet": {
+          "score": 37,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 104,
+          "ice": 1
+        }
+      },
+      "after": {
+        "games": 1000,
+        "wins": 896,
+        "threes": 609,
+        "winRate": 0.896,
+        "threeRate": 0.609,
+        "winRate95": [
+          0.8755398308973383,
+          0.9134292654222405
+        ],
+        "threeRate95": [
+          0.5783929481543383,
+          0.6387727879538286
+        ],
+        "scoreOnlyLosses": 0,
+        "unmet": {
+          "score": 8,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 104,
+          "ice": 1
+        }
+      },
+      "pairedWinChange": {
+        "difference": 0.008,
+        "difference95": [
+          -0.004698921221906974,
+          0.020698921221906974
+        ]
+      },
+      "pairedThreeStarChange": {
+        "difference": -0.019,
+        "difference95": [
+          -0.03943930888625501,
+          0.001439308886255014
+        ]
+      },
+      "retrospectiveScoreOnlyRescue": {
+        "before": 8,
+        "eligibleWithNewThreshold": 7
+      }
+    },
+    {
+      "level": 305,
+      "kind": "collect",
+      "group": "challenge",
+      "config": {
+        "moves": 24,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          2,
+          61,
+          16,
+          47,
+          5,
+          58,
+          23,
+          40
+        ],
+        "icePairs": 0,
+        "target": 13700,
+        "targetType": 4,
+        "count": 36,
+        "starTargets": [
+          13700,
+          24200,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "collect"
+      },
+      "before": {
+        "games": 1000,
+        "wins": 821,
+        "threes": 544,
+        "winRate": 0.821,
+        "threeRate": 0.544,
+        "winRate95": [
+          0.7960248554543453,
+          0.8435182756531919
+        ],
+        "threeRate95": [
+          0.5130201879988806,
+          0.5746430449255172
+        ],
+        "scoreOnlyLosses": 6,
+        "unmet": {
+          "score": 53,
+          "collection": 173,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 10
+        }
+      },
+      "after": {
+        "games": 1000,
+        "wins": 823,
+        "threes": 547,
+        "winRate": 0.823,
+        "threeRate": 0.547,
+        "winRate95": [
+          0.7981208142834733,
+          0.8454070092297183
+        ],
+        "threeRate95": [
+          0.5160256008817754,
+          0.5776146706511041
+        ],
+        "scoreOnlyLosses": 1,
+        "unmet": {
+          "score": 22,
+          "collection": 176,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 9
+        }
+      },
+      "pairedWinChange": {
+        "difference": 0.002,
+        "difference95": [
+          -0.008740017764491011,
+          0.012740017764491011
+        ]
+      },
+      "pairedThreeStarChange": {
+        "difference": 0.003,
+        "difference95": [
+          -0.010442519366804848,
+          0.01644251936680485
+        ]
+      },
+      "retrospectiveScoreOnlyRescue": {
+        "before": 6,
+        "eligibleWithNewThreshold": 5
+      }
+    },
+    {
+      "level": 290,
+      "kind": "spread",
+      "group": "challenge",
+      "config": {
+        "moves": 26,
+        "goalKind": "spread",
+        "iceCount": 0,
+        "doubleIce": 0,
+        "iceCells": [],
+        "icePairs": 0,
+        "target": 13600,
+        "targetType": 1,
+        "count": 36,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "spread",
+        "cells": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63
+        ],
+        "painted": [
+          0,
+          7,
+          27,
+          28,
+          35,
+          36,
+          56,
+          63
+        ]
+      },
+      "before": {
+        "games": 1000,
+        "wins": 821,
+        "threes": 680,
+        "winRate": 0.821,
+        "threeRate": 0.68,
+        "winRate95": [
+          0.7960248554543453,
+          0.8435182756531919
+        ],
+        "threeRate95": [
+          0.6504458220300267,
+          0.7081764944788729
+        ],
+        "scoreOnlyLosses": 1,
+        "unmet": {
+          "score": 40,
+          "collection": 0,
+          "spread": 178,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "after": {
+        "games": 1000,
+        "wins": 815,
+        "threes": 668,
+        "winRate": 0.815,
+        "threeRate": 0.668,
+        "winRate95": [
+          0.7897434604481715,
+          0.8378455934424025
+        ],
+        "threeRate95": [
+          0.6382172868431599,
+          0.696496875231813
+        ],
+        "scoreOnlyLosses": 0,
+        "unmet": {
+          "score": 10,
+          "collection": 0,
+          "spread": 185,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        }
+      },
+      "pairedWinChange": {
+        "difference": -0.006,
+        "difference95": [
+          -0.01900235223194506,
+          0.0070023522319450585
+        ]
+      },
+      "pairedThreeStarChange": {
+        "difference": -0.012,
+        "difference95": [
+          -0.02717145288304912,
+          0.0031714528830491164
+        ]
+      },
+      "retrospectiveScoreOnlyRescue": {
+        "before": 1,
+        "eligibleWithNewThreshold": 1
+      }
+    },
+    {
+      "level": 295,
+      "kind": "reveal",
+      "group": "challenge",
+      "config": {
+        "moves": 24,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6,
+          57,
+          15,
+          48
+        ],
+        "icePairs": 0,
+        "target": 13600,
+        "targetType": 0,
+        "count": 36,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "reveal",
+        "groups": [
+          {
+            "cells": [
+              9,
+              10,
+              17,
+              18
+            ],
+            "type": 1
+          },
+          {
+            "cells": [
+              28,
+              29,
+              36,
+              37
+            ],
+            "type": 2
+          },
+          {
+            "cells": [
+              49,
+              50,
+              57,
+              58
+            ],
+            "type": 3
+          },
+          {
+            "cells": [
+              14,
+              15,
+              22,
+              23
+            ],
+            "type": 4
+          },
+          {
+            "cells": [
+              54,
+              55,
+              62,
+              63
+            ],
+            "type": 5
+          }
+        ],
+        "revealed": []
+      },
+      "before": {
+        "games": 1000,
+        "wins": 825,
+        "threes": 496,
+        "winRate": 0.825,
+        "threeRate": 0.496,
+        "winRate95": [
+          0.8002178770109885,
+          0.8472946389078577
+        ],
+        "threeRate95": [
+          0.4650853277924981,
+          0.5269452873961931
+        ],
+        "scoreOnlyLosses": 29,
+        "unmet": {
+          "score": 78,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 144,
+          "deliver": 0,
+          "ice": 23
+        }
+      },
+      "after": {
+        "games": 1000,
+        "wins": 853,
+        "threes": 481,
+        "winRate": 0.853,
+        "threeRate": 0.481,
+        "winRate95": [
+          0.8297018143400393,
+          0.873596395257969
+        ],
+        "threeRate95": [
+          0.45016399995300416,
+          0.5119814221932788
+        ],
+        "scoreOnlyLosses": 9,
+        "unmet": {
+          "score": 29,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 136,
+          "deliver": 0,
+          "ice": 19
+        }
+      },
+      "pairedWinChange": {
+        "difference": 0.028,
+        "difference95": [
+          0.013428448410834258,
+          0.04257155158916574
+        ]
+      },
+      "pairedThreeStarChange": {
+        "difference": -0.015,
+        "difference95": [
+          -0.03326714341457168,
+          0.003267143414571686
+        ]
+      },
+      "retrospectiveScoreOnlyRescue": {
+        "before": 29,
+        "eligibleWithNewThreshold": 19
+      }
+    },
+    {
+      "level": 300,
+      "kind": "deliver",
+      "group": "challenge",
+      "config": {
+        "moves": 25,
+        "goalKind": "deliver",
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          10,
+          53
+        ],
+        "icePairs": 0,
+        "target": 13700,
+        "targetType": 5,
+        "count": 36,
+        "starTargets": [
+          13700,
+          24200,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "deliver",
+        "total": 3,
+        "delivered": 0,
+        "exits": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "before": {
+        "games": 1000,
+        "wins": 849,
+        "threes": 556,
+        "winRate": 0.849,
+        "threeRate": 0.556,
+        "winRate95": [
+          0.8254745866587543,
+          0.8698542381279453
+        ],
+        "threeRate95": [
+          0.5250485919968327,
+          0.5865227953614917
+        ],
+        "scoreOnlyLosses": 14,
+        "unmet": {
+          "score": 71,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 137,
+          "ice": 0
+        }
+      },
+      "after": {
+        "games": 1000,
+        "wins": 865,
+        "threes": 539,
+        "winRate": 0.865,
+        "threeRate": 0.539,
+        "winRate95": [
+          0.842417404170765,
+          0.88478895986117
+        ],
+        "threeRate95": [
+          0.508013659504653,
+          0.5696878424056085
+        ],
+        "scoreOnlyLosses": 2,
+        "unmet": {
+          "score": 21,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 133,
+          "ice": 0
+        }
+      },
+      "pairedWinChange": {
+        "difference": 0.016,
+        "difference95": [
+          0.005671009805482482,
+          0.026328990194517517
+        ]
+      },
+      "pairedThreeStarChange": {
+        "difference": -0.017,
+        "difference95": [
+          -0.03526040580107727,
+          0.0012604058010772627
+        ]
+      },
+      "retrospectiveScoreOnlyRescue": {
+        "before": 14,
+        "eligibleWithNewThreshold": 10
+      }
+    }
+  ],
+  "paintingCandidates": [
+    {
+      "layout": "baseline",
+      "level": 298,
+      "seedStart": 910001,
+      "seedEnd": 911000,
+      "initialPainted": 8,
+      "symmetry": {
+        "horizontal": true,
+        "vertical": true,
+        "quarterTurn": true
+      },
+      "applied": false,
+      "games": 1000,
+      "wins": 785,
+      "threes": 620,
+      "winRate": 0.785,
+      "threeRate": 0.62,
+      "winRate95": [
+        0.7584716775357235,
+        0.809346990270034
+      ],
+      "threeRate95": [
+        0.5895103176750073,
+        0.6495712266642589
+      ],
+      "scoreOnlyLosses": 0,
+      "unmet": {
+        "score": 14,
+        "collection": 0,
+        "spread": 215,
+        "reveal": 0,
+        "deliver": 0,
+        "ice": 0
+      }
+    },
+    {
+      "layout": "corner-pairs",
+      "level": 298,
+      "seedStart": 910001,
+      "seedEnd": 911000,
+      "initialPainted": 12,
+      "symmetry": {
+        "horizontal": false,
+        "vertical": false,
+        "quarterTurn": true
+      },
+      "applied": false,
+      "games": 1000,
+      "wins": 847,
+      "threes": 633,
+      "winRate": 0.847,
+      "threeRate": 0.633,
+      "winRate95": [
+        0.8233629868076504,
+        0.8679811455733946
+      ],
+      "threeRate95": [
+        0.6026700618124939,
+        0.6623119831635261
+      ],
+      "scoreOnlyLosses": 0,
+      "unmet": {
+        "score": 8,
+        "collection": 0,
+        "spread": 153,
+        "reveal": 0,
+        "deliver": 0,
+        "ice": 0
+      }
+    },
+    {
+      "layout": "corner-ls",
+      "level": 298,
+      "seedStart": 910001,
+      "seedEnd": 911000,
+      "initialPainted": 16,
+      "symmetry": {
+        "horizontal": true,
+        "vertical": true,
+        "quarterTurn": true
+      },
+      "applied": true,
+      "games": 1000,
+      "wins": 886,
+      "threes": 651,
+      "winRate": 0.886,
+      "threeRate": 0.651,
+      "winRate95": [
+        0.8648069825448822,
+        0.9042386517464244
+      ],
+      "threeRate95": [
+        0.6209297417330122,
+        0.679914534893898
+      ],
+      "scoreOnlyLosses": 0,
+      "unmet": {
+        "score": 7,
+        "collection": 0,
+        "spread": 114,
+        "reveal": 0,
+        "deliver": 0,
+        "ice": 0
+      }
+    },
+    {
+      "layout": "corner-diagonals",
+      "level": 298,
+      "seedStart": 910001,
+      "seedEnd": 911000,
+      "initialPainted": 12,
+      "symmetry": {
+        "horizontal": true,
+        "vertical": true,
+        "quarterTurn": true
+      },
+      "applied": false,
+      "games": 1000,
+      "wins": 819,
+      "threes": 639,
+      "winRate": 0.819,
+      "threeRate": 0.639,
+      "winRate95": [
+        0.7939299861359917,
+        0.8416284525658911
+      ],
+      "threeRate95": [
+        0.6087515993621762,
+        0.6681845228308074
+      ],
+      "scoreOnlyLosses": 0,
+      "unmet": {
+        "score": 11,
+        "collection": 0,
+        "spread": 181,
+        "reveal": 0,
+        "deliver": 0,
+        "ice": 0
+      }
+    }
+  ],
+  "independentPaintingConfirmation": {
+    "level": 298,
+    "seedStart": 810001,
+    "seedEnd": 811000,
+    "games": 1000,
+    "wins": 883,
+    "threes": 659,
+    "winRate": 0.883,
+    "threeRate": 0.659,
+    "winRate95": [
+      0.8615966700317587,
+      0.9014719256510663
+    ],
+    "threeRate95": [
+      0.6290598496719452,
+      0.6877231965775826
+    ],
+    "scoreOnlyLosses": 0,
+    "unmet": {
+      "score": 7,
+      "collection": 0,
+      "spread": 117,
+      "reveal": 0,
+      "deliver": 0,
+      "ice": 0
+    },
+    "previousHistoricalBaseline": {
+      "source": "docs/fuzzy-match-3-spread-300.json",
+      "layout": "center 2×2 + four corners",
+      "initialPainted": 8,
+      "scoreTarget": 17000,
+      "games": 1000,
+      "seedStart": 810001,
+      "seedEnd": 811000,
+      "winRate": 0.779
+    }
+  },
+  "reproduction": "node scripts/fuzzy-match-3-balance.mjs --level 298 --games 1000 --seed 810001 --strategy strong; for the eight-type comparison, repeat with levels 297,298,299,296,305,290,295,300 and seed 910001.",
+  "subsequentRetryImplementation": "Adaptive retry assistance was enabled after this calibration. The comparisons here use no assistance; the current unaided engine was checked against the snapshot for all eight configurations over 16 full games. Adaptive retry probabilities are reported separately in fuzzy-match-3-assistance-300.json."
+}

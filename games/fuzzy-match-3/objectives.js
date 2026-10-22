@@ -29,8 +29,16 @@ export function createObjective(kind, level, daily = false) {
       27, 28, 35, 36,
       start * SIZE + start, start * SIZE + end,
       end * SIZE + start, end * SIZE + end,
-    ].sort((a, b) => a - b);
-    return { kind, cells, painted };
+    ];
+    // Corner L shapes preserve horizontal, vertical and quarter-turn symmetry.
+    if (side > 4 && !isChallengeLevel(level, daily))
+      painted.push(
+        start * SIZE + start + 1, (start + 1) * SIZE + start,
+        start * SIZE + end - 1, (start + 1) * SIZE + end,
+        end * SIZE + start + 1, (end - 1) * SIZE + start,
+        end * SIZE + end - 1, (end - 1) * SIZE + end,
+      );
+    return { kind, cells, painted: painted.sort((a, b) => a - b) };
   }
   if (kind === "reveal") {
     const anchors = isChallengeLevel(level, daily)

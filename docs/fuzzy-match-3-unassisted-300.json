@@ -1,0 +1,1110 @@
+{
+  "generatedAt": "2026-10-22T09:20:01.954Z",
+  "startedAt": "2026-10-22T09:13:24.945Z",
+  "completedAt": "2026-10-22T09:19:31.272Z",
+  "commit": "b5a2eda710facc234e000515ccee4aeb1130e2bf",
+  "sourceSha256": {
+    "games/fuzzy-match-3/constants.js": "0ef4db3ea2044185a505601e626412a86ef7c44dc4d40affdc876472a8cd3b5e",
+    "games/fuzzy-match-3/assistance.js": "445bdee53fe0a7d14e04707f1826f77c32ee98c23e227f2e9b966f255c8e3e86",
+    "games/fuzzy-match-3/objectives.js": "bba45a6f390f99da124aa7e5d7a9760f1a9291de863e6f9507c3bf9adc3d5301",
+    "games/fuzzy-match-3/game.js": "316d2795ed824505b81ec7b93de8953ce54d5760adf5c48cdeee63ab62019c5c",
+    "scripts/fuzzy-match-3-ai.mjs": "bb76dee98c183f8b83f21315ed63819dd4155ce22fa78b3ccf111dcdc83f842d",
+    "scripts/fuzzy-match-3-balance.mjs": "589f4d789ae8f88bf2548bcc23118b6dc9428c9f468288d6b35d5180a7b6760e"
+  },
+  "rawResultsSha256": "b36a030004c405b22a890813b84962e58135370717ac56b915673e07126ebf51",
+  "protocol": {
+    "purpose": "Fresh current-production audit around level 300 including lower one-star thresholds and normal L-corner painting, with all retry assistance disabled.",
+    "strategy": "strong: four candidate moves, three independent sampled futures each, two turns deep",
+    "levels": [
+      297,
+      298,
+      299,
+      296,
+      305,
+      290,
+      295,
+      300
+    ],
+    "gamesPerType": 1000,
+    "totalGames": 8000,
+    "seedStart": 1010001,
+    "seedEnd": 1011000,
+    "seeds": "New range, disjoint from the previous 810001–811000 and 910001–911000 samples; reused across the eight level types.",
+    "assistance": "Each game is a fresh createGame call with no assistance field. No profile, retry registry, failed-attempt carryover or weighted spawn hook is loaded. All six ordinary types remain uniformly distributed on refill.",
+    "rules": "Current committed production engine is copied byte-for-byte to a temporary module root; no rule or audit instrumentation is injected.",
+    "objectives": "Normal painting starts with 16 painted cells; challenge painting retains eight. Current 0.96 completion-score multiplier, interpolated two-star threshold, unchanged three-star thresholds and existing objective/ice/move settings are included.",
+    "denominator": "Both winRate and threeRate use all 1000 attempts, including losses; threeAmongWins is reported separately.",
+    "tools": "No hints or manual shuffles; automatic dead-board reshuffles retained.",
+    "finale": "Winning special cleanup and 1500 points per unused move included. Exhausted losing games do not trigger cleanup.",
+    "randomness": "Actual refill and AI prediction use independent streams; the AI cannot access actual future draws.",
+    "uncertainty": "Per-cell Wilson 95% intervals. Aggregate rates are descriptive equal-weight combinations; no independence-based confidence interval is claimed across reused seeds.",
+    "scope": "Eight representative layouts and one AI policy; these are not human win rates or a full-level-range estimate."
+  },
+  "reproduction": "For each level 297,298,299,296,305,290,295,300: node scripts/fuzzy-match-3-balance.mjs --level LEVEL --games 1000 --seed 1010001 --strategy strong",
+  "aggregate": [
+    {
+      "group": "normal",
+      "games": 4000,
+      "wins": 3729,
+      "threes": 2485,
+      "winRate": 0.93225,
+      "threeRate": 0.62125,
+      "threeAmongWins": 0.6663984982569053,
+      "scoreOnlyLosses": 17
+    },
+    {
+      "group": "challenge",
+      "games": 4000,
+      "wins": 3357,
+      "threes": 2199,
+      "winRate": 0.83925,
+      "threeRate": 0.54975,
+      "threeAmongWins": 0.6550491510277033,
+      "scoreOnlyLosses": 7
+    },
+    {
+      "group": "all",
+      "games": 8000,
+      "wins": 7086,
+      "threes": 4684,
+      "winRate": 0.88575,
+      "threeRate": 0.5855,
+      "threeAmongWins": 0.6610217329946373,
+      "scoreOnlyLosses": 24
+    }
+  ],
+  "perType": [
+    {
+      "group": "normal",
+      "kind": "collect",
+      "level": 297,
+      "games": 1000,
+      "seedStart": 1010001,
+      "seedEnd": 1011000,
+      "config": {
+        "moves": 25,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 13600,
+        "targetType": 2,
+        "count": 24,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "collect"
+      },
+      "assistance": null,
+      "wins": 981,
+      "threes": 599,
+      "winRate": 0.981,
+      "threeRate": 0.599,
+      "threeAmongWins": 0.6106014271151886,
+      "winRate95": [
+        0.9705153112972965,
+        0.9878032122625958
+      ],
+      "threeRate95": [
+        0.5683001748076085,
+        0.6289420992722862
+      ],
+      "medianWinScore": 19750,
+      "winTotalScoreQuantiles": {
+        "p5": 22580,
+        "p25": 30730,
+        "p50": 37360,
+        "p60": 40050,
+        "p75": 45060,
+        "p95": 65780
+      },
+      "medianMovesLeft": 11,
+      "earlyThreeRate": 0.053,
+      "failureReasons": {
+        "losses": 19,
+        "unmet": {
+          "score": 12,
+          "collection": 10,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 3
+        },
+        "combinations": {
+          "score": 7,
+          "ice": 2,
+          "score+ice": 0,
+          "collection": 5,
+          "score+collection": 4,
+          "collection+ice": 0,
+          "score+collection+ice": 1,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "previousIndependentSample": {
+        "source": "docs/fuzzy-match-3-completion-300.json",
+        "seedStart": 910001,
+        "seedEnd": 911000,
+        "winRate": 0.979,
+        "threeRate": 0.6
+      }
+    },
+    {
+      "group": "normal",
+      "kind": "spread",
+      "level": 298,
+      "games": 1000,
+      "seedStart": 1010001,
+      "seedEnd": 1011000,
+      "config": {
+        "moves": 25,
+        "goalKind": "spread",
+        "iceCount": 0,
+        "doubleIce": 0,
+        "iceCells": [],
+        "icePairs": 0,
+        "target": 13600,
+        "targetType": 3,
+        "count": 24,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "spread",
+        "cells": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63
+        ],
+        "painted": [
+          0,
+          1,
+          6,
+          7,
+          8,
+          15,
+          27,
+          28,
+          35,
+          36,
+          48,
+          55,
+          56,
+          57,
+          62,
+          63
+        ]
+      },
+      "assistance": null,
+      "wins": 888,
+      "threes": 638,
+      "winRate": 0.888,
+      "threeRate": 0.638,
+      "threeAmongWins": 0.7184684684684685,
+      "winRate95": [
+        0.8669495617556403,
+        0.9060807649413208
+      ],
+      "threeRate95": [
+        0.607737663737362,
+        0.6672061122527942
+      ],
+      "medianWinScore": 27170,
+      "winTotalScoreQuantiles": {
+        "p5": 24500,
+        "p25": 33150,
+        "p50": 41110,
+        "p60": 44910,
+        "p75": 50040,
+        "p95": 70580
+      },
+      "medianMovesLeft": 9,
+      "earlyThreeRate": 0.081,
+      "failureReasons": {
+        "losses": 112,
+        "unmet": {
+          "score": 4,
+          "collection": 0,
+          "spread": 112,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 108,
+          "score+spread": 4,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "previousIndependentSample": {
+        "source": "docs/fuzzy-match-3-completion-300.json",
+        "seedStart": 910001,
+        "seedEnd": 911000,
+        "winRate": 0.886,
+        "threeRate": 0.651
+      }
+    },
+    {
+      "group": "normal",
+      "kind": "reveal",
+      "level": 299,
+      "games": 1000,
+      "seedStart": 1010001,
+      "seedEnd": 1011000,
+      "config": {
+        "moves": 25,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          9,
+          54,
+          14,
+          49,
+          17,
+          46,
+          22,
+          41
+        ],
+        "icePairs": 4,
+        "target": 13700,
+        "targetType": 4,
+        "count": 24,
+        "starTargets": [
+          13700,
+          24200,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "reveal",
+        "groups": [
+          {
+            "cells": [
+              9,
+              10,
+              17,
+              18
+            ],
+            "type": 5
+          },
+          {
+            "cells": [
+              28,
+              29,
+              36,
+              37
+            ],
+            "type": 0
+          },
+          {
+            "cells": [
+              49,
+              50,
+              57,
+              58
+            ],
+            "type": 1
+          }
+        ],
+        "revealed": []
+      },
+      "assistance": null,
+      "wins": 973,
+      "threes": 632,
+      "winRate": 0.973,
+      "threeRate": 0.632,
+      "threeAmongWins": 0.6495375128468653,
+      "winRate95": [
+        0.9610010105865644,
+        0.9813787433507103
+      ],
+      "threeRate95": [
+        0.6016569549774633,
+        0.6613327437957297
+      ],
+      "medianWinScore": 19030,
+      "winTotalScoreQuantiles": {
+        "p5": 23170,
+        "p25": 31580,
+        "p50": 37910,
+        "p60": 40680,
+        "p75": 45660,
+        "p95": 65880
+      },
+      "medianMovesLeft": 12,
+      "earlyThreeRate": 0.053,
+      "failureReasons": {
+        "losses": 27,
+        "unmet": {
+          "score": 12,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 17,
+          "deliver": 0,
+          "ice": 4
+        },
+        "combinations": {
+          "score": 8,
+          "ice": 1,
+          "score+ice": 1,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 13,
+          "score+reveal": 2,
+          "reveal+ice": 1,
+          "score+reveal+ice": 1,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "previousIndependentSample": {
+        "source": "docs/fuzzy-match-3-completion-300.json",
+        "seedStart": 910001,
+        "seedEnd": 911000,
+        "winRate": 0.975,
+        "threeRate": 0.605
+      }
+    },
+    {
+      "group": "normal",
+      "kind": "deliver",
+      "level": 296,
+      "games": 1000,
+      "seedStart": 1010001,
+      "seedEnd": 1011000,
+      "config": {
+        "moves": 25,
+        "goalKind": "deliver",
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          9,
+          54
+        ],
+        "icePairs": 0,
+        "target": 13600,
+        "targetType": 1,
+        "count": 24,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "deliver",
+        "total": 3,
+        "delivered": 0,
+        "exits": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "assistance": null,
+      "wins": 887,
+      "threes": 616,
+      "winRate": 0.887,
+      "threeRate": 0.616,
+      "threeAmongWins": 0.6944757609921083,
+      "winRate95": [
+        0.86587803145935,
+        0.9051599490347838
+      ],
+      "threeRate95": [
+        0.5854657662994249,
+        0.6456463932285326
+      ],
+      "medianWinScore": 22710,
+      "winTotalScoreQuantiles": {
+        "p5": 23620,
+        "p25": 32970,
+        "p50": 39680,
+        "p60": 42760,
+        "p75": 47020,
+        "p95": 65440
+      },
+      "medianMovesLeft": 11,
+      "earlyThreeRate": 0.056,
+      "failureReasons": {
+        "losses": 113,
+        "unmet": {
+          "score": 9,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 111,
+          "ice": 1
+        },
+        "combinations": {
+          "score": 2,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 103,
+          "score+deliver": 7,
+          "deliver+ice": 1,
+          "score+deliver+ice": 0
+        }
+      },
+      "previousIndependentSample": {
+        "source": "docs/fuzzy-match-3-completion-300.json",
+        "seedStart": 910001,
+        "seedEnd": 911000,
+        "winRate": 0.896,
+        "threeRate": 0.609
+      }
+    },
+    {
+      "group": "challenge",
+      "kind": "collect",
+      "level": 305,
+      "games": 1000,
+      "seedStart": 1010001,
+      "seedEnd": 1011000,
+      "config": {
+        "moves": 24,
+        "goalKind": "collect",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          2,
+          61,
+          16,
+          47,
+          5,
+          58,
+          23,
+          40
+        ],
+        "icePairs": 0,
+        "target": 13700,
+        "targetType": 4,
+        "count": 36,
+        "starTargets": [
+          13700,
+          24200,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "collect"
+      },
+      "assistance": null,
+      "wins": 834,
+      "threes": 545,
+      "winRate": 0.834,
+      "threeRate": 0.545,
+      "threeAmongWins": 0.6534772182254197,
+      "winRate95": [
+        0.809668727086498,
+        0.8557749046577932
+      ],
+      "threeRate95": [
+        0.5140218675128997,
+        0.5756337116143252
+      ],
+      "medianWinScore": 29330,
+      "winTotalScoreQuantiles": {
+        "p5": 23200,
+        "p25": 31360,
+        "p50": 39720,
+        "p60": 43130,
+        "p75": 50100,
+        "p95": 74320
+      },
+      "medianMovesLeft": 6,
+      "earlyThreeRate": 0.059,
+      "failureReasons": {
+        "losses": 166,
+        "unmet": {
+          "score": 17,
+          "collection": 166,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 7
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 146,
+          "score+collection": 13,
+          "collection+ice": 3,
+          "score+collection+ice": 4,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "previousIndependentSample": {
+        "source": "docs/fuzzy-match-3-completion-300.json",
+        "seedStart": 910001,
+        "seedEnd": 911000,
+        "winRate": 0.823,
+        "threeRate": 0.547
+      }
+    },
+    {
+      "group": "challenge",
+      "kind": "spread",
+      "level": 290,
+      "games": 1000,
+      "seedStart": 1010001,
+      "seedEnd": 1011000,
+      "config": {
+        "moves": 26,
+        "goalKind": "spread",
+        "iceCount": 0,
+        "doubleIce": 0,
+        "iceCells": [],
+        "icePairs": 0,
+        "target": 13600,
+        "targetType": 1,
+        "count": 36,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "spread",
+        "cells": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63
+        ],
+        "painted": [
+          0,
+          7,
+          27,
+          28,
+          35,
+          36,
+          56,
+          63
+        ]
+      },
+      "assistance": null,
+      "wins": 826,
+      "threes": 674,
+      "winRate": 0.826,
+      "threeRate": 0.674,
+      "threeAmongWins": 0.8159806295399515,
+      "winRate95": [
+        0.8012668269449458,
+        0.8482380351767277
+      ],
+      "threeRate95": [
+        0.6443288638870206,
+        0.7023393754049156
+      ],
+      "medianWinScore": 31010,
+      "winTotalScoreQuantiles": {
+        "p5": 27210,
+        "p25": 37190,
+        "p50": 44920,
+        "p60": 47900,
+        "p75": 53950,
+        "p95": 73760
+      },
+      "medianMovesLeft": 9,
+      "earlyThreeRate": 0.084,
+      "failureReasons": {
+        "losses": 174,
+        "unmet": {
+          "score": 8,
+          "collection": 0,
+          "spread": 174,
+          "reveal": 0,
+          "deliver": 0,
+          "ice": 0
+        },
+        "combinations": {
+          "score": 0,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 166,
+          "score+spread": 8,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "previousIndependentSample": {
+        "source": "docs/fuzzy-match-3-completion-300.json",
+        "seedStart": 910001,
+        "seedEnd": 911000,
+        "winRate": 0.815,
+        "threeRate": 0.668
+      }
+    },
+    {
+      "group": "challenge",
+      "kind": "reveal",
+      "level": 295,
+      "games": 1000,
+      "seedStart": 1010001,
+      "seedEnd": 1011000,
+      "config": {
+        "moves": 24,
+        "goalKind": "reveal",
+        "iceCount": 8,
+        "doubleIce": 3,
+        "iceCells": [
+          1,
+          62,
+          8,
+          55,
+          6,
+          57,
+          15,
+          48
+        ],
+        "icePairs": 0,
+        "target": 13600,
+        "targetType": 0,
+        "count": 36,
+        "starTargets": [
+          13600,
+          24100,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "reveal",
+        "groups": [
+          {
+            "cells": [
+              9,
+              10,
+              17,
+              18
+            ],
+            "type": 1
+          },
+          {
+            "cells": [
+              28,
+              29,
+              36,
+              37
+            ],
+            "type": 2
+          },
+          {
+            "cells": [
+              49,
+              50,
+              57,
+              58
+            ],
+            "type": 3
+          },
+          {
+            "cells": [
+              14,
+              15,
+              22,
+              23
+            ],
+            "type": 4
+          },
+          {
+            "cells": [
+              54,
+              55,
+              62,
+              63
+            ],
+            "type": 5
+          }
+        ],
+        "revealed": []
+      },
+      "assistance": null,
+      "wins": 847,
+      "threes": 477,
+      "winRate": 0.847,
+      "threeRate": 0.477,
+      "threeAmongWins": 0.5631641086186541,
+      "winRate95": [
+        0.8233629868076504,
+        0.8679811455733946
+      ],
+      "threeRate95": [
+        0.44618966977096414,
+        0.5079863675640099
+      ],
+      "medianWinScore": 22690,
+      "winTotalScoreQuantiles": {
+        "p5": 21050,
+        "p25": 29190,
+        "p50": 36000,
+        "p60": 38740,
+        "p75": 43800,
+        "p95": 62470
+      },
+      "medianMovesLeft": 8,
+      "earlyThreeRate": 0.04,
+      "failureReasons": {
+        "losses": 153,
+        "unmet": {
+          "score": 26,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 147,
+          "deliver": 0,
+          "ice": 20
+        },
+        "combinations": {
+          "score": 4,
+          "ice": 2,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 117,
+          "score+reveal": 12,
+          "reveal+ice": 8,
+          "score+reveal+ice": 10,
+          "deliver": 0,
+          "score+deliver": 0,
+          "deliver+ice": 0,
+          "score+deliver+ice": 0
+        }
+      },
+      "previousIndependentSample": {
+        "source": "docs/fuzzy-match-3-completion-300.json",
+        "seedStart": 910001,
+        "seedEnd": 911000,
+        "winRate": 0.853,
+        "threeRate": 0.481
+      }
+    },
+    {
+      "group": "challenge",
+      "kind": "deliver",
+      "level": 300,
+      "games": 1000,
+      "seedStart": 1010001,
+      "seedEnd": 1011000,
+      "config": {
+        "moves": 25,
+        "goalKind": "deliver",
+        "iceCount": 2,
+        "doubleIce": 0,
+        "iceCells": [
+          10,
+          53
+        ],
+        "icePairs": 0,
+        "target": 13700,
+        "targetType": 5,
+        "count": 36,
+        "starTargets": [
+          13700,
+          24200,
+          34600
+        ]
+      },
+      "initialObjective": {
+        "kind": "deliver",
+        "total": 3,
+        "delivered": 0,
+        "exits": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "assistance": null,
+      "wins": 850,
+      "threes": 503,
+      "winRate": 0.85,
+      "threeRate": 0.503,
+      "threeAmongWins": 0.591764705882353,
+      "winRate95": [
+        0.8265308859716873,
+        0.8707902850178393
+      ],
+      "threeRate95": [
+        0.4720581081153037,
+        0.533918930493178
+      ],
+      "medianWinScore": 21670,
+      "winTotalScoreQuantiles": {
+        "p5": 21280,
+        "p25": 30180,
+        "p50": 36780,
+        "p60": 39470,
+        "p75": 45090,
+        "p95": 67170
+      },
+      "medianMovesLeft": 10,
+      "earlyThreeRate": 0.031,
+      "failureReasons": {
+        "losses": 150,
+        "unmet": {
+          "score": 28,
+          "collection": 0,
+          "spread": 0,
+          "reveal": 0,
+          "deliver": 147,
+          "ice": 1
+        },
+        "combinations": {
+          "score": 3,
+          "ice": 0,
+          "score+ice": 0,
+          "collection": 0,
+          "score+collection": 0,
+          "collection+ice": 0,
+          "score+collection+ice": 0,
+          "spread": 0,
+          "score+spread": 0,
+          "spread+ice": 0,
+          "score+spread+ice": 0,
+          "reveal": 0,
+          "score+reveal": 0,
+          "reveal+ice": 0,
+          "score+reveal+ice": 0,
+          "deliver": 122,
+          "score+deliver": 24,
+          "deliver+ice": 0,
+          "score+deliver+ice": 1
+        }
+      },
+      "previousIndependentSample": {
+        "source": "docs/fuzzy-match-3-completion-300.json",
+        "seedStart": 910001,
+        "seedEnd": 911000,
+        "winRate": 0.865,
+        "threeRate": 0.539
+      }
+    }
+  ]
+}

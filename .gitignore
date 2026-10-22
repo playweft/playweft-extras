@@ -6,3 +6,6 @@ test-results/
 
 .env.local
 .env.*.local
+
+# Local experiments, intermediate assets and scratch data (not deployed).
+/.local/

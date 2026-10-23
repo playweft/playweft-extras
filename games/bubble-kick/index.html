@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#000000" />
+    <title>泡泡球场</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="game-window" id="game-window" aria-label="泡泡球场">
+      <aside class="sidebar match-sidebar" aria-label="比赛信息">
+        <header class="window-bar">
+          <span>泡泡球场</span><span id="round-label">第 01 局</span
+          ><a href="../" aria-label="返回游戏列表">退出</a>
+        </header>
+        <section class="clock-panel">
+          <div class="panel-cap"><strong>时间</strong><small>TIME</small></div>
+          <strong id="timer">04:00</strong>
+        </section>
+        <div class="score-panel">
+          <span>薄荷 <b id="score-mint">0</b></span
+          ><i>:</i><span><b id="score-peach">0</b> 蜜桃</span>
+        </div>
+        <div class="player-badge">
+          <canvas
+            id="own-avatar"
+            width="74"
+            height="74"
+            aria-hidden="true"
+          ></canvas
+          ><span id="match-status">等待开始</span>
+        </div>
+        <div class="controls" aria-label="键盘操作">
+          <div class="control-group">
+            <kbd>WASD / ↑↓←→</kbd><span>移动</span>
+          </div>
+          <div id="p2-controls" hidden>
+            <span>2P</span><kbd>↑↓←→</kbd><span>移动</span>
+          </div>
+        </div>
+        <div class="mode-control" id="modes">
+          <button class="selected" data-mode="solo">单人</button
+          ><button data-mode="local">双人</button>
+        </div>
+        <span id="room-mode" hidden>联机对战</span>
+        <div class="side-actions">
+          <button id="pause" disabled>Ⅱ 暂停</button
+          ><button id="sound" aria-label="打开音效">♪ 音效关</button>
+        </div>
+      </aside>
+      <div class="field-column">
+        <section class="arena" aria-label="踢炸弹球场">
+          <div class="canvas-wrap">
+            <canvas
+              id="pitch"
+              width="960"
+              height="800"
+              aria-label="方向键或 WASD 移动"
+            ></canvas>
+            <div class="overlay" id="overlay">
+              <div class="intro-card">
+                <h1 id="overlay-title">泡泡球场</h1>
+                <p id="overlay-description"></p>
+                <button class="primary" id="start">
+                  开始游戏 <span>▶</span>
+                </button>
+                <small id="overlay-note"></small>
+              </div>
+            </div>
+            <div id="toast" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+      <aside class="sidebar players-sidebar" aria-label="队员和道具">
+        <section class="roster-panel">
+          <div class="panel-title">
+            <span>参赛玩家</span><span id="roster-count">2 VS 2</span>
+          </div>
+          <div id="roster"></div>
+        </section>
+        <section class="inventory-panel">
+          <div class="panel-title"><span>我的道具</span><small>1–7 使用</small></div>
+          <div class="item-bar" aria-label="道具栏">
+            <button class="item-slot" data-item-slot="1" disabled><small>1</small><span class="item-icon"></span><b class="item-count"></b></button>
+            <button class="item-slot" data-item-slot="2" disabled><small>2</small><span class="item-icon"></span><b class="item-count"></b></button>
+            <button class="item-slot" data-item-slot="3" disabled><small>3</small><span class="item-icon"></span><b class="item-count"></b></button>
+            <button class="item-slot" data-item-slot="4" disabled><small>4</small><span class="item-icon"></span><b class="item-count"></b></button>
+            <button class="item-slot" data-item-slot="5" disabled><small>5</small><span class="item-icon"></span><b class="item-count"></b></button>
+            <button class="item-slot" data-item-slot="6" disabled><small>6</small><span class="item-icon"></span><b class="item-count"></b></button>
+            <button class="item-slot" data-item-slot="7" disabled><small>7</small><span class="item-icon"></span><b class="item-count"></b></button>
+          </div>
+        </section>
+      </aside>
+    </main>
+    <div class="touch-controls touch-actions" aria-label="使用道具">
+      <div class="touch-items" aria-label="使用道具">
+        <button data-item-kind="glue" aria-label="放置慢慢胶" disabled><span aria-hidden="true">🧴</span><b>0</b></button>
+        <button data-item-kind="banana" aria-label="放置香蕉皮" disabled><span aria-hidden="true">🍌</span><b>0</b></button>
+        <button data-item-kind="fork" aria-label="使用叉子自救" disabled><span aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v8a7 7 0 0 0 14 0V4M16 4v24"/></svg></span><b>0</b></button>
+      </div>
+    </div>
+    <div class="touch-controls touch-movement" aria-label="移动操作">
+      <div id="joystick" class="joystick" role="group" aria-label="虚拟摇杆">
+        <span class="stick-axis stick-axis-x" aria-hidden="true"></span>
+        <span class="stick-axis stick-axis-y" aria-hidden="true"></span>
+        <span class="joystick-knob" aria-hidden="true"></span>
+      </div>
+    </div>
+    <div class="orientation-gate" role="status" aria-live="polite">
+      <span class="rotate-phone" aria-hidden="true">↻</span>
+      <p>请横屏游玩</p>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

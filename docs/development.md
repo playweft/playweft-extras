@@ -25,6 +25,10 @@ npm run dev:light-trails
 
 Open `http://localhost:9139/__dev/?seat=1` and `?seat=2` in two visible windows; use `?seat=0` to spectate. Set another port with `PORT=9141 npm run dev:light-trails`. This tool executes the same Lua game script but is development-only: it does not provide platform authentication or room security boundaries and is excluded from production builds.
 
+## Bubble Kick
+
+Open `http://localhost:9140/bubble-kick/` for practice with bots or same-keyboard play. Room mode uses the packaged `game.lua` for 2–4 humans with spectators, alternating teams. Both solo and room modes are declared in its manifest. See the [game README](../games/bubble-kick/README.md) for controls, timing and synchronization.
+
 ## Local saves
 
 Pupdoku and Fuzzy Match 3 use `src/game-storage.js`. Embedded games wait for
@@ -89,6 +93,7 @@ The build updates asset URLs and manifest IDs and places the complete site in `d
 ```text
 games/light-trails/       Game page, rendering, Lua rules, manifest, help
 games/pupdoku/            Solo logic puzzle, unique-solution generation, Worker, manifest, help
+games/bubble-kick/        Canvas stadium, local/bot rules, authoritative Lua room rules, manifest, help
 games/fuzzy-match-3/      Responsive match-three, special pieces, levels, daily challenges, local progress
 src/playweft-client.js    Shared MessageChannel / JSON-RPC client
 public/                  Icons, featured-games.json, static response headers

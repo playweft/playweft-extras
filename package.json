@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "dev:light-trails": "node scripts/dev.mjs",
+    "dev:bubble-kick": "DEV_GAME=bubble-kick node scripts/dev.mjs",
     "build": "vite build",
     "check": "vite build --emptyOutDir && node --test tests/*.test.js",
     "test": "node --test tests/*.test.js"

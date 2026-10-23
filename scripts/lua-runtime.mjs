@@ -14,9 +14,10 @@ export function luaValue(value) {
   throw new Error('Non-JSON Lua input');
 }
 
-export async function createRuntime() {
+export async function createRuntime(game = 'light-trails') {
+  if (!/^[a-z][a-z0-9-]*$/.test(game)) throw new Error('Invalid game name');
   const engine = await new LuaFactory().createEngine();
-  const source = await readFile(new URL('../games/light-trails/game.lua', import.meta.url), 'utf8');
+  const source = await readFile(new URL(`../games/${game}/game.lua`, import.meta.url), 'utf8');
   engine.doStringSync(`
     local hook = debug.sethook
     local function quote(value)

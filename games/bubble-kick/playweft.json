@@ -1,0 +1,46 @@
+{
+  "$schema": "https://play.longern.com/schemas/game-manifest-v1.json",
+  "manifest_version": 1,
+  "id": "/bubble-kick/",
+  "version": "1.7.0",
+  "protocol": {
+    "min": 1,
+    "max": 1
+  },
+  "start_url": "./",
+  "name": "Bubble Kick",
+  "name_localized": {
+    "zh-CN": "泡泡球场"
+  },
+  "description": "Kick ticking bubbles, dodge chain reactions, and rescue your teammates in a little stadium full of chaos.",
+  "description_localized": {
+    "zh-CN": "踢走定时糖泡，躲避十字爆炸，营救队友。支持单人练习、同屏双人与 2–4 人联机。"
+  },
+  "categories": ["games", "arcade"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "help_url": "./help.html",
+  "modes": {
+    "solo": {},
+    "room": {
+      "players": {
+        "min": 2,
+        "max": 4
+      },
+      "server": {
+        "runtime": "lua",
+        "entry": "./game.lua",
+        "persistence": "live"
+      }
+    }
+  },
+  "orientation": "landscape"
+}

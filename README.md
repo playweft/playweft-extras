@@ -10,6 +10,8 @@ A collection of browser games for [Playweft](https://github.com/longern/playweft
 | [Fuzzy Match 3](games/fuzzy-match-3/README.md)     | 1                  | Match six animal friends and trigger colorful cascades in solo levels and daily challenges. |
 | [Light Trails](games/light-trails/README.md) | 2, with spectators | Steer clear of walls and trails to be the last player standing.                   |
 
+| [Bubble Kick](games/bubble-kick/README.md) | 1–4, with spectators | Kick ticking bubbles, dodge cross-shaped blasts, and rescue teammates. |
+
 ## Getting started
 
 Requires **Node.js 22.12 or later** and npm.
@@ -25,6 +27,7 @@ Open <http://localhost:9140/> to browse the games.
 
 - Play Pupdoku directly at <http://localhost:9140/pupdoku/>.
 - Play Fuzzy Match 3 directly at <http://localhost:9140/fuzzy-match-3/>.
+- Play Bubble Kick directly at <http://localhost:9140/bubble-kick/> with bots or a second local player; use a Playweft room for 2–4 humans.
 - Start a Light Trails match through a Playweft room. For local multiplayer testing, see the [development guide](docs/development.md).
 
 ## Development

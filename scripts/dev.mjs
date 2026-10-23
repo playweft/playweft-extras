@@ -7,7 +7,9 @@ import { createRuntime } from './lua-runtime.mjs';
 
 // Explicit development-only bridge harness. Not included in dist/.
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
-const runtime = await createRuntime();
+const game = process.env.DEV_GAME || 'light-trails';
+if (!['light-trails', 'bubble-kick'].includes(game)) throw new Error('Unsupported development game');
+const runtime = await createRuntime(game);
 let state, version = 0, match = 0;
 let tail = Promise.resolve();
 const enqueue = (fn) => { const result = tail.then(fn); tail = result.catch(console.error); return result; };
@@ -17,7 +19,7 @@ async function reset() {
   state = (await runtime.call('setup', { serverTime: Date.now(), match: { startedAt: Date.now() }, players })).state;
 }
 await reset();
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.lua': 'text/plain' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.lua': 'text/plain' };
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -33,15 +35,19 @@ const server = http.createServer(async (req, res) => {
     else {
       let pathname = decodeURIComponent(url.pathname);
       if (pathname === '/') pathname = '/index.html';
-      else if (pathname === '/light-trails' || pathname === '/light-trails/') pathname = '/games/light-trails/index.html';
-      else if (/^\/(light-trails|pupdoku)\/icon\.svg$/.test(pathname)) pathname = '/public' + pathname;
-      else if (pathname.startsWith('/light-trails/')) pathname = '/games' + pathname;
+      else if (pathname === `/${game}` || pathname === `/${game}/`) pathname = `/games/${game}/index.html`;
+      else if (/^\/(light-trails|pupdoku|bubble-kick)\/icon\.svg$/.test(pathname)) pathname = '/public' + pathname;
+      else if (pathname.startsWith('/bubble-kick/art/')) pathname = '/public' + pathname;
+      else if (pathname.startsWith(`/${game}/`)) pathname = '/games' + pathname;
       else if (pathname === '/featured-games.json') pathname = '/public/featured-games.json';
       if (!['/index.html', '/games/', '/src/', '/public/'].some(prefix => pathname === prefix || pathname.startsWith(prefix.endsWith('/') ? prefix : prefix + '/'))) throw new Error('Invalid path');
       path = resolve(root, '.' + pathname);
       if (!path.startsWith(root + sep)) throw new Error('Invalid path');
     }
-    const body = await readFile(path);
+    let body = await readFile(path);
+    if (url.pathname === '/__dev/' || url.pathname === '/__dev') {
+      body = Buffer.from(body.toString().replaceAll('Light Trails', game === 'bubble-kick' ? 'Bubble Kick' : 'Light Trails').replaceAll('/light-trails/', `/${game}/`));
+    }
     res.setHeader('Content-Type', `${mime[extname(String(path))] || 'application/octet-stream'}; charset=utf-8`);
     res.end(body);
   } catch { res.writeHead(404); res.end('Not found'); }
@@ -74,4 +80,4 @@ sockets.on('connection', (ws, req) => {
   });
 });
 const port = Number(process.env.PORT || 9139);
-server.listen(port, '0.0.0.0', () => console.log(`Light Trails: http://localhost:${server.address().port}/__dev/?seat=1 and ?seat=2. Manifest: /light-trails/playweft.json`));
+server.listen(port, '0.0.0.0', () => console.log(`${game}: http://localhost:${server.address().port}/__dev/?seat=1 and ?seat=2. Manifest: /${game}/playweft.json`));

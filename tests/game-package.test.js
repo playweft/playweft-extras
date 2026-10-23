@@ -29,7 +29,14 @@ test('Vite emits independent game package at /light-trails/ with resolvable asse
       { manifestUrl: './light-trails/playweft.json' },
       { manifestUrl: './pupdoku/playweft.json' },
       { manifestUrl: './fuzzy-match-3/playweft.json' },
+      { manifestUrl: './bubble-kick/playweft.json' },
     ]);
+    const kick = JSON.parse(await readFile(join(outDir, 'bubble-kick/playweft.json'), 'utf8'));
+    assert.equal(kick.id, '/bubble-kick/');
+    assert.equal(kick.orientation, 'landscape');
+    assert.deepEqual(kick.modes.room.players, { min: 2, max: 4 });
+    assert.deepEqual(kick.modes.solo, {});
+    assert.equal(await readFile(join(outDir, 'bubble-kick/game.lua'), 'utf8'), await readFile(join(root, 'games/bubble-kick/game.lua'), 'utf8'));
     const solo = JSON.parse(
       await readFile(join(outDir, 'pupdoku/playweft.json'), 'utf8'),
     );
@@ -83,6 +90,8 @@ test('Vite emits independent game package at /light-trails/ with resolvable asse
       'pupdoku/help.html',
       'fuzzy-match-3/index.html',
       'fuzzy-match-3/help.html',
+      'bubble-kick/index.html',
+      'bubble-kick/help.html',
     ]) {
       const html = await readFile(join(outDir, page), 'utf8');
       for (const [, url] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
@@ -141,10 +150,24 @@ test('Vite serves stable game URLs, raw Lua and cross-origin manifests during de
       '/fuzzy-match-3/styles.css',
       '/fuzzy-match-3/help.html',
       '/fuzzy-match-3/icon.svg',
+      '/bubble-kick/',
+      '/bubble-kick/main.js',
+      '/bubble-kick/game.js',
+      '/bubble-kick/movement.js',
+      '/bubble-kick/bomb-rules.js',
+      '/bubble-kick/render.js',
+      '/bubble-kick/art.js',
+      '/bubble-kick/art/hero-walk.png',
+      '/bubble-kick/art/hero-walk.json',
+      '/bubble-kick/art/stadium.png',
+      '/bubble-kick/touch-controls.js',
+      '/bubble-kick/styles.css',
+      '/bubble-kick/help.html',
+      '/bubble-kick/icon.svg',
     ]) {
       assert.equal((await fetch(base + path)).status, 200, path);
     }
-    for (const game of ['light-trails', 'pupdoku', 'fuzzy-match-3']) {
+    for (const game of ['light-trails', 'pupdoku', 'fuzzy-match-3', 'bubble-kick']) {
       const response = await fetch(base + `/${game}/icon.svg?v=1`);
       assert.match(response.headers.get('content-type'), /image\/svg\+xml/);
       assert.equal(
@@ -202,10 +225,17 @@ test('BASE_PATH builds root or nested static sites and removes output from the p
       const piece = JSON.parse(await readFile(join(dir, 'fuzzy-match-3/playweft.json'), 'utf8'));
       assert.equal(piece.id, base + 'fuzzy-match-3/');
       assert.deepEqual(piece.modes, { solo: {} });
+      const kick = JSON.parse(await readFile(join(dir, 'bubble-kick/playweft.json'), 'utf8'));
+      assert.equal(kick.id, base + 'bubble-kick/');
+      await access(join(dir, 'bubble-kick/game.lua'));
+      for (const asset of ['hero-walk.png', 'hero-walk.json', 'stadium.png']) {
+        await access(join(dir, 'bubble-kick/art', asset));
+      }
       for (const [game, metadata] of [
         ['light-trails', manifest],
         ['pupdoku', solo],
         ['fuzzy-match-3', piece],
+        ['bubble-kick', kick],
       ]) {
         const iconPath = new URL(
           metadata.icons[0].src,
@@ -238,6 +268,8 @@ test('BASE_PATH builds root or nested static sites and removes output from the p
         'pupdoku/help.html',
         'fuzzy-match-3/index.html',
         'fuzzy-match-3/help.html',
+      'bubble-kick/index.html',
+      'bubble-kick/help.html',
       ]) {
         const html = await readFile(join(dir, page), 'utf8');
         for (const [, url] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {

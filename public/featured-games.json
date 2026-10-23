@@ -1,5 +1,6 @@
 [
   { "manifestUrl": "./light-trails/playweft.json" },
   { "manifestUrl": "./pupdoku/playweft.json" },
-  { "manifestUrl": "./fuzzy-match-3/playweft.json" }
+  { "manifestUrl": "./fuzzy-match-3/playweft.json" },
+  { "manifestUrl": "./bubble-kick/playweft.json" }
 ]

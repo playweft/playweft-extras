@@ -4,6 +4,14 @@ This document covers the generator, solver, color model, and maintenance tools i
 
 The interface uses Preact and JSX to render the board, status, and controls declaratively. `controller.js` manages game actions, gestures, the Worker, and saved progress; `puzzle.js` provides the independent generator and solver. Components use refs only for focus, pointer capture, and bounce animations, without manually adding or removing board nodes. Interaction tests mount the actual Preact components and dispatch DOM events.
 
+## Responsive layout
+
+The UI has two arrangements, selected by viewport orientation: portrait and square viewports stack controls around the board; landscape viewports place a control panel beside it. Landscape viewports narrower than 360 px keep the stacked arrangement so the panel does not consume nearly all the available width. Orientation follows the CSS viewport, including an embedding iframe's viewport, rather than the physical device or screen orientation.
+
+Button sizes, text, spacing, and padding scale continuously with bounded CSS values. Each board fills the largest square in its remaining grid area. Side-by-side layouts are centered and capped in both dimensions so tall windows do not stretch the control panel away from the board. Pup sizes follow the board's container width and cell count instead of the full viewport width. Safe-area insets remain part of the available-space calculation.
+
+The stacked layout can grow to 960 px wide for tablets, with a viewport-height cap of 80svh to keep the controls together in nearly square windows. Its board area adds 8–24 px of horizontal padding on each side, in addition to the page padding and safe-area insets. This keeps playable cells away from the screen edges without adding device-specific breakpoints. The inset reduces accidental starts in edge-navigation gesture areas; it does not disable browser or operating-system gestures. The side-by-side layout uses its existing outer padding without the extra board inset.
+
 ## Procedural levels and generation
 
 Each new level uses an independent seed to randomly select a board size from 8 to 12, then generates a new partition of connected regions. There is no size selector, difficulty selector, or fixed level list.

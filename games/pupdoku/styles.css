@@ -15,6 +15,12 @@ body {
   margin: 0;
 }
 
+#app {
+  height: 100svh;
+  display: grid;
+  place-items: center;
+}
+
 button {
   font: inherit;
   cursor: pointer;
@@ -46,12 +52,21 @@ a:focus-visible {
 }
 
 .game {
-  width: min(100%, 580px);
+  --page-padding: clamp(12px, 4vmin, 24px);
+  --layout-gap: clamp(8px, 1.6svh, 20px);
+  --round-size: clamp(44px, 13vmin, 62px);
+  --action-size: clamp(56px, 16.5vmin, 75px);
+  /* Keep controls close to the board when a portrait viewport is nearly square. */
+  width: min(100%, 960px, 80svh);
   height: 100svh;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   margin: auto;
-  padding: 38px 24px 30px;
+  gap: var(--layout-gap);
+  padding: max(var(--page-padding), env(safe-area-inset-top))
+    max(var(--page-padding), env(safe-area-inset-right))
+    max(var(--page-padding), env(safe-area-inset-bottom))
+    max(var(--page-padding), env(safe-area-inset-left));
 }
 
 .topbar {
@@ -59,15 +74,15 @@ a:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 40px;
+  margin: 0;
 }
 
 .round-button {
   border: 0;
   border-radius: 50%;
   background: #fffefa;
-  width: 62px;
-  height: 62px;
+  width: var(--round-size);
+  height: var(--round-size);
   display: grid;
   place-items: center;
   flex: none;
@@ -90,8 +105,8 @@ a:focus-visible {
 }
 
 .round-button svg {
-  width: 32px;
-  height: 32px;
+  width: 52%;
+  height: 52%;
   stroke: currentColor;
   stroke-width: 5;
   stroke-linecap: round;
@@ -105,7 +120,7 @@ a:focus-visible {
 
 h1 {
   color: #a15f80;
-  font-size: 29px;
+  font-size: clamp(24px, 5vmin, 29px);
   line-height: 1.1;
   letter-spacing: -0.6px;
   margin: 0;
@@ -116,8 +131,8 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  margin-bottom: 14px;
+  gap: clamp(10px, 2vmin, 18px);
+  margin: 0;
 }
 
 .counter,
@@ -127,25 +142,25 @@ h1 {
   justify-content: center;
   border-radius: 30px;
   background: #fffefa;
-  height: 38px;
-  padding: 0 13px;
-  gap: 12px;
+  height: clamp(32px, 8.5vmin, 38px);
+  padding: 0 clamp(10px, 2vmin, 13px);
+  gap: 6px;
 }
 
 .counter > span {
-  font-size: 27px;
+  font-size: clamp(24px, 5vmin, 27px);
 }
 
 .counter strong {
   color: #409b4f;
-  font-size: 22px;
+  font-size: clamp(20px, 4vmin, 22px);
   letter-spacing: -1px;
 }
 
 .hearts {
   color: #dc132a;
-  font-size: 27px;
-  gap: 7px;
+  font-size: clamp(22px, 5vmin, 27px);
+  gap: clamp(4px, 1vmin, 7px);
   white-space: nowrap;
 }
 
@@ -156,21 +171,21 @@ h1 {
 .rules {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-  margin-bottom: 55px;
+  gap: clamp(4px, 1vmin, 5px);
+  margin: 0;
 }
 
 .rules > div {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 58px;
-  padding: 9px 5px;
+  min-height: clamp(44px, 8vmin, 58px);
+  padding: 8px 4px;
   border-radius: 11px;
   background: #f1e2d4;
   color: #8d6c61;
   text-align: center;
-  font-size: 14px;
+  font-size: clamp(11px, 2.5vmin, 14px);
   line-height: 1.2;
   letter-spacing: -0.4px;
 }
@@ -181,10 +196,12 @@ h1 {
   container-type: size;
   display: grid;
   place-items: center;
+  padding-inline: clamp(8px, 2vw, 24px);
 }
 
 .board-wrap {
-  --cell-radius: 4px;
+  --cell-radius: clamp(3px, 0.8vmin, 4px);
+  container-type: inline-size;
   position: relative;
   aspect-ratio: 1;
   width: min(100%, 100cqh);
@@ -196,7 +213,7 @@ h1 {
   grid-template-columns: repeat(var(--size, 8), minmax(0, 1fr));
   grid-template-rows: repeat(var(--size, 8), minmax(0, 1fr));
   aspect-ratio: 1;
-  gap: 4px;
+  gap: clamp(3px, 0.8vmin, 4px);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -260,7 +277,7 @@ h1 {
 }
 
 .cell .dog {
-  font-size: var(--dog-size, 28px);
+  font-size: calc(66cqw / var(--size, 8));
   filter: drop-shadow(0 2px 1px #49312d24);
   animation: pop 0.16s ease-out;
 }
@@ -597,7 +614,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 66px;
+  margin: 0;
 }
 
 .actions button {
@@ -609,13 +626,12 @@ h1 {
   padding: 0;
   background: none;
   color: #efbd27;
-  font-size: 20px;
+  font-size: clamp(16px, 4vmin, 20px);
   font-weight: 850;
-  min-width: 75px;
+  min-width: var(--action-size);
 }
 
 .action-icon {
-  --action-size: 75px;
   --press-depth: 0px;
   display: block;
   position: relative;
@@ -701,8 +717,8 @@ h1 {
 }
 
 .action-icon svg {
-  width: 45px;
-  height: 45px;
+  width: 60%;
+  height: 60%;
   stroke: #fffefa;
   stroke-width: 4;
   stroke-linecap: round;
@@ -759,190 +775,45 @@ h1 {
   }
 }
 
-@media (max-width: 760px) {
+/* Use viewport orientation for a predictable arrangement. The width floor
+   keeps the control panel usable in very narrow landscape viewports. */
+@media (orientation: landscape) and (min-width: 360px) {
   .game {
-    --layout-gap: clamp(8px, calc((100svh - 580px) / 8), 35px);
-    padding-top: max(12px, min(3svh, 38px), env(safe-area-inset-top));
-    padding-bottom: max(12px, min(3svh, 30px), env(safe-area-inset-bottom));
-  }
-
-  .topbar,
-  .rules {
-    margin-bottom: var(--layout-gap);
-  }
-
-  .actions {
-    margin-top: var(--layout-gap);
-  }
-}
-
-@media (max-width: 480px) {
-  .game {
-    padding-inline: 18px;
-    padding-top: max(12px, min(3svh, 27px), env(safe-area-inset-top));
-    padding-bottom: max(12px, min(3svh, 24px), env(safe-area-inset-bottom));
-  }
-
-  .round-button {
-    width: 51px;
-    height: 51px;
-  }
-
-  .round-button svg {
-    width: 27px;
-    height: 27px;
-  }
-
-  h1 {
-    font-size: 25px;
-  }
-
-  .status-row {
-    gap: 10px;
-  }
-
-  .counter,
-  .hearts {
-    height: 33px;
-    padding: 0 10px;
-    gap: 6px;
-  }
-
-  .counter > span {
-    font-size: 24px;
-  }
-
-  .counter strong {
-    font-size: 20px;
-  }
-
-  .hearts {
-    font-size: 23px;
-    gap: 4px;
-  }
-
-  .rules {
-    gap: 4px;
-  }
-
-  .rules > div {
-    font-size: 11px;
-    min-height: 49px;
-    padding: 8px 4px;
-    border-radius: 8px;
-  }
-
-  .board {
-    gap: 3px;
-  }
-
-  .board-wrap {
-    --cell-radius: 3px;
-  }
-
-  .action-icon {
-    --action-size: 65px;
-  }
-
-  .action-icon svg {
-    width: 38px;
-    height: 38px;
-  }
-
-  .actions button {
-    font-size: 17px;
-    min-width: 65px;
-  }
-}
-
-@media (max-height: 800px) and (min-width: 761px) {
-  .game {
-    width: 460px;
-    padding-top: 22px;
-  }
-
-  .topbar {
-    margin-bottom: 22px;
-  }
-
-  .round-button {
-    width: 50px;
-    height: 50px;
-  }
-
-  .rules {
-    margin-bottom: 28px;
-  }
-
-  .rules > div {
-    min-height: 48px;
-    font-size: 12px;
-  }
-
-  .actions {
-    margin-top: 32px;
-  }
-
-  .action-icon {
-    --action-size: 58px;
-  }
-
-  .action-icon svg {
-    width: 35px;
-    height: 35px;
-  }
-
-  .actions button {
-    font-size: 16px;
-  }
-}
-
-@media (max-height: 500px) and (min-width: 481px) {
-  .game {
-    width: min(100%, 900px);
-    padding: 12px max(18px, env(safe-area-inset-right)) 12px
-      max(18px, env(safe-area-inset-left));
-    grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1fr);
+    --sidebar-width: clamp(224px, 28vw, 320px);
+    --column-gap: clamp(16px, 3vw, 32px);
+    width: min(
+      100%,
+      1240px,
+      calc(100svh + var(--sidebar-width) + var(--column-gap))
+    );
+    height: min(
+      100svh,
+      max(
+        320px,
+        calc(min(100vw, 1240px) - var(--sidebar-width) - var(--column-gap))
+      )
+    );
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
     grid-template-rows: auto auto auto minmax(0, 1fr);
-    gap: 12px 24px;
+    column-gap: var(--column-gap);
   }
 
   .topbar {
     grid-area: 1 / 1;
-    margin: 0;
   }
-
   .status-row {
     grid-area: 2 / 1;
-    margin: 0;
   }
-
   .rules {
     grid-area: 3 / 1;
-    margin: 0;
   }
-
   .board-space {
     grid-area: 1 / 2 / -1 / 3;
+    padding-inline: 0;
   }
-
   .actions {
     grid-area: 4 / 1;
     align-self: end;
-    margin: 0;
-  }
-
-  .round-button {
-    width: 44px;
-    height: 44px;
-  }
-
-  .action-icon {
-    --action-size: 56px;
-  }
-
-  .actions button {
-    font-size: 16px;
   }
 }
 

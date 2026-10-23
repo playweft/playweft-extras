@@ -207,7 +207,6 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
       aria-label={`${size} 行 ${size} 列棋盘，单击或滑动标记，双击放小狗`}
       style={{
         '--size': size,
-        '--dog-size': `clamp(16px, ${66 / size}vw, ${Math.round(300 / size)}px)`,
         '--completion-pups': `${COMPLETION_TIMING.pups}ms`,
       }}
       onPointerDown={pointerDown}

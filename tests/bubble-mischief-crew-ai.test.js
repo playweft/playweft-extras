@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGame, stepGame, blastCells, random } from "../games/bubble-mischief-crew/game.js";
+import { createGame, stepGame, blastCells, kickBall, random } from "../games/bubble-mischief-crew/game.js";
 import { botInput } from "../games/bubble-mischief-crew/bot.js";
 import { playerCell } from "../games/bubble-mischief-crew/movement.js";
 
@@ -12,6 +12,113 @@ function playing() {
 function foam(s, x, y, until = s.tick + 5) {
   s.blasts = [{ x, y, until, atFrame: s.tick * 5 - 1, id: 1 }];
 }
+
+function incoming(moving = false) {
+  const s = playing(), p = s.players[0];
+  Object.assign(p, { bot: true, x: 4, y: 4, input: 0, moving });
+  s.balls = [{ id: 1, x: 7, y: 4, kind: "football", fuse: 108, owner: "local-1",
+    flight: { x: 1, y: 4, start: 500, end: 520, distance: 6 } }];
+  return { s, p };
+}
+function observe({ s, p }, elapsed, rng = () => 0) {
+  s.tick = 100 + Math.floor(elapsed / 100);
+  s.substep = elapsed % 100 / 20;
+  for (const b of s.balls) if (b.flight?.end <= s.tick * 5 + s.substep) delete b.flight;
+  const seen = new Set();
+  botInput(s, p, (b, balls) => {
+    seen.add(b.id);
+    return blastCells(b, balls);
+  }, rng);
+  return seen;
+}
+
+test("incoming kick awareness takes 260–400 ms at rest and 400–640 ms while moving, without stopping roaming", () => {
+  for (const [moving, delay, rng] of [
+    [false, 260, () => 0], [false, 400, (_s, n) => n - 1],
+    [true, 400, () => 0], [true, 640, (_s, n) => n - 1],
+  ]) {
+    const fixture = incoming(moving);
+    for (let elapsed = 0; elapsed < delay; elapsed += 20) {
+      assert.equal(observe(fixture, elapsed, rng).size, 0, `${moving}, ${elapsed}: premature prediction`);
+      assert.equal(fixture.p.input, 0, "unnoticed landing must not change the open-field roaming choice");
+    }
+    assert.ok(observe(fixture, delay, rng).has(1));
+    assert.notEqual(fixture.p.input, 0, "react on recognition, even between the 200 ms steering decisions");
+  }
+});
+
+test("landing and coming to rest do not restart or shorten a moving bot's pending observation", () => {
+  const fixture = incoming(true), latest = (_s, n) => n - 1;
+  observe(fixture, 0, latest);
+  fixture.p.moving = false;
+  for (let elapsed = 20; elapsed < 640; elapsed += 20)
+    assert.equal(observe(fixture, elapsed, latest).size, 0);
+  assert.equal(fixture.s.balls[0].flight, undefined, "ball has already landed");
+  assert.ok(observe(fixture, 640, latest).has(1));
+  assert.ok(observe(fixture, 800, latest).has(1), "recognized ball stays under observation");
+});
+
+test("pending landing is absent from occupancy and blast-blocking predictions as well as danger scoring", () => {
+  const fixture = incoming(), { s, p } = fixture;
+  Object.assign(s.balls[0], { x: 5, y: 4, fuse: 10000 });
+  observe(fixture, 0);
+  assert.equal(p.input, 0, "the unknown landing must not block the chosen adjacent cell");
+  s.balls.push({ id: 2, x: 7, y: 4, kind: "football", fuse: 108 });
+  const blockers = [];
+  botInput(s, p, (b, balls) => {
+    blockers.push(...balls.map(ball => ball.id));
+    return blastCells(b, balls);
+  }, () => 0);
+  assert.ok(blockers.includes(2));
+  assert.ok(!blockers.includes(1), "an unnoticed ball must not secretly alter predicted blast arms");
+});
+
+test("each bot notices independently, and only a new kick starts a fresh observation", () => {
+  const fixture = incoming(), { s, p } = fixture, q = s.players[2];
+  Object.assign(q, { bot: true, x: 4, y: 4, input: 0, moving: true });
+  observe(fixture, 0);
+  observe({ s, p: q }, 0);
+  assert.ok(observe(fixture, 260).has(1));
+  assert.equal(observe({ s, p: q }, 260).size, 0);
+  assert.ok(observe({ s, p: q }, 400).has(1));
+  assert.ok(observe(fixture, 400).has(1));
+  s.balls[0].flight = { x: 7, y: 4, start: 522, end: 542, distance: 1 };
+  assert.equal(observe(fixture, 440).size, 0);
+  assert.equal(observe(fixture, 680).size, 0);
+  assert.ok(observe(fixture, 700).has(1));
+  assert.equal(p.moving, false);
+});
+
+test("self-directed kicks are known immediately, while perception RNG and pending timers survive replay", () => {
+  const own = incoming();
+  own.s.balls[0].owner = own.p.id;
+  assert.ok(observe(own, 0).has(1));
+  const fixture = incoming(true), seed = fixture.s.seed;
+  // Begin between steering decisions so only perception runs.
+  observe(fixture, 20, random);
+  assert.equal(fixture.s.seed, seed, "noticing a kick must not consume the world/roaming RNG");
+  const copy = structuredClone(fixture.s), cloned = { s: copy, p: copy.players[0] };
+  for (let elapsed = 40; elapsed <= 800; elapsed += 20) {
+    assert.deepEqual(observe(fixture, elapsed, random), observe(cloned, elapsed, random));
+    assert.deepEqual(fixture.s, cloned.s);
+  }
+});
+
+test("an actual incoming kick leaves moving bot steering unchanged throughout the first 380 ms", () => {
+  const s = playing(), p = s.players[0], kicker = s.players[1];
+  Object.assign(p, { bot: true, x: 6, y: 4, moving: true, input: 0 });
+  Object.assign(kicker, { x: 10, y: 4, dir: 0 });
+  const baseline = structuredClone(s);
+  s.balls = [{ id: 1, x: 11, y: 4, kind: "football", fuse: 108 }];
+  assert.ok(kickBall(s, kicker));
+  assert.equal(s.balls[0].x, 4);
+  for (let elapsed = 20; elapsed < 400; elapsed += 20) {
+    stepGame(s, 20);
+    stepGame(baseline, 20);
+    const q = baseline.players[0];
+    assert.deepEqual({ x: p.x, y: p.y, input: p.input }, { x: q.x, y: q.y, input: q.input });
+  }
+});
 
 test("bots roam across open space instead of camping at a safe cell", () => {
   for (const seed of [17, 7919, 15838, 23757]) {

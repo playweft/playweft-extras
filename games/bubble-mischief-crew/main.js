@@ -85,7 +85,7 @@ let audio = null,
   lastStatus = "",
   hud = "",
   wasEnded = false;
-window.addEventListener("bubble-kick-art-ready", () => {
+window.addEventListener("bubble-mischief-crew-art-ready", () => {
   hud = "";
 });
 function beep(freq = 280, duration = 0.09) {
@@ -198,7 +198,7 @@ for (const b of document.querySelectorAll("[data-mode]"))
     $("overlay").hidden = false;
     $("pause").disabled = true;
     $("pause").textContent = "Ⅱ 暂停";
-    overlay("泡泡球场", "", "开始游戏");
+    overlay("泡泡捣蛋团", "", "开始游戏");
   });
 function controls(index) {
   if (portraitBlocked) return { dir: -1 };
@@ -441,7 +441,7 @@ function updateHUD() {
   $("score-mint").textContent = s.scores[0];
   $("score-peach").textContent = s.scores[1];
   $("round-label").textContent =
-    `第 ${String(s.round).padStart(2, "0")} 局${room ? " · 联机" : ""}`;
+    `第${String(s.round).padStart(2, "0")}局`;
   const key =
     s.players
       .map((p) => `${p.id}:${p.name}:${p.status}:${p.shield}:${p.shoes}:${p.slideDir}:${Math.max(0, Math.ceil(((p.slowUntil || 0) - s.tick) / 10))}:${JSON.stringify(p.inventory)}`)

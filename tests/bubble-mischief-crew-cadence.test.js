@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGame, stepGame, COLS, ROWS, inside } from "../games/bubble-kick/game.js";
+import { createGame, stepGame, COLS, ROWS, inside } from "../games/bubble-mischief-crew/game.js";
 import {
   airborneElapsed, airborneInterval, airborneCounts, simulationFrame,
-} from "../games/bubble-kick/bomb-rules.js";
+} from "../games/bubble-mischief-crew/bomb-rules.js";
 import { createRuntime } from "../scripts/lua-runtime.mjs";
 
 function game() {
@@ -66,7 +66,7 @@ test("scene clock includes Ready/Go, freezes on pause, and is independent of bat
 });
 
 test("Lua dispatches the same whole batches, including waves between logical ticks and capped late waves", async () => {
-  const runtime = await createRuntime("bubble-kick");
+  const runtime = await createRuntime("bubble-mischief-crew");
   try {
     for (const [tick, lastWaveAt, expected] of [
       [49, -1, 5000], [124, 5000, 12460], [429, 39000, 43000], [1629, 159000, 163000],
@@ -96,7 +96,7 @@ test("Lua dispatches the same whole batches, including waves between logical tic
 });
 
 test("a capped 38-bubble batch can chain-explode during room catch-up within the Lua instruction budget", async () => {
-  const runtime = await createRuntime("bubble-kick");
+  const runtime = await createRuntime("bubble-mischief-crew");
   try {
     const s = game();
     Object.assign(s, { tick: 1700, lastWaveAt: 166000, lastStepAt: 10000, nextId: 39 });

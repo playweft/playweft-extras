@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bubbleStackDisplay } from '../games/bubble-kick/bubble-stacks.js';
+import { bubbleStackDisplay } from '../games/bubble-mischief-crew/bubble-stacks.js';
 
 const ball = (id, kind = 'normal', x = 6, y = 4) => ({ id, kind, x, y });
 const state = balls => ({ balls, round: 1, tick: 40, substep: 0 });

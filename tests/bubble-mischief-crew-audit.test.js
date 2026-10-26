@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, stepGame, COLS, ROWS } from '../games/bubble-kick/game.js';
-import { BOMB, kickDestination, simulationFrame } from '../games/bubble-kick/bomb-rules.js';
-import { movePlayer } from '../games/bubble-kick/movement.js';
+import { createGame, stepGame, COLS, ROWS } from '../games/bubble-mischief-crew/game.js';
+import { BOMB, kickDestination, simulationFrame } from '../games/bubble-mischief-crew/bomb-rules.js';
+import { movePlayer } from '../games/bubble-mischief-crew/movement.js';
 import { createRuntime } from '../scripts/lua-runtime.mjs';
 const array = v => Array.isArray(v) ? v : [];
 function game() {
@@ -53,7 +53,7 @@ test('native 22-pixel contact probes kick before moving, but do not reach into a
 });
 
 test('fresh bubbles retain a 3000 ms fuse and detonate on the next 20 ms frame, identically in Lua',async()=>{
-  const r=await createRuntime('bubble-kick');
+  const r=await createRuntime('bubble-mischief-crew');
   try {
     const s=game();s.drops=[{id:1,x:6,y:4,kind:'normal',at:32,start:24,fromX:2}];s.nextId=2;
     await advanceBoth(r,s);assert.equal(s.balls[0].fuseFrame,simulationFrame(s)+151);
@@ -65,7 +65,7 @@ test('fresh bubbles retain a 3000 ms fuse and detonate on the next 20 ms frame, 
 });
 
 test('a short bubble stops a football arm and chains with its own range instead of transmitting the long arm',async()=>{
-  const r=await createRuntime('bubble-kick');
+  const r=await createRuntime('bubble-mischief-crew');
   try {
     const s=game();s.balls=[bomb(1,6,4,'football',32),bomb(2,7,4)];s.nextId=3;
     await advanceBoth(r,s);assert.equal(s.balls.length,0);
@@ -76,7 +76,7 @@ test('a short bubble stops a football arm and chains with its own range instead 
 });
 
 test('flames hit only on impact; entering visible foam or landing a later bubble does not cause a new hit',async()=>{
-  const r=await createRuntime('bubble-kick');
+  const r=await createRuntime('bubble-mischief-crew');
   try {
     const s=game(),p=s.players[0];Object.assign(p,{x:5,y:5,immune:0});
     s.balls=[bomb(1,6,4,'football',32)];s.nextId=3;
@@ -91,7 +91,7 @@ test('flames hit only on impact; entering visible foam or landing a later bubble
 });
 
 test('an airborne bubble can still be explicitly chain-triggered at its registered destination',async()=>{
-  const r=await createRuntime('bubble-kick');
+  const r=await createRuntime('bubble-mischief-crew');
   try {
     const s=game();s.balls=[bomb(1,5,4,'football',32),{
       ...bomb(2,9,4),flight:{x:1,y:4,start:155,end:175,distance:8}}];
@@ -101,7 +101,7 @@ test('an airborne bubble can still be explicitly chain-triggered at its register
 });
 
 test('native round deadline is four scene-clock minutes and inventory quantities saturate at 255',async()=>{
-  const r=await createRuntime('bubble-kick');
+  const r=await createRuntime('bubble-mischief-crew');
   try {
     const s=game(),p=s.players[0];p.inventory=[{kind:'glue',count:254}];
     s.items=[{x:p.x,y:p.y,kind:'glue',id:1}];await advanceBoth(r,s);

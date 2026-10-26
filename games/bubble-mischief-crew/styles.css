@@ -200,6 +200,7 @@ kbd { font: 10px sans-serif; color: #d7f5ff; background: #164f70; padding: 2px 3
 }
 @media (max-width: 760px) {
   .window-bar { font-size: 10px; gap: 1px; }
+  .window-bar > span:first-child { font-size: 9px; }
   .window-bar #round-label { font-size: 8px; }
   .window-bar a { font-size: 9px; }
   .side-actions #sound { font-size: 10px; white-space: nowrap; }

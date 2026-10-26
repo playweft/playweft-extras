@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGame, stepGame, kickBall, blastCells } from "../games/bubble-kick/game.js";
-import { inside, COLS, ROWS } from "../games/bubble-kick/arena.js";
-import { BOMB, bombRange, kickLanding } from "../games/bubble-kick/bomb-rules.js";
+import { createGame, stepGame, kickBall, blastCells } from "../games/bubble-mischief-crew/game.js";
+import { inside, COLS, ROWS } from "../games/bubble-mischief-crew/arena.js";
+import { BOMB, bombRange, kickLanding } from "../games/bubble-mischief-crew/bomb-rules.js";
 import { createRuntime } from "../scripts/lua-runtime.mjs";
 
 function game(tick = 31) {
@@ -89,7 +89,7 @@ test("falling waves keep occupied targets and land the correct bubble type", () 
 });
 
 test("Lua and local rules agree through flight, occupied landings, stacked drops and chain explosions", async () => {
-  const runtime = await createRuntime("bubble-kick");
+  const runtime = await createRuntime("bubble-mischief-crew");
   try {
     const s = game();
     Object.assign(s.players[0], { x: 2, y: 2, input: 0 });

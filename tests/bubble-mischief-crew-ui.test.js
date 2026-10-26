@@ -3,14 +3,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import { Window } from "happy-dom";
-import * as rules from "../games/bubble-kick/game.js";
-import { createTouchControls } from "../games/bubble-kick/touch-controls.js";
+import * as rules from "../games/bubble-mischief-crew/game.js";
+import { createTouchControls } from "../games/bubble-mischief-crew/touch-controls.js";
 async function mount({ deferred = false, stateFactory = rules.createGame, floating = false } = {}) {
   const window = new Window(),
     document = window.document;
   document.write(
     await readFile(
-      new URL("../games/bubble-kick/index.html", import.meta.url),
+      new URL("../games/bubble-mischief-crew/index.html", import.meta.url),
       "utf8",
     ),
   );
@@ -82,7 +82,7 @@ async function mount({ deferred = false, stateFactory = rules.createGame, floati
   };
   const source = (
     await readFile(
-      new URL("../games/bubble-kick/main.js", import.meta.url),
+      new URL("../games/bubble-mischief-crew/main.js", import.meta.url),
       "utf8",
     )
   ).replace(/^import[^\n]+\n/gm, "");
@@ -130,7 +130,7 @@ test("local screen starts, pauses, resumes and switches to independent two-playe
     assert.match($("pause").textContent, /暂停/);
     ui.document.querySelector('[data-mode="local"]').click();
     assert.equal($("p2-controls").hidden, false);
-    assert.match($("overlay-title").textContent, /泡泡球场/);
+    assert.match($("overlay-title").textContent, /泡泡捣蛋团/);
     assert.equal($("pause").disabled, true);
   } finally {
     await ui.close();

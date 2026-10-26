@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
-import { createTouchControls } from '../games/bubble-kick/touch-controls.js';
+import { createTouchControls } from '../games/bubble-mischief-crew/touch-controls.js';
 
 function setup() {
   const window = new Window(), document = window.document;

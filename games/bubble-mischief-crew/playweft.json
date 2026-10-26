@@ -2,20 +2,20 @@
   "$schema": "https://play.longern.com/schemas/game-manifest-v1.json",
   "manifest_version": 1,
   "id": "/bubble-kick/",
-  "version": "1.8.6",
+  "version": "1.9.0",
   "protocol": {
     "min": 1,
     "max": 1
   },
   "start_url": "./",
   "launch_mode": "choose",
-  "name": "Bubble Kick",
+  "name": "Bubble Mischief Crew",
   "name_localized": {
-    "zh-CN": "泡泡球场"
+    "zh-CN": "泡泡捣蛋团"
   },
-  "description": "Kick ticking bubbles, dodge chain reactions, and rescue your teammates in a little stadium full of chaos.",
+  "description": "Round up your friends for playful bubble chaos. Kick ticking bubbles, dodge chain reactions, and rescue teammates in Bubble Football.",
   "description_localized": {
-    "zh-CN": "踢走定时糖泡，躲避十字爆炸，营救队友。支持单人练习、同屏双人与 2–4 人联机。"
+    "zh-CN": "叫上朋友，一起捣蛋、互相救场。当前提供泡泡足球，支持单人练习、同屏双人与 2–4 人联机。"
   },
   "categories": ["games", "arcade"],
   "icons": [

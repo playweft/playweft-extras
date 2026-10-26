@@ -453,7 +453,7 @@ local function advance(s,now)
  while now>=s.lastStepAt+STEP and n<8 and (s.phase=='playing' or s.phase=='countdown') do s.lastStepAt=s.lastStepAt+STEP;step(s,cache);n=n+1 end
 end
 function setup(context)
- assert(#context.players>=2 and #context.players<=4,'Bubble Kick requires 2–4 players')
+ assert(#context.players>=2 and #context.players<=4,'Bubble Mischief Crew requires 2–4 players')
  local now=context.serverTime or context.match.startedAt
  local s={seed=math.max(1,floor(now)%2147483647),round=1,players={},scores={0,0}}
  for i,p in ipairs(context.players) do s.players[i]={id=p.id,name=p.name or ('Player '..i),team=(i-1)%2,bot=false} end

@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGame, stepGame, blastCells, random } from "../games/bubble-kick/game.js";
-import { botInput } from "../games/bubble-kick/bot.js";
-import { playerCell } from "../games/bubble-kick/movement.js";
+import { createGame, stepGame, blastCells, random } from "../games/bubble-mischief-crew/game.js";
+import { botInput } from "../games/bubble-mischief-crew/bot.js";
+import { playerCell } from "../games/bubble-mischief-crew/movement.js";
 
 function playing() {
   const s = createGame({ humans: 4 });

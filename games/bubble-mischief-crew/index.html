@@ -7,14 +7,15 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#000000" />
-    <title>泡泡球场</title>
+    <title>泡泡捣蛋团 Bubble Mischief Crew｜好友联机泡泡游戏</title>
+    <meta name="description" content="和朋友一起踢泡泡、互相捣蛋、关键时刻救场。泡泡捣蛋团 Bubble Mischief Crew 当前提供泡泡足球，支持单人练习、同屏双人和 2–4 人联机。" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="game-window" id="game-window" aria-label="泡泡球场">
+    <main class="game-window" id="game-window" aria-label="泡泡捣蛋团">
       <aside class="sidebar match-sidebar" aria-label="比赛信息">
         <header class="window-bar">
-          <span>泡泡球场</span><span id="round-label">第 01 局</span
+          <span>泡泡捣蛋团</span><span id="round-label">第01局</span
           ><a href="../" aria-label="返回游戏列表">退出</a>
         </header>
         <section class="clock-panel">
@@ -46,7 +47,7 @@
           <button class="selected" data-mode="solo">单人</button
           ><button data-mode="local">双人</button>
         </div>
-        <span id="room-mode" hidden>联机对战</span>
+        <span id="room-mode" hidden>好友联机</span>
         <div class="side-actions">
           <button id="pause" disabled>Ⅱ 暂停</button
           ><button id="sound" aria-label="打开音效">♪ 音效关</button>
@@ -63,7 +64,7 @@
             ></canvas>
             <div class="overlay" id="overlay">
               <div class="intro-card">
-                <h1 id="overlay-title">泡泡球场</h1>
+                <h1 id="overlay-title">泡泡捣蛋团</h1>
                 <p id="overlay-description"></p>
                 <button class="primary" id="start">
                   开始游戏 <span>▶</span>

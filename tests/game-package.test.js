@@ -29,14 +29,23 @@ test('Vite emits independent game package at /light-trails/ with resolvable asse
       { manifestUrl: './light-trails/playweft.json' },
       { manifestUrl: './pupdoku/playweft.json' },
       { manifestUrl: './fuzzy-match-3/playweft.json' },
-      { manifestUrl: './bubble-kick/playweft.json' },
+      { manifestUrl: './bubble-mischief-crew/playweft.json' },
     ]);
-    const kick = JSON.parse(await readFile(join(outDir, 'bubble-kick/playweft.json'), 'utf8'));
-    assert.equal(kick.id, '/bubble-kick/');
+    const kick = JSON.parse(await readFile(join(outDir, 'bubble-mischief-crew/playweft.json'), 'utf8'));
+    assert.equal(kick.id, '/bubble-kick/', 'renaming preserves installed-game and room identity');
+    assert.equal(kick.name, 'Bubble Mischief Crew');
+    assert.equal(kick.name_localized['zh-CN'], '泡泡捣蛋团');
+    assert.deepEqual(JSON.parse(await readFile(join(outDir, 'bubble-kick/playweft.json'), 'utf8')), kick);
+    for (const file of ['game.lua', 'icon.svg', 'art/hero-walk.png', 'art/hero-walk.json']) {
+      assert.deepEqual(await readFile(join(outDir, 'bubble-kick', file)), await readFile(join(outDir, 'bubble-mischief-crew', file)));
+    }
+    const legacyPage = await readFile(join(outDir, 'bubble-kick/index.html'), 'utf8');
+    assert.match(legacyPage, /rel="canonical" href="\.\.\/bubble-mischief-crew\/"/);
+    assert.match(legacyPage, /location\.search\+location\.hash/);
     assert.equal(kick.orientation, 'landscape');
     assert.deepEqual(kick.modes.room.players, { min: 2, max: 4 });
     assert.deepEqual(kick.modes.solo, {});
-    assert.equal(await readFile(join(outDir, 'bubble-kick/game.lua'), 'utf8'), await readFile(join(root, 'games/bubble-kick/game.lua'), 'utf8'));
+    assert.equal(await readFile(join(outDir, 'bubble-mischief-crew/game.lua'), 'utf8'), await readFile(join(root, 'games/bubble-mischief-crew/game.lua'), 'utf8'));
     const solo = JSON.parse(
       await readFile(join(outDir, 'pupdoku/playweft.json'), 'utf8'),
     );
@@ -90,8 +99,8 @@ test('Vite emits independent game package at /light-trails/ with resolvable asse
       'pupdoku/help.html',
       'fuzzy-match-3/index.html',
       'fuzzy-match-3/help.html',
-      'bubble-kick/index.html',
-      'bubble-kick/help.html',
+      'bubble-mischief-crew/index.html',
+      'bubble-mischief-crew/help.html',
     ]) {
       const html = await readFile(join(outDir, page), 'utf8');
       for (const [, url] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
@@ -126,6 +135,19 @@ test('Vite serves stable game URLs, raw Lua and cross-origin manifests during de
   try {
     await server.listen();
     const base = `http://127.0.0.1:${server.httpServer.address().port}`;
+    for (const [legacy, canonical] of [
+      ['/bubble-kick?invite=old', '/bubble-mischief-crew?invite=old'],
+      ['/bubble-kick/', '/bubble-mischief-crew/'],
+      ['/bubble-kick/help.html', '/bubble-mischief-crew/help.html'],
+      ['/bubble-kick/playweft.json?v=1', '/bubble-mischief-crew/playweft.json?v=1'],
+      ['/bubble-kick/art/hero-walk.png', '/bubble-mischief-crew/art/hero-walk.png'],
+    ]) {
+      const redirect = await fetch(base + legacy, { redirect: 'manual' });
+      assert.equal(redirect.status, 308);
+      assert.equal(redirect.headers.get('location'), canonical);
+      assert.equal(redirect.headers.get('access-control-allow-origin'), '*');
+      assert.equal((await fetch(base + legacy)).status, 200);
+    }
     for (const path of [
       '/light-trails/',
       '/light-trails/main.js',
@@ -150,26 +172,26 @@ test('Vite serves stable game URLs, raw Lua and cross-origin manifests during de
       '/fuzzy-match-3/styles.css',
       '/fuzzy-match-3/help.html',
       '/fuzzy-match-3/icon.svg',
-      '/bubble-kick/',
-      '/bubble-kick/main.js',
-      '/bubble-kick/game.js',
-      '/bubble-kick/movement.js',
-      '/bubble-kick/bomb-rules.js',
-      '/bubble-kick/render.js',
-      '/bubble-kick/art.js',
-      '/bubble-kick/art/hero-walk.png',
-      '/bubble-kick/art/hero-walk.json',
-      '/bubble-kick/art/hero-walk-side.png',
-      '/bubble-kick/art/hero-walk-side.json',
-      '/bubble-kick/art/stadium.png',
-      '/bubble-kick/touch-controls.js',
-      '/bubble-kick/styles.css',
-      '/bubble-kick/help.html',
-      '/bubble-kick/icon.svg',
+      '/bubble-mischief-crew/',
+      '/bubble-mischief-crew/main.js',
+      '/bubble-mischief-crew/game.js',
+      '/bubble-mischief-crew/movement.js',
+      '/bubble-mischief-crew/bomb-rules.js',
+      '/bubble-mischief-crew/render.js',
+      '/bubble-mischief-crew/art.js',
+      '/bubble-mischief-crew/art/hero-walk.png',
+      '/bubble-mischief-crew/art/hero-walk.json',
+      '/bubble-mischief-crew/art/hero-walk-side.png',
+      '/bubble-mischief-crew/art/hero-walk-side.json',
+      '/bubble-mischief-crew/art/stadium.png',
+      '/bubble-mischief-crew/touch-controls.js',
+      '/bubble-mischief-crew/styles.css',
+      '/bubble-mischief-crew/help.html',
+      '/bubble-mischief-crew/icon.svg',
     ]) {
       assert.equal((await fetch(base + path)).status, 200, path);
     }
-    for (const game of ['light-trails', 'pupdoku', 'fuzzy-match-3', 'bubble-kick']) {
+    for (const game of ['light-trails', 'pupdoku', 'fuzzy-match-3', 'bubble-mischief-crew']) {
       const response = await fetch(base + `/${game}/icon.svg?v=1`);
       assert.match(response.headers.get('content-type'), /image\/svg\+xml/);
       assert.equal(
@@ -227,17 +249,24 @@ test('BASE_PATH builds root or nested static sites and removes output from the p
       const piece = JSON.parse(await readFile(join(dir, 'fuzzy-match-3/playweft.json'), 'utf8'));
       assert.equal(piece.id, base + 'fuzzy-match-3/');
       assert.equal(Object.hasOwn(piece, 'modes'), false);
-      const kick = JSON.parse(await readFile(join(dir, 'bubble-kick/playweft.json'), 'utf8'));
+      const kick = JSON.parse(await readFile(join(dir, 'bubble-mischief-crew/playweft.json'), 'utf8'));
       assert.equal(kick.id, base + 'bubble-kick/');
-      await access(join(dir, 'bubble-kick/game.lua'));
+      const legacy = JSON.parse(await readFile(join(dir, 'bubble-kick/playweft.json'), 'utf8'));
+      assert.deepEqual(legacy, kick);
+      for (const entry of [legacy.start_url, legacy.help_url, legacy.icons[0].src, legacy.modes.room.server.entry]) {
+        let path = new URL(entry, 'https://games.example' + base + 'bubble-kick/playweft.json').pathname;
+        if (path.endsWith('/')) path += 'index.html';
+        await access(join(outDir, path));
+      }
+      await access(join(dir, 'bubble-mischief-crew/game.lua'));
       for (const asset of ['hero-walk.png', 'hero-walk.json', 'hero-walk-side.png', 'hero-walk-side.json', 'stadium.png']) {
-        await access(join(dir, 'bubble-kick/art', asset));
+        await access(join(dir, 'bubble-mischief-crew/art', asset));
       }
       for (const [game, metadata] of [
         ['light-trails', manifest],
         ['pupdoku', solo],
         ['fuzzy-match-3', piece],
-        ['bubble-kick', kick],
+        ['bubble-mischief-crew', kick],
       ]) {
         const iconPath = new URL(
           metadata.icons[0].src,
@@ -270,8 +299,8 @@ test('BASE_PATH builds root or nested static sites and removes output from the p
         'pupdoku/help.html',
         'fuzzy-match-3/index.html',
         'fuzzy-match-3/help.html',
-      'bubble-kick/index.html',
-      'bubble-kick/help.html',
+      'bubble-mischief-crew/index.html',
+      'bubble-mischief-crew/help.html',
       ]) {
         const html = await readFile(join(dir, page), 'utf8');
         for (const [, url] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, stepGame, useItem, blastCells, inside } from '../games/bubble-kick/game.js';
-import { ITEM_POOL, chooseItem, playerSpeed } from '../games/bubble-kick/item-rules.js';
-import { collectAndTriggerItems, clearBlastedItems, dispatchRecycledItems } from '../games/bubble-kick/items.js';
+import { createGame, stepGame, useItem, blastCells, inside } from '../games/bubble-mischief-crew/game.js';
+import { ITEM_POOL, chooseItem, playerSpeed } from '../games/bubble-mischief-crew/item-rules.js';
+import { collectAndTriggerItems, clearBlastedItems, dispatchRecycledItems } from '../games/bubble-mischief-crew/items.js';
 import { createRuntime } from '../scripts/lua-runtime.mjs';
 
 function game() {
@@ -84,7 +84,7 @@ test('placed traps spare overlapping players until they leave, then affect the o
 });
 
 test('moving players place glue and banana at their current cell without interrupting held movement, identically in Lua', async () => {
-  const runtime = await createRuntime('bubble-kick');
+  const runtime = await createRuntime('bubble-mischief-crew');
   try {
     const s = game(), p = s.players[0];
     p.input = 0;
@@ -113,7 +113,7 @@ test('moving players place glue and banana at their current cell without interru
 });
 
 test('fork only self-rescues a trapped player, consumes once, and does not leave a ground trap', async () => {
-  const runtime=await createRuntime('bubble-kick');
+  const runtime=await createRuntime('bubble-mischief-crew');
   try {
     const s=game(),p=s.players[0];p.inventory=[{kind:'fork',count:2}];
     assert.equal(useItem(s,0,1),false);
@@ -139,7 +139,7 @@ test('fork only self-rescues a trapped player, consumes once, and does not leave
 });
 
 test('glue, forced banana sliding, blocked slide and stacked traps match Lua', async () => {
-  const runtime=await createRuntime('bubble-kick');
+  const runtime=await createRuntime('bubble-mischief-crew');
   try {
     for (const kind of ['glue','banana']) {
       const s=game(),p=s.players[0];
@@ -159,7 +159,7 @@ test('glue, forced banana sliding, blocked slide and stacked traps match Lua', a
 });
 
 test('pickups fall one per bomb wave, never into goals, with matching Lua stock and timing', async () => {
-  const runtime=await createRuntime('bubble-kick');
+  const runtime=await createRuntime('bubble-mischief-crew');
   try {
     const s=game();s.players.forEach(p=>p.immune=10000);s.tick=49;
     await advanceBoth(runtime,s);
@@ -186,7 +186,7 @@ test('blasted pickups and placed hazards recycle on the 30-second gate without c
   clearBlastedItems(s,new Set([2*13+3,2*13+4]));
   assert.deepEqual(s.recycled,[{kind:'shoe',placed:false},{kind:'banana',placed:true}]);
   dispatchRecycledItems(s,()=>0);assert.equal(s.itemDrops.length,0);
-  const runtime=await createRuntime('bubble-kick');
+  const runtime=await createRuntime('bubble-mischief-crew');
   try {
     await advanceBoth(runtime,s);
     assert.equal(s.itemDrops.length,2);assert.equal(s.recycled.length,0);
@@ -198,7 +198,7 @@ test('blasted pickups and placed hazards recycle on the 30-second gate without c
 });
 
 test('goal bodies stop players and blasts while the three-cell upper and lower lanes remain open', async () => {
-  const runtime=await createRuntime('bubble-kick');
+  const runtime=await createRuntime('bubble-mischief-crew');
   try {
     for(const [x,y,dir,expected] of [[1,4,2,[0.975,4]],[11,4,0,[11.025,4]],
       [0,2,1,[0,2.025]],[0,6,3,[0,5.975]],[12,2,1,[12,2.025]],[12,6,3,[12,5.975]],
@@ -214,7 +214,7 @@ test('goal bodies stop players and blasts while the three-cell upper and lower l
 });
 
 test('800 ms room catch-up with four moving players, bombs and placed items stays within the instruction budget', async () => {
-  const runtime=await createRuntime('bubble-kick');
+  const runtime=await createRuntime('bubble-mischief-crew');
   try {
     const s=game();s.tick=1700;s.nextId=30;
     s.players.forEach(p=>p.input=0);

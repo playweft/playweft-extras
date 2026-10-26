@@ -7,7 +7,7 @@ import {
   kickBall,
   blastCells,
   COLS, ROWS,
-} from "../games/bubble-kick/game.js";
+} from "../games/bubble-mischief-crew/game.js";
 import { createRuntime } from "../scripts/lua-runtime.mjs";
 const players = Array.from({ length: 4 }, (_, i) => ({
   id: `p${i}`,
@@ -172,7 +172,7 @@ function comparable(s) {
 }
 
 test("rescue and enemy contact use a 0.75-cell circle across grid boundaries, identically in Lua", async () => {
-  const runtime = await createRuntime("bubble-kick");
+  const runtime = await createRuntime("bubble-mischief-crew");
   const cases = [
     { origin: [5.49, 5], offset: [0.02, 0], contact: true },
     { origin: [5, 5], offset: [0.75, 0], contact: true },
@@ -225,7 +225,7 @@ test("distance contact is checked during movement and enemies take priority over
 });
 
 test("Lua room rules match local human rules across a full seeded match, within runtime fuel limits", async () => {
-  const r = await createRuntime("bubble-kick");
+  const r = await createRuntime("bubble-mischief-crew");
   try {
     let s = game();
     s.players.forEach((p) => (p.immune = 10000));
@@ -260,7 +260,7 @@ test("Lua room rules match local human rules across a full seeded match, within 
   }
 });
 test("room validates actor, round, input, sequence; pauses on silence and requires all rematch votes", async () => {
-  const r = await createRuntime("bubble-kick");
+  const r = await createRuntime("bubble-mischief-crew");
   try {
     let s = (await r.call("setup", { players, serverTime: 1000 })).state;
     const act = (action, actor = { id: "p0", role: "player" }, now = 1000) =>

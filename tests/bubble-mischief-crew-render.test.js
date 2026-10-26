@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
-import { createGame, COLS, ROWS } from '../games/bubble-kick/game.js';
-import { GOALS } from '../games/bubble-kick/arena.js';
-import { movePlayer } from '../games/bubble-kick/movement.js';
-import { BOMB, simulationFrame } from '../games/bubble-kick/bomb-rules.js';
-import { bubbleStackDisplay } from '../games/bubble-kick/bubble-stacks.js';
+import { createGame, COLS, ROWS } from '../games/bubble-mischief-crew/game.js';
+import { GOALS } from '../games/bubble-mischief-crew/arena.js';
+import { movePlayer } from '../games/bubble-mischief-crew/movement.js';
+import { BOMB, simulationFrame } from '../games/bubble-mischief-crew/bomb-rules.js';
+import { bubbleStackDisplay } from '../games/bubble-mischief-crew/bubble-stacks.js';
 
 // Exercise the real renderer with a recording canvas, without loading bitmaps.
 async function renderer() {
@@ -47,7 +47,7 @@ async function renderer() {
       return true;
     },
   };
-  const source = (await readFile(new URL('../games/bubble-kick/render.js', import.meta.url), 'utf8'))
+  const source = (await readFile(new URL('../games/bubble-mischief-crew/render.js', import.meta.url), 'utf8'))
     .replace(/^import[^\n]+\n/gm, '').replace(/export /g, '');
   vm.runInNewContext(source, scope);
   return { events, context, render: scope.render };
@@ -235,7 +235,7 @@ test('goal frames mirror each other with matching widths and red/green side colo
 
 test('players can reach the lawn above and below both goals, with bubbles and blast tiles aligned', async () => {
   const { events, context, render } = await renderer();
-  const metadata = JSON.parse(await readFile(new URL('../public/bubble-kick/art/hero-walk.json', import.meta.url), 'utf8'));
+  const metadata = JSON.parse(await readFile(new URL('../public/bubble-mischief-crew/art/hero-walk.json', import.meta.url), 'utf8'));
   const halfWidth = Math.max(34, ...metadata.frames.map(f => f.w * 88 / metadata.referenceHeight / 2));
   for (const [startX, dir, edgeX] of [[0.1, 2, 0], [COLS - 1.1, 0, COLS - 1]]) {
     for (const row of [1, ROWS - 2]) {
@@ -272,8 +272,8 @@ test('players can reach the lawn above and below both goals, with bubbles and bl
 });
 
 test('the sixteen animation crops stay inside the transparent atlas', async () => {
-  const metadata = JSON.parse(await readFile(new URL('../public/bubble-kick/art/hero-walk.json', import.meta.url), 'utf8'));
-  const png = await readFile(new URL('../public/bubble-kick/art/hero-walk.png', import.meta.url));
+  const metadata = JSON.parse(await readFile(new URL('../public/bubble-mischief-crew/art/hero-walk.json', import.meta.url), 'utf8'));
+  const png = await readFile(new URL('../public/bubble-mischief-crew/art/hero-walk.png', import.meta.url));
   assert.equal(png.readUInt32BE(16), metadata.width);
   assert.equal(png.readUInt32BE(20), metadata.height);
   assert.equal(png[25], 6, 'RGBA transparency is preserved');
@@ -289,8 +289,8 @@ test('the sixteen animation crops stay inside the transparent atlas', async () =
 });
 
 test('real sprite draws register both feet around the same ground point throughout all sixteen frames', async () => {
-  const metadata = JSON.parse(await readFile(new URL('../public/bubble-kick/art/hero-walk.json', import.meta.url), 'utf8'));
-  const source = await readFile(new URL('../games/bubble-kick/art.js', import.meta.url), 'utf8');
+  const metadata = JSON.parse(await readFile(new URL('../public/bubble-mischief-crew/art/hero-walk.json', import.meta.url), 'utf8'));
+  const source = await readFile(new URL('../games/bubble-mischief-crew/art.js', import.meta.url), 'utf8');
   const calls = [], atlas = {};
   const scope = { metadata, atlas };
   vm.runInNewContext(source.replace(/export /g, '') + '\nart.frames = metadata; art.heroes = [atlas, atlas, atlas, atlas];', scope);
@@ -317,14 +317,14 @@ test('real sprite draws register both feet around the same ground point througho
 });
 
 test('replacement side cycles alternate near/far foot contacts and retain the ground pivot for every team', async () => {
-  const metadata = JSON.parse(await readFile(new URL('../public/bubble-kick/art/hero-walk-side.json', import.meta.url), 'utf8'));
-  const original = JSON.parse(await readFile(new URL('../public/bubble-kick/art/hero-walk.json', import.meta.url), 'utf8'));
-  const png = await readFile(new URL('../public/bubble-kick/art/hero-walk-side.png', import.meta.url));
+  const metadata = JSON.parse(await readFile(new URL('../public/bubble-mischief-crew/art/hero-walk-side.json', import.meta.url), 'utf8'));
+  const original = JSON.parse(await readFile(new URL('../public/bubble-mischief-crew/art/hero-walk.json', import.meta.url), 'utf8'));
+  const png = await readFile(new URL('../public/bubble-mischief-crew/art/hero-walk-side.png', import.meta.url));
   assert.equal(png.readUInt32BE(16), metadata.width);
   assert.equal(png.readUInt32BE(20), metadata.height);
   assert.equal(png[25], 6);
   assert.equal(metadata.frames.length, 8);
-  const source = await readFile(new URL('../games/bubble-kick/art.js', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../games/bubble-mischief-crew/art.js', import.meta.url), 'utf8');
   const calls = [], atlases = [{}, {}, {}, {}], fallback = {};
   const scope = { metadata, original, atlases, fallback };
   vm.runInNewContext(source.replace(/export /g, '') + '\nart.frames = original; art.heroes = [fallback]; art.sideFrames = metadata; art.sideHeroes = atlases;', scope);

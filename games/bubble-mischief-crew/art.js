@@ -37,13 +37,13 @@ if (typeof Image !== 'undefined' && typeof document !== 'undefined') {
     .then(([image, metadata]) => {
       art.frames = metadata;
       art.heroes = [image, ...[3, 43, 283].map(h => teamAtlas(image, h))];
-      window.dispatchEvent(new Event('bubble-kick-art-ready'));
+      window.dispatchEvent(new Event('bubble-mischief-crew-art-ready'));
     }).catch(() => {});
   Promise.all([loadImage('hero-walk-side.png'), fetch(assetURL('hero-walk-side.json')).then(r => r.json())])
     .then(([image, metadata]) => {
       art.sideFrames = metadata;
       art.sideHeroes = [image, ...[3, 43, 283].map(h => teamAtlas(image, h))];
-      window.dispatchEvent(new Event('bubble-kick-art-ready'));
+      window.dispatchEvent(new Event('bubble-mischief-crew-art-ready'));
     }).catch(() => {});
 }
 export function drawStadium(c) {

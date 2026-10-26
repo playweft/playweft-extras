@@ -4,7 +4,7 @@ import { defineConfig, loadEnv } from 'vite';
 import { emitGamePackages } from './build/vite/plugins/emit-game-packages.js';
 import { preserveGameUrls } from './build/vite/plugins/preserve-game-urls.js';
 
-const games = ['light-trails', 'pupdoku', 'fuzzy-match-3', 'bubble-kick'];
+const games = ['light-trails', 'pupdoku', 'fuzzy-match-3', 'bubble-mischief-crew'];
 const input = { index: resolve(import.meta.dirname, 'index.html') };
 for (const game of games) {
   input[game] = resolve(import.meta.dirname, `games/${game}/index.html`);
@@ -21,7 +21,7 @@ export default defineConfig(({ mode, command }) => ({
           loadEnv(mode, import.meta.dirname, 'BASE_PATH').BASE_PATH,
         )
       : '/',
-  plugins: [emitGamePackages({ games }), preserveGameUrls({ games })],
+  plugins: [emitGamePackages({ games }), preserveGameUrls({ games, aliases: { 'bubble-kick': 'bubble-mischief-crew' } })],
   oxc: { jsx: { runtime: 'automatic', importSource: 'preact' } },
   server: { port: 9140, cors: true },
   build: { rollupOptions: { input } },

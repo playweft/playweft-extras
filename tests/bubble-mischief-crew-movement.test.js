@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGame, stepGame, input, COLS, ROWS, inside } from "../games/bubble-kick/game.js";
-import { movePlayer, playerCell, BODY_HALF } from "../games/bubble-kick/movement.js";
-import { GOALS } from "../games/bubble-kick/arena.js";
+import { createGame, stepGame, input, COLS, ROWS, inside } from "../games/bubble-mischief-crew/game.js";
+import { movePlayer, playerCell, BODY_HALF } from "../games/bubble-mischief-crew/movement.js";
+import { GOALS } from "../games/bubble-mischief-crew/arena.js";
 import { createRuntime } from "../scripts/lua-runtime.mjs";
 const players = Array.from({ length: 4 }, (_, i) => ({
   id: `p${i}`,
@@ -212,7 +212,7 @@ test("explosions and pickups use the closest cell; rescue keeps continuous posit
   close(q.y, 3.45);
 });
 test("Lua and local collision geometry agree for edge clearance, full blocks, turning and contact kicks", async () => {
-  const runtime = await createRuntime("bubble-kick");
+  const runtime = await createRuntime("bubble-mischief-crew");
   try {
     for (const [x, y, balls, dir] of [
       [2.025, 2.35, [ball(3, 3)], 0],
@@ -262,7 +262,7 @@ test("Lua and local collision geometry agree for edge clearance, full blocks, tu
 });
 
 test("room catches up 800 ms with four moving players and twelve balls within the Lua budget", async () => {
-  const runtime = await createRuntime("bubble-kick");
+  const runtime = await createRuntime("bubble-mischief-crew");
   try {
     const s = game();
     s.tick = 1000;
@@ -289,7 +289,7 @@ test("room catches up 800 ms with four moving players and twelve balls within th
   }
 });
 test("spatially indexed Lua sweeps match local geometry across fractional offsets and ball layouts", async () => {
-  const runtime = await createRuntime("bubble-kick");
+  const runtime = await createRuntime("bubble-mischief-crew");
   let seed = 20803;
   const rand = (n) => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;

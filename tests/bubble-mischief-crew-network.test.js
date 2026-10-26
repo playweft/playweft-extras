@@ -5,12 +5,12 @@ import { once } from "node:events";
 import { WebSocket } from "ws";
 
 test(
-  "Bubble Kick room traverses the real bridge harness, synchronizes seats and stops stale movement",
+  "Bubble Mischief Crew room traverses the real bridge harness, synchronizes seats and stops stale movement",
   { timeout: 15000 },
   async () => {
     const child = spawn(process.execPath, ["scripts/dev.mjs"], {
       cwd: new URL("../", import.meta.url),
-      env: { ...process.env, PORT: "0", DEV_GAME: "bubble-kick" },
+      env: { ...process.env, PORT: "0", DEV_GAME: "bubble-mischief-crew" },
       stdio: ["ignore", "pipe", "pipe"],
     });
     const clients = [];
@@ -28,18 +28,22 @@ test(
         });
       });
       for (const path of [
-        "/bubble-kick/",
-        "/bubble-kick/main.js",
-        "/bubble-kick/render.js",
-        "/bubble-kick/game.js",
-        "/bubble-kick/game.lua",
-        "/bubble-kick/icon.svg",
+        "/bubble-mischief-crew/",
+        "/bubble-mischief-crew/main.js",
+        "/bubble-mischief-crew/render.js",
+        "/bubble-mischief-crew/game.js",
+        "/bubble-mischief-crew/game.lua",
+        "/bubble-mischief-crew/icon.svg",
       ])
         assert.equal((await fetch(address + path)).status, 200, path);
       assert.match(
         await (await fetch(address + "/__dev/")).text(),
-        /src="\/bubble-kick\/"/,
+        /src="\/bubble-mischief-crew\/"/,
       );
+      const legacy = await fetch(address + '/bubble-kick/?invite=old', { redirect: 'manual' });
+      assert.equal(legacy.status, 308);
+      assert.equal(legacy.headers.get('location'), '/bubble-mischief-crew/?invite=old');
+      assert.equal((await (await fetch(address + '/bubble-kick/playweft.json')).json()).name, 'Bubble Mischief Crew');
       function connect(seat) {
         const ws = new WebSocket(
             address.replace("http", "ws") + `/__dev/socket?seat=${seat}`,

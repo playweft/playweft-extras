@@ -1,1 +1,89 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" fill="#2c6049"/><path d="M16 29h96v70H16zM64 29v70" fill="none" stroke="#9fc18b" stroke-width="3"/><circle cx="64" cy="64" r="23" fill="none" stroke="#9fc18b" stroke-width="3"/><circle cx="66" cy="62" r="31" fill="#fff1ca"/><path d="m66 43 17 12-6 20H55l-6-20zm-25 6 7 10-5 16-7-14zm46 28 6-17 4 4-6 19zM56 87l16-3 7 5-14 5z" fill="#54866a"/><path d="m99 24 3 8 9 2-8 4-2 9-4-8-9-2 8-4z" fill="#f5b493"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1280" role="img" aria-labelledby="title desc">
+  <title id="title">泡泡对战</title>
+  <desc id="desc">蓝发小勇士置身泡泡中，右上角点缀黄色爆破星芒，浅蓝背景从中心向四周加深。</desc>
+  <defs>
+    <radialGradient id="background" cx="50%" cy="50%" r="72%">
+      <stop stop-color="#effdff"/>
+      <stop offset=".38" stop-color="#b1f0ff"/>
+      <stop offset=".73" stop-color="#43c8f5"/>
+      <stop offset="1" stop-color="#139fe9"/>
+    </radialGradient>
+    <linearGradient id="bubble" x1="230" y1="190" x2="1030" y2="1030" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#29d5f1"/>
+      <stop offset=".6" stop-color="#16baf0"/>
+      <stop offset="1" stop-color="#39dfed"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="500" y1="230" x2="730" y2="850" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#24e7f2"/>
+      <stop offset=".48" stop-color="#00baf5"/>
+      <stop offset="1" stop-color="#0871de"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="490" y1="630" x2="810" y2="1050" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffdbad"/>
+      <stop offset="1" stop-color="#ffc195"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#background)" d="M0 0h1280v1280H0z"/>
+  <g id="mascot" transform="translate(76 72) scale(.9)" stroke="#071842" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <!-- One bubble silhouette and a light inner rim. -->
+    <ellipse cx="630" cy="632" rx="565" ry="546" fill="url(#bubble)" stroke-width="34"/>
+    <ellipse cx="630" cy="632" rx="535" ry="516" fill="none" stroke="#8cf9fa" stroke-width="24"/>
+    <g fill="#fff" stroke="none">
+      <path d="M220 399c-22-35 29-113 100-169 66-51 152-78 180-46 25 29-44 84-104 123-74 48-145 127-176 92z"/>
+      <ellipse cx="185" cy="470" rx="27" ry="33" transform="rotate(28 185 470)"/>
+      <path d="M122 540c-14 105-8 222 37 302-57-61-66-185-37-302z"/>
+      <path d="M1080 906c-36 70-102 143-173 176 57-57 118-114 173-176z" opacity=".65"/>
+    </g>
+    <!-- A few large hair tufts define the silhouette at small sizes. -->
+    <path fill="url(#hair)" d="M228 771l-71-73 91-85-73-39c72-83 169-136 328-169l-112-73c69-28 146-32 219-10l-53-120c145 0 269 70 348 141l69-44c-13 63-5 116 30 174l43-61c41 64 61 130 47 186l55-39c-5 92-21 161-74 218l34 27-70 36-17 74-88 36-545-12-35-79-43 38-29-79-39 12z"/>
+    <g fill="#0753c1" stroke="none">
+      <path d="M182 574c80-43 168-56 246-35-49 28-87 72-113 121l-67-47z"/>
+      <path d="M259 730c12-54 36-96 59-119-23 43-29 82-29 108 38-18 67-20 88-8l-20 76-42-33z"/>
+      <path d="M909 541c28-18 44-40 56-70-2 50-20 86-51 107z"/>
+      <path d="M985 742c54-28 84-78 101-137-5 78-25 142-69 187z"/>
+    </g>
+    <!-- Ear / face shapes sit below the foreground bangs. -->
+    <path fill="url(#skin)" d="M957 855c16-23 30-21 40-4 16 30 0 75-36 94l-28-20z" stroke-width="22"/>
+    <path fill="url(#skin)" d="M505 647c56-54 111-89 201-92 116-4 228 48 268 132 38 81 21 190-39 262-62 77-155 119-261 116-126-3-238-54-286-142-55 5-110-18-128-61-21-47-8-96 23-116 36-23 72-7 96 29 30-55 71-93 126-128z"/>
+    <path fill="#ffad80" stroke="none" d="M357 867c-30-2-62-30-63-61-2-25 10-34 24-26 21 10 39 48 39 87z"/>
+    <path fill="none" d="M316 783c22 5 39 29 45 55" stroke-width="17"/>
+    <path fill="#fff0c8" d="M635 628l107-75c67 17 133 36 179 69l34 107c-92-62-194-94-320-101z" stroke-width="19"/>
+    <path fill="#ead7aa" stroke="none" d="M914 624l9 83 32 22-34-107z"/>
+    <!-- Foreground bangs: one swept lock, two side locks, broad colour accents. -->
+    <path fill="url(#hair)" d="M391 332c115 15 220 64 296 132l-84-45c-79 44-139 118-160 207l-51 102 9-60c-35 17-57 54-71 103l-20-60-33 17 7-54c-34 8-56 23-79 40l44-101-71-37c87-97 201-149 326-171z"/>
+    <path fill="url(#hair)" d="M557 202c182 5 357 134 348 330l-64 68-29-88c-104 49-203 130-258 220-45-39-52-117-22-184 17-38 42-79 72-127-62-45-135-75-213-89 78-29 147-33 219-10z"/>
+    <path fill="url(#hair)" d="M978 598c57 57 55 134 6 195l-31 68c1-57-16-113-38-153l-21-54c25 27 38 53 45 81 12-40 12-90 39-137z" stroke-width="23"/>
+    <g stroke="none">
+      <path fill="#79f7f5" d="M585 222c91 13 187 68 246 143-76-45-129-66-188-75z"/>
+      <path fill="#27ebed" d="M433 337c115 16 217 66 288 136-95-51-192-84-288-136z"/>
+      <path fill="#64f7f1" d="M578 445c-44 88-48 189-24 263-42-48-45-133-15-191z"/>
+      <path fill="#0754bc" d="M792 457l34 89c-101 31-192 90-253 158 65-105 131-181 219-247z"/>
+      <path fill="#0754c0" d="M204 551c78-30 151-34 223-11-43 30-83 65-111 105 7-25 18-48 32-69-48-30-95-37-144-25z"/>
+      <path fill="#33e5ed" d="M1018 607c31-10 54-24 76-42-5 50-35 74-76 42z"/>
+      <path fill="#0b84e7" d="M977 625c23 44 20 86-6 123 6-42 7-81 6-123z"/>
+    </g>
+    <!-- Large eyes and mouth keep the expression readable at small sizes. -->
+    <g stroke="none">
+      <ellipse cx="573" cy="820" rx="69" ry="79" fill="#fff" transform="rotate(16 573 820)"/>
+      <ellipse cx="560" cy="812" rx="52" ry="76" fill="#071842" transform="rotate(16 560 812)"/>
+      <ellipse cx="546" cy="787" rx="17" ry="22" fill="#fff" transform="rotate(17 546 787)"/>
+      <ellipse cx="853" cy="862" rx="56" ry="71" fill="#fff" transform="rotate(18 853 862)"/>
+      <ellipse cx="840" cy="863" rx="42" ry="64" fill="#071842" transform="rotate(18 840 863)"/>
+      <ellipse cx="828" cy="838" rx="14" ry="18" fill="#fff" transform="rotate(17 828 838)"/>
+      <ellipse cx="480" cy="892" rx="49" ry="26" fill="#ff9f87" transform="rotate(23 480 892)"/>
+      <ellipse cx="864" cy="950" rx="41" ry="23" fill="#ff9f87" transform="rotate(-18 864 950)"/>
+    </g>
+    <path fill="none" d="M507 708c49 12 105 40 155 87" stroke-width="24"/>
+    <path fill="none" d="M802 809c43-33 83-54 126-62" stroke-width="22"/>
+    <path fill="#071842" d="M637 918c31 34 74 45 119 33-23 30-86 36-119-33z" stroke-width="13"/>
+    <!-- Foreground satellite bubble and the four-point burst. -->
+    <circle cx="198" cy="1015" r="126" fill="url(#bubble)" stroke-width="27"/>
+    <circle cx="198" cy="1015" r="105" fill="none" stroke="#9bfafb" stroke-width="15"/>
+    <g fill="#fff" stroke="none">
+      <ellipse cx="163" cy="975" rx="30" ry="49" transform="rotate(42 163 975)"/>
+      <circle cx="148" cy="1052" r="16"/>
+    </g>
+    <path fill="#ffda13" d="M968 105c39 76 91 114 215 79-40 58-66 111-18 201-72-23-101-8-111 69-32-79-69-124-153-139 74-35 91-94 67-210z" stroke-width="28"/>
+    <path fill="#fff" stroke="none" d="M1008 221c28 34 60 47 109 32-28 38-30 72-17 114-28-31-54-47-104-50 23-28 24-58 12-96z"/>
+  </g>
+</svg>

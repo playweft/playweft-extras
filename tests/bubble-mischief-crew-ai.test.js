@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createGame, stepGame, blastCells, kickBall, random } from "../games/bubble-mischief-crew/game.js";
 import { botInput } from "../games/bubble-mischief-crew/bot.js";
 import { playerCell } from "../games/bubble-mischief-crew/movement.js";
+import { createBotPlanner } from "../games/bubble-mischief-crew/bot-planning.js";
 
 function playing() {
   const s = createGame({ humans: 4 });
@@ -12,6 +13,73 @@ function playing() {
 function foam(s, x, y, until = s.tick + 5) {
   s.blasts = [{ x, y, until, atFrame: s.tick * 5 - 1, id: 1 }];
 }
+function walls(s, cells) {
+  for (const [x, y] of cells) for (let copy = 0; copy < 2; copy++)
+    s.balls.push({ id: s.nextId++, x, y, kind: "normal", fuse: 10000 });
+}
+
+test("short lookahead avoids a corridor whose next turn will explode", () => {
+  const s = playing(), p = s.players[0];
+  Object.assign(p, { bot: true, x: 3, y: 4 });
+  walls(s, [[3, 3], [2, 4], [4, 5], [4, 2], [5, 5]]);
+  s.balls.push({ id: s.nextId++, x: 6, y: 3, kind: "normal", fuse: 108 });
+  botInput(s, p, blastCells, () => 0);
+  assert.equal(p.input, 1, "choose the lower escape route instead of the tempting right corridor");
+});
+
+test("a boxed-in bot deliberately kicks a single ball to open a safe exit using real physics", () => {
+  const s = playing(), p = s.players[0];
+  Object.assign(p, { bot: true, x: 4, y: 4 });
+  walls(s, [[3, 4], [4, 3], [4, 5]]);
+  const ball = { id: s.nextId++, x: 5, y: 4, kind: "normal", fuse: 104 };
+  s.balls.push(ball);
+  const before = structuredClone(s.balls);
+  botInput(s, p, blastCells, () => 0);
+  assert.equal(p.input, 0);
+  assert.deepEqual(s.balls, before, "planning must not move, kick or modify real balls");
+  stepGame(s, 20);
+  assert.ok(ball.flight, "held movement must actually kick the selected ball");
+  assert.equal(ball.x, 11, "use native goal fallback rather than an imaginary landing");
+  assert.ok(p.x > 4);
+  assert.ok(!blastCells(ball, s.balls).some(c => c.x === 4 && c.y === 4));
+});
+
+test("stacked balls remain solid and a bot will not clear its exit by newly endangering a teammate", () => {
+  for (const stacked of [true, false]) {
+    const s = playing(), p = s.players[0];
+    Object.assign(p, { bot: true, x: 4, y: 4 });
+    Object.assign(s.players[2], { x: 11, y: 5 });
+    walls(s, [[3, 4], [4, 3], [4, 5]]);
+    s.balls.push({ id: s.nextId++, x: 5, y: 4, kind: "normal", fuse: 104 });
+    if (stacked) s.balls.push({ id: s.nextId++, x: 5, y: 4, kind: "normal", fuse: 104 });
+    const before = structuredClone(s.balls);
+    botInput(s, p, blastCells, () => 0);
+    assert.equal(p.input, -1, stacked ? "stack cannot be kicked" : "landing threatens teammate");
+    assert.deepEqual(s.balls, before);
+  }
+});
+
+test("clearance planning rejects a ball that would explode before the bot could reach its kick probe", () => {
+  const s = playing(), p = s.players[0];
+  Object.assign(p, { bot: true, x: 3.6, y: 4 });
+  walls(s, [[3, 4], [4, 3], [4, 5]]);
+  s.balls.push({ id: s.nextId++, x: 5, y: 4, kind: "normal", fuse: 100.4, fuseFrame: 502 });
+  botInput(s, p, blastCells, () => 0);
+  assert.equal(p.input, -1, "do not plan an impossible last-moment kick");
+  assert.ok(s.balls.every(b => !b.flight));
+});
+
+test("forecast waits for natural flight landing but propagates earlier chain explosions", () => {
+  const s = playing(), p = s.players[0];
+  const ball = { id: 1, x: 6, y: 4, kind: "football", fuse: 99,
+    flight: { x: 1, y: 4, start: 500, end: 520 } };
+  s.balls = [ball];
+  const plan = () => createBotPlanner(s, p, s.balls, blastCells, new Set(), false).original;
+  assert.equal(plan().danger(6, 4, 100), false, "expired airborne fuse is deferred until landing");
+  assert.equal(plan().danger(6, 4, 104), true);
+  s.balls.push({ id: 2, x: 6, y: 5, kind: "normal", fuse: 101 });
+  assert.equal(plan().danger(6, 4, 101), true, "chain can detonate an airborne ball immediately");
+});
 
 function incoming(moving = false) {
   const s = playing(), p = s.players[0];
@@ -160,8 +228,8 @@ test("bot steering avoids even the final frames of visible foam, then uses the o
   Object.assign(p, { bot: true, x: 4, y: 4 });
   // The only open exit is right. Arrival-time-only checks incorrectly enter
   // this animation once less than 200 ms remain.
-  s.balls = [[3, 4], [4, 3], [4, 5]].map(([x, y], i) =>
-    ({ id: i + 1, x, y, kind: "normal", fuse: 10000 }));
+  // Stacks make these actual walls even with deliberate clearance kicks.
+  walls(s, [[3, 4], [4, 3], [4, 5]]);
   foam(s, 5, 4, s.tick + .6);
   botInput(s, p, blastCells, random);
   assert.equal(p.input, -1);

@@ -2,6 +2,7 @@ import { COLS, ROWS, inside } from "./arena.js";
 import { simulationFrame } from "./bomb-rules.js";
 import { playerCell, movePlayer, MOTION_STEP } from "./movement.js";
 import { playerSpeed } from "./item-rules.js";
+import { createBotPlanner } from "./bot-planning.js";
 
 const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
 const at = (objects, x, y) => objects.find(b => b.x === x && b.y === y);
@@ -61,24 +62,27 @@ export function botInput(s, p, blastCells, random) {
   // A newly understood landing can prompt steering on this motion step rather
   // than adding up to another 200 ms after the observation delay.
   if (noticed || ((s.substep || 0) === 0 && s.tick % 2 === 0)) {
-    const danger = (x, y, t) =>
-      s.blasts.some(b => b.x === x && b.y === y && b.until > t) ||
-      balls.some(b => b.fuse <= t + 3 && b.fuse + 5 >= t &&
-        blastCells(b, balls).some(c => c.x === x && c.y === y));
+    const planner = createBotPlanner(s, p, balls, blastCells, visible, leavingBlast);
     let best = -Infinity, direction = -1;
     for (const d of [-1, 0, 1, 2, 3]) {
       const x = cell.x + (d < 0 ? 0 : DX[d]), y = cell.y + (d < 0 ? 0 : DY[d]);
-      if (!inside(x, y) || at(balls, x, y)) continue;
+      if (!inside(x, y)) continue;
+      const blocker = at(balls, x, y);
+      const plan = blocker ? (d < 0 ? null : planner.kick(blocker, d)) : planner.original;
+      if (!plan) continue;
+      const danger = plan.danger;
       // Check visibility now, not at the future arrival estimate: the last
       // part of an explosion animation must not invite immediate re-entry.
       if (!leavingBlast && visible.has(key(x, y))) continue;
       let value = random(s, 20) / 20;
-      if (danger(x, y, s.tick + 2)) value -= 100;
-      if (danger(x, y, s.tick + 8)) value -= 25;
+      if (danger(x, y, now + 2)) value -= 100;
+      if (danger(x, y, now + 8)) value -= 25;
+      if (plan.nearby) value += plan.route(x, y);
+      value += plan.bonus || 0;
       let exits = 0;
       for (let a = 0; a < 4; a++)
-        if (inside(x + DX[a], y + DY[a]) && !at(balls, x + DX[a], y + DY[a]) &&
-          !danger(x + DX[a], y + DY[a], s.tick + 4)) exits++;
+        if (inside(x + DX[a], y + DY[a]) && !at(plan.balls, x + DX[a], y + DY[a]) &&
+          !danger(x + DX[a], y + DY[a], now + 4)) exits++;
       value += exits * 2;
       for (const target of s.players.filter(q => q.status === "bubble")) {
         const distance = Math.abs(x - target.x) + Math.abs(y - target.y);

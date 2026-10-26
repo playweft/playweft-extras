@@ -13,6 +13,5 @@
   "icons": [{ "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }],
   "background_color": "#faf6ef",
   "theme_color": "#936278",
-  "help_url": "./help.html",
-  "modes": { "solo": {} }
+  "help_url": "./help.html"
 }

@@ -41,12 +41,12 @@ test('Vite emits independent game package at /light-trails/ with resolvable asse
       await readFile(join(outDir, 'pupdoku/playweft.json'), 'utf8'),
     );
     assert.equal(solo.id, '/pupdoku/');
-    assert.deepEqual(solo.modes, { solo: {} });
+    assert.equal(Object.hasOwn(solo, 'modes'), false);
     const piece = JSON.parse(await readFile(join(outDir, 'fuzzy-match-3/playweft.json'), 'utf8'));
     assert.equal(piece.id, '/fuzzy-match-3/');
     assert.equal(piece.name, 'Fuzzy Match 3');
     assert.equal(piece.name_localized['zh-CN'], '绒绒消消乐');
-    assert.deepEqual(piece.modes, { solo: {} });
+    assert.equal(Object.hasOwn(piece, 'modes'), false);
     for (const family of ['Fredoka', 'ZCOOL-KuaiLe']) {
       const font = await readFile(join(outDir, 'fuzzy-match-3/fonts', family + '.woff2'));
       assert.equal(font.subarray(0, 4).toString(), 'wOF2');
@@ -187,7 +187,7 @@ test('Vite serves stable game URLs, raw Lua and cross-origin manifests during de
       headers: { Origin: 'https://play.longern.com' },
     });
     assert.equal(solo.headers.get('access-control-allow-origin'), '*');
-    assert.deepEqual((await solo.json()).modes, { solo: {} });
+    assert.equal(Object.hasOwn(await solo.json(), 'modes'), false);
     const lua = await fetch(base + '/light-trails/game.lua');
     assert.equal(
       await lua.text(),
@@ -226,7 +226,7 @@ test('BASE_PATH builds root or nested static sites and removes output from the p
       assert.equal(solo.id, base + 'pupdoku/');
       const piece = JSON.parse(await readFile(join(dir, 'fuzzy-match-3/playweft.json'), 'utf8'));
       assert.equal(piece.id, base + 'fuzzy-match-3/');
-      assert.deepEqual(piece.modes, { solo: {} });
+      assert.equal(Object.hasOwn(piece, 'modes'), false);
       const kick = JSON.parse(await readFile(join(dir, 'bubble-kick/playweft.json'), 'utf8'));
       assert.equal(kick.id, base + 'bubble-kick/');
       await access(join(dir, 'bubble-kick/game.lua'));

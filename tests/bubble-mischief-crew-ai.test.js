@@ -18,6 +18,59 @@ function walls(s, cells) {
     s.balls.push({ id: s.nextId++, x, y, kind: "normal", fuse: 10000 });
 }
 
+test("a stopping bot takes a small step away from cell edges without walking to the centre", () => {
+  const s = playing(), p = s.players[0];
+  Object.assign(p, { bot: true, x: 4.46, y: 4.46, input: -1 });
+  s.substep = 1;
+  botInput(s, p, blastCells, () => 0); // Select an adjustment for this stop.
+  for (let i = 0; i < 8; i++) {
+    stepGame(s, 20);
+    assert.deepEqual(playerCell(p), { x: 4, y: 4 });
+  }
+  assert.ok(p.x <= 4.4 && p.y <= 4.4, "leave a small boundary margin on both axes");
+  assert.ok(p.x > 4.25 && p.y > 4.25, "do not keep moving toward the centre");
+  assert.equal(p.input, -1);
+  assert.equal(p.moving, false, "release the adjustment direction once the margin is sufficient");
+});
+
+test("edge avoidance remains optional and does not retry a declined adjustment at the same stop", () => {
+  const s = playing(), p = s.players[0];
+  Object.assign(p, { bot: true, x: 4.46, y: 4.46, input: -1 });
+  s.substep = 1;
+  let rolls = 0;
+  const decline = (_state, n) => { rolls++; return n - 1; };
+  for (let i = 0; i < 20; i++) botInput(s, p, blastCells, decline);
+  assert.equal(p.input, -1);
+  assert.equal(p.x, 4.46); assert.equal(p.y, 4.46);
+  assert.equal(rolls, 1, "the same stop must not keep rerolling until it gets corrected");
+});
+
+test("interior stopping positions are left alone, and normal escape decisions override footing adjustments", () => {
+  const s = playing(), p = s.players[0];
+  Object.assign(p, { bot: true, x: 4.3, y: 4.15, input: -1 });
+  for (let i = 0; i < 8; i++) stepGame(s, 20);
+  assert.equal(p.x, 4.3); assert.equal(p.y, 4.15);
+  Object.assign(s, { tick: 101, substep: 4 });
+  Object.assign(p, { x: 4.49, botFooting: { round: 1, seed: 7, adjusting: true, clearance: .12 } });
+  const baseline = structuredClone(s);
+  delete baseline.players[0].botFooting;
+  stepGame(s, 20); stepGame(baseline, 20);
+  const q = baseline.players[0];
+  assert.deepEqual({ x: p.x, y: p.y, input: p.input }, { x: q.x, y: q.y, input: q.input });
+});
+
+test("footing adjustments yield to imminent known danger and forced banana sliding", () => {
+  const s = playing(), p = s.players[0];
+  Object.assign(p, { bot: true, x: 4.46, y: 4, input: -1 });
+  s.balls = [{ id: 1, x: 6, y: 4, kind: "football", fuse: 102 }];
+  stepGame(s, 20);
+  assert.equal(p.x, 4.46, "do not spend an extra positioning step in a known blast zone");
+  s.balls = [];
+  p.slideDir = 0;
+  stepGame(s, 20);
+  assert.ok(p.x > 4.5, "banana sliding must retain control of movement");
+});
+
 test("short lookahead avoids a corridor whose next turn will explode", () => {
   const s = playing(), p = s.players[0];
   Object.assign(p, { bot: true, x: 3, y: 4 });
@@ -217,8 +270,8 @@ test("fresh explosions interrupt held bot movement between steering decisions, a
       foam(s, 5, 4);
       stepGame(s, 20); // No scheduled 200 ms decision occurs on this frame.
       assert.notDeepEqual(playerCell(p), { x: 5, y: 4 });
-      assert.equal(p.x, x);
-      assert.equal(p.y, y);
+      assert.ok((p.x - x) * [1, 0, -1, 0][dir] + (p.y - y) * [0, 1, 0, -1][dir] <= 0,
+        "may ease away from the boundary, but must not continue toward fresh foam");
     }
   }
 });
@@ -246,7 +299,8 @@ test("the bot guard also prevents edge assistance from sliding into fresh foam",
   const balls = structuredClone(s.balls);
   stepGame(s, 20);
   assert.equal(p.x, 2.025);
-  assert.equal(p.y, 2.5);
+  assert.ok(p.y >= 2.5, "any footing adjustment must move away from the foam above");
+  assert.deepEqual(playerCell(p), { x: 2, y: 3 });
   assert.deepEqual(s.balls, balls, "the preview must not kick or mutate real balls");
 });
 

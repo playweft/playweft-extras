@@ -8,6 +8,55 @@ const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
 const at = (objects, x, y) => objects.find(b => b.x === x && b.y === y);
 const key = (x, y) => y * COLS + x;
 
+function adjustStoppedFooting(s, p, balls, blastCells, planner, visible, random) {
+  if (p.moving && p.botFooting) {
+    delete p.botFooting.skippedX;
+    delete p.botFooting.skippedY;
+  }
+  if (p.input >= 0 || (p.slideDir ?? -1) >= 0) {
+    if (p.botFooting) p.botFooting.adjusting = false;
+    return;
+  }
+  const cell = playerCell(p), dx = p.x - cell.x, dy = p.y - cell.y;
+  let footing = p.botFooting;
+  const clearance = .5 - Math.max(Math.abs(dx), Math.abs(dy));
+  // A dead band near the cell boundary, not a pull toward the centre.
+  if (!footing?.adjusting && clearance >= .08) return;
+  if (!footing || footing.round !== s.round) footing = p.botFooting = {
+    round: s.round, seed: (s.seed + (s.players.indexOf(p) + 1) * 104729) % 2147483646 + 1,
+    adjusting: false,
+  };
+  if (!footing.adjusting) {
+    // One mild preference per stop, not a correction retried until accepted.
+    if (footing.skippedX === p.x && footing.skippedY === p.y) return;
+    if (random(footing, 5) >= 3) {
+      footing.skippedX = p.x; footing.skippedY = p.y;
+      return;
+    }
+    footing.clearance = .10 + random(footing, 5) / 100;
+    footing.adjusting = true;
+  }
+  if (clearance >= footing.clearance) { footing.adjusting = false; return; }
+  const now = simulationFrame(s) / 5;
+  planner ??= createBotPlanner(s, p, balls, blastCells, visible, false);
+  if (visible.has(key(cell.x, cell.y)) || planner.original.prediction.unsafe(cell.x, cell.y, now, now + 2)) {
+    footing.adjusting = false; return;
+  }
+  const penalty = actor => Math.max(0, Math.abs(actor.x - cell.x) - .5 + footing.clearance) +
+    Math.max(0, Math.abs(actor.y - cell.y) - .5 + footing.clearance);
+  const directions = Math.abs(dx) >= Math.abs(dy)
+    ? [dx > 0 ? 2 : 0, dy > 0 ? 3 : 1] : [dy > 0 ? 3 : 1, dx > 0 ? 2 : 0];
+  for (const dir of directions) {
+    const probe = { ...p }, preview = { ...s, balls: balls.map(b => ({ ...b })) };
+    movePlayer(preview, probe, dir, MOTION_STEP, COLS, ROWS, playerSpeed(p, now));
+    const next = playerCell(probe);
+    if (next.x !== cell.x || next.y !== cell.y || penalty(probe) >= penalty(p) ||
+      preview.balls.some((b, i) => b.flight !== balls[i].flight)) continue;
+    p.input = dir;
+    return;
+  }
+}
+
 function perceiveKicks(s, p, random) {
   const frame = simulationFrame(s);
   // Keep perception RNG separate from roaming and wave placement. Save it on
@@ -52,17 +101,25 @@ function perceiveKicks(s, p, random) {
 }
 
 export function botInput(s, p, blastCells, random) {
-  if (p.status !== "alive") { p.input = -1; return; }
+  if (p.status !== "alive") {
+    p.input = -1;
+    if (p.botFooting) p.botFooting.adjusting = false;
+    return;
+  }
+  // A short footing adjustment is not a held roaming command.
+  if (p.botFooting?.adjusting) p.input = -1;
   const { balls, noticed } = perceiveKicks(s, p, random);
   const now = simulationFrame(s) / 5;
   const visible = new Set(s.blasts.filter(b => b.until > now).map(b => key(b.x, b.y)));
   const cell = playerCell(p), leavingBlast = visible.has(key(cell.x, cell.y));
+  let planner;
   // Original local steering: choose among neighbours every 200 ms, with random
   // variation, open exits and nearby rescue/contact opportunities.
   // A newly understood landing can prompt steering on this motion step rather
   // than adding up to another 200 ms after the observation delay.
   if (noticed || ((s.substep || 0) === 0 && s.tick % 2 === 0)) {
-    const planner = createBotPlanner(s, p, balls, blastCells, visible, leavingBlast);
+    if (p.botFooting) p.botFooting.adjusting = false;
+    planner = createBotPlanner(s, p, balls, blastCells, visible, leavingBlast);
     let best = -Infinity, direction = -1;
     for (const d of [-1, 0, 1, 2, 3]) {
       const x = cell.x + (d < 0 ? 0 : DX[d]), y = cell.y + (d < 0 ? 0 : DY[d]);
@@ -96,12 +153,15 @@ export function botInput(s, p, blastCells, random) {
   // An explosion can appear between steering decisions. Guard held movement on
   // every 20 ms step, including a perpendicular edge-assistance displacement.
   // Actors already in foam may leave; banana sliding remains forced by physics.
-  if (!visible.size || leavingBlast || p.input < 0 || (p.slideDir ?? -1) >= 0) return;
-  if (visible.has(key(cell.x + DX[p.input], cell.y + DY[p.input]))) {
-    p.input = -1; return;
+  if (visible.size && !leavingBlast && p.input >= 0 && (p.slideDir ?? -1) < 0) {
+    if (visible.has(key(cell.x + DX[p.input], cell.y + DY[p.input]))) p.input = -1;
+    else {
+      const probe = { ...p }, world = { ...s, balls: s.balls.map(b => ({ ...b })) };
+      movePlayer(world, probe, p.input, MOTION_STEP, COLS, ROWS, playerSpeed(p, now));
+      const next = playerCell(probe);
+      if (visible.has(key(next.x, next.y))) p.input = -1;
+    }
   }
-  const probe = { ...p }, world = { ...s, balls: s.balls.map(b => ({ ...b })) };
-  movePlayer(world, probe, p.input, MOTION_STEP, COLS, ROWS, playerSpeed(p, now));
-  const next = playerCell(probe);
-  if (visible.has(key(next.x, next.y))) p.input = -1;
+  // Reuse the same perceived hazards, including the incoming-kick delay.
+  adjustStoppedFooting(s, p, balls, blastCells, planner, visible, random);
 }

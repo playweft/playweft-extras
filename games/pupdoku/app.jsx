@@ -384,12 +384,6 @@ export function PupdokuApp({ controller }) {
   return (
     <main class="game" aria-label="小狗数独">
       <header class="topbar">
-        <a class="round-button" href="../" aria-label="返回游戏列表">
-          <Icon path="m20 6-10 10 10 10" />
-        </a>
-        <div class="level">
-          <h1 id="level">Level {level}</h1>
-        </div>
         <button
           id="restart"
           class="round-button"
@@ -400,6 +394,9 @@ export function PupdokuApp({ controller }) {
         >
           <Icon path="M8 11a11 11 0 1 1-1 12M4 5v9h9" />
         </button>
+        <div class="level">
+          <h1 id="level">Level {level}</h1>
+        </div>
       </header>
       <Status game={game} />
       <div class="rules" aria-label="规则">

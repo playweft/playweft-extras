@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { regionColors } from './colors.js';
 import { COMPLETION_TIMING, LEVEL_TRANSITION_TIMING } from './controller.js';
+import { attachPupdokuGamepad } from './gamepad.js';
 
 function Icon({ path, viewBox = '0 0 32 32' }) {
   return (
@@ -58,6 +59,7 @@ function Cross({ value }) {
 }
 
 function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
+  const [gamepadFocus, setGamepadFocus] = useState(false);
   const { game, busy, preview, selected, highlight } = state;
   const boardRef = useRef(null),
     cells = useRef([]),
@@ -90,6 +92,23 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
     animation.finished.catch(() => {});
     animations.current.set(cell, animation);
   }
+  useLayoutEffect(
+    () =>
+      attachPupdokuGamepad({
+        controller,
+        focusCell: (index) =>
+          cells.current[index]?.focus({ preventScroll: true }),
+        onActive: () => {
+          setKeyboardFocus(true);
+          setGamepadFocus(true);
+        },
+        onInactive: () => {
+          setKeyboardFocus(false);
+          setGamepadFocus(false);
+        },
+      }),
+    [controller],
+  );
   useLayoutEffect(() => {
     const stopFeedback = controller.setFeedback((indices) =>
       indices.forEach(animateCell),
@@ -202,7 +221,7 @@ function Board({ state, controller, keyboardFocus, setKeyboardFocus }) {
     <div
       id="board"
       ref={boardRef}
-      class={`board${keyboardFocus ? ' keyboard-focus' : ''}${celebrating ? ' celebrate' : ''}`}
+      class={`board${keyboardFocus ? ' keyboard-focus' : ''}${gamepadFocus ? ' gamepad-focus' : ''}${celebrating ? ' celebrate' : ''}`}
       role="group"
       aria-label={`${size} 行 ${size} 列棋盘，单击或滑动标记，双击放小狗`}
       style={{

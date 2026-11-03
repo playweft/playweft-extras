@@ -533,6 +533,74 @@ test('Preact preserves cell nodes across edits and shows keyboard focus only dur
   assert.equal(ui.el('board').classList.contains('keyboard-focus'), false);
 });
 
+test('gamepad polling focuses actual Preact cells, paints a stroke and relinquishes the cursor to pointer input', async () => {
+  const frames = new Map();
+  let nextFrame = 0,
+    now = 0;
+  const pad = {
+    id: 'DualSense',
+    index: 0,
+    connected: true,
+    mapping: 'standard',
+    axes: [0, 0],
+    buttons: Array.from({ length: 17 }, () => ({ pressed: false })),
+  };
+  const overrides = [
+    [window.navigator, 'getGamepads', () => [pad]],
+    [
+      window,
+      'requestAnimationFrame',
+      (callback) => {
+        const id = ++nextFrame;
+        frames.set(id, callback);
+        return id;
+      },
+    ],
+    [window, 'cancelAnimationFrame', (id) => frames.delete(id)],
+    [document, 'hasFocus', () => true],
+  ].map(([object, key, value]) => {
+    const descriptor = Object.getOwnPropertyDescriptor(object, key);
+    Object.defineProperty(object, key, { configurable: true, value });
+    return () =>
+      descriptor
+        ? Object.defineProperty(object, key, descriptor)
+        : delete object[key];
+  });
+  try {
+    const board = puzzle.generatePuzzle(8, 31);
+    const ui = await mount(
+      JSON.stringify({ level: 1, game: puzzle.createGame(board) }),
+    );
+    const tick = () =>
+      act(() => {
+        now += 16;
+        const pending = [...frames.values()];
+        frames.clear();
+        pending.forEach((callback) => callback(now));
+      });
+    tick();
+    pad.buttons[15].pressed = true;
+    tick();
+    assert.equal(document.activeElement, ui.el('board').children[1]);
+    assert.equal(ui.el('board').classList.contains('gamepad-focus'), true);
+    pad.buttons[15].pressed = false;
+    pad.buttons[2].pressed = true;
+    tick();
+    pad.buttons[13].pressed = true;
+    tick();
+    assert.equal(document.activeElement, ui.el('board').children[9]);
+    assert.equal(ui.state().game.cells[1], 1);
+    assert.equal(ui.state().game.cells[9], 1);
+    assert.equal(ui.state().game.history.length, 1);
+    ui.tap(3);
+    assert.equal(ui.el('board').classList.contains('gamepad-focus'), false);
+    assert.equal(ui.el('board').classList.contains('keyboard-focus'), false);
+    act(() => render(null, ui.el('board').closest('.game').parentElement));
+  } finally {
+    overrides.reverse().forEach((restore) => restore());
+  }
+});
+
 test('holding X paints repeated arrows and turns as one reversible stroke without changing pups or red notes', async () => {
   const board = puzzle.generateLevel(7),
     game = puzzle.createGame(board);

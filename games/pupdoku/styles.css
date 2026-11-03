@@ -266,7 +266,8 @@ h1 {
   outline: none;
 }
 
-.board.keyboard-focus .cell:focus-visible {
+.board.keyboard-focus .cell:focus-visible,
+.board.gamepad-focus .cell[tabindex='0'] {
   outline: 3px solid #81516c;
   outline-offset: -3px;
   z-index: 1;

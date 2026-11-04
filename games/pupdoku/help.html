@@ -4,27 +4,381 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#faf2e9" />
-    <title>Pupdoku rules</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <meta
+      name="description"
+      content="Learn Pupdoku with illustrated rules and controls for touch, mouse, keyboard and gamepad."
+    />
+    <title>How to play · Pupdoku</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./help.css" />
+    <script type="module" src="./help.js"></script>
   </head>
   <body>
-    <main class="game" aria-label="Pupdoku rules">
-      <header class="topbar">
-        <a class="round-button" href="./" aria-label="Back to the board">
-          <svg viewBox="0 0 32 32" aria-hidden="true">
-            <path d="m20 6-10 10 10 10" />
-          </svg>
-        </a>
+    <svg
+      class="icon-definitions"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <symbol id="back-icon" viewBox="0 0 32 32">
+          <path d="m20 6-10 10 10 10" />
+        </symbol>
+        <symbol id="undo-icon" viewBox="0 0 32 32">
+          <path d="m12 6-8 8 8 8M4 14h15a7 7 0 0 1 0 14h-7" />
+        </symbol>
+        <symbol id="hint-icon" viewBox="0 0 32 32">
+          <path
+            d="M11 24c0-5-4-5-4-11a9 9 0 0 1 18 0c0 6-4 6-4 11Zm1 5h8M16 0v1M3 4l2 2m22-2-2 2M0 13h2m28 0h2M3 23l2-2m22 2-2-2"
+          />
+        </symbol>
+        <symbol id="heart-icon" viewBox="0 0 32 32">
+          <path d="M16 29 4 17C-4 9 6-3 16 7 26-3 36 9 28 17Z" />
+        </symbol>
+        <symbol id="crown-icon" viewBox="0 0 32 32">
+          <path d="m3 7 8 7 5-10 5 10 8-7-3 20H6Z" />
+          <path d="M7 23h18" />
+        </symbol>
+        <symbol id="hand-icon" viewBox="0 0 40 40">
+          <path
+            d="M16 22V9a3 3 0 0 1 6 0v10-3a3 3 0 0 1 6 0v3-1a3 3 0 0 1 6 0v5c0 10-5 15-11 15-4 0-7-2-10-6L7 23a3 3 0 0 1 5-3l4 5"
+          />
+        </symbol>
+      </defs>
+    </svg>
+    <main class="help-page">
+      <header class="help-header">
+        <a class="back-button" href="./" aria-label="Back to Pupdoku"
+          ><svg class="icon" viewBox="0 0 32 32" aria-hidden="true">
+            <use href="#back-icon" /></svg
+        ></a>
+        <h1>How to play</h1>
+        <span class="header-pup" aria-hidden="true">🐶</span>
+        <p>Find a home for every pup.</p>
       </header>
-      <div class="rules">
-        <div>1 Pup per color</div>
-        <div>
-          1 Pup per column
-          <br />
-          and row
+      <section class="help-section" aria-labelledby="rules-heading">
+        <h2 id="rules-heading">Three simple rules</h2>
+        <div class="rule-cards">
+          <article class="rule-card">
+            <img
+              class="rule-diagram"
+              src="./help/rows-columns.svg"
+              width="156"
+              height="156"
+              alt="A pup excludes every other cell in its row and column."
+            />
+            <div>
+              <h3>Rows &amp; columns</h3>
+              <p>One pup in every row and column.</p>
+            </div>
+          </article>
+          <article class="rule-card">
+            <img
+              class="rule-diagram"
+              src="./help/colored-regions.svg"
+              width="156"
+              height="156"
+              alt="A pup excludes every other cell in its purple region."
+            />
+            <div>
+              <h3>Colored regions</h3>
+              <p>One pup in every colored region.</p>
+            </div>
+          </article>
+          <article class="rule-card">
+            <img
+              class="rule-diagram"
+              src="./help/no-touching.svg"
+              width="156"
+              height="156"
+              alt="A pup excludes all eight neighboring cells, including diagonals."
+            />
+            <div>
+              <h3>No touching</h3>
+              <p>Keep pups apart, even diagonally.</p>
+            </div>
+          </article>
         </div>
-        <div>Pups cannot touch</div>
-      </div>
+      </section>
+      <section
+        class="help-section controls-section"
+        aria-labelledby="controls-heading"
+        data-control-tabs
+      >
+        <h2 id="controls-heading">Controls</h2>
+        <div
+          class="control-tabs"
+          role="tablist"
+          aria-label="Input method"
+          hidden
+        >
+          <button
+            id="tab-touch"
+            type="button"
+            role="tab"
+            aria-controls="panel-touch"
+            aria-selected="true"
+          >
+            Touch &amp; mouse
+          </button>
+          <button
+            id="tab-keyboard"
+            type="button"
+            role="tab"
+            aria-controls="panel-keyboard"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Keyboard
+          </button>
+          <button
+            id="tab-gamepad"
+            type="button"
+            role="tab"
+            aria-controls="panel-gamepad"
+            aria-selected="false"
+            tabindex="-1"
+          >
+            Gamepad
+          </button>
+        </div>
+        <div
+          id="panel-touch"
+          class="controls-panel"
+          role="tabpanel"
+          aria-labelledby="tab-touch"
+          tabindex="0"
+        >
+          <h3 class="panel-heading">Touch &amp; mouse</h3>
+          <div class="touch-controls">
+            <div class="touch-row">
+              <svg class="gesture" viewBox="0 0 64 56" aria-hidden="true">
+                <use href="#hand-icon" x="12" y="14" width="40" height="40" />
+                <g class="gesture-accent">
+                  <path d="M31 2v4M20 7l3 3M42 7l-3 3M16 17h4m22 0h4" />
+                </g>
+              </svg>
+              <div>
+                <h3>Tap or click</h3>
+                <p>Toggle an × mark.</p>
+              </div>
+            </div>
+            <div class="touch-row">
+              <svg class="gesture" viewBox="0 0 64 56" aria-hidden="true">
+                <g class="gesture-accent">
+                  <path d="M19 19a12 12 0 1 1 24 0M14 19a17 17 0 1 1 34 0" />
+                </g>
+                <use href="#hand-icon" x="12" y="14" width="40" height="40" />
+              </svg>
+              <div>
+                <h3>Double-tap or click twice</h3>
+                <p>Place a pup.</p>
+              </div>
+            </div>
+            <div class="touch-row">
+              <svg class="gesture" viewBox="0 0 64 56" aria-hidden="true">
+                <use href="#hand-icon" x="3" y="14" width="40" height="40" />
+                <path class="gesture-accent" d="M31 10h27m-6-6 6 6-6 6" />
+              </svg>
+              <div>
+                <h3>Drag</h3>
+                <p>Paint or erase marks in one stroke.</p>
+              </div>
+            </div>
+          </div>
+          <p class="control-note">
+            Start on an empty cell to paint, or an × to erase. A whole stroke
+            counts as one Undo action.
+          </p>
+        </div>
+        <div
+          id="panel-keyboard"
+          class="controls-panel"
+          role="tabpanel"
+          aria-labelledby="tab-keyboard"
+          tabindex="0"
+        >
+          <h3 class="panel-heading">Keyboard</h3>
+          <div class="device-controls">
+            <div class="keyboard-visual" aria-hidden="true">
+              <div class="arrow-keys">
+                <span>↑</span><span>←</span><span>↓</span><span>→</span>
+              </div>
+              <div class="letter-keys"><span>X</span><span>D</span></div>
+              <p>Move, mark, place.</p>
+            </div>
+            <dl class="control-list">
+              <div class="control-row">
+                <dt>
+                  <kbd class="">↑</kbd> <kbd class="">↓</kbd>
+                  <kbd class="">←</kbd> <kbd class="">→</kbd>
+                </dt>
+                <dd>Move between cells</dd>
+              </div>
+              <div class="control-row">
+                <dt>
+                  <kbd class="">Enter</kbd> <span class="or">/</span>
+                  <kbd class="">Space</kbd>
+                </dt>
+                <dd>Toggle an × mark</dd>
+              </div>
+              <div class="control-row">
+                <dt><kbd class="">X</kbd></dt>
+                <dd>
+                  Mark or erase<small
+                    >Hold X and use the arrows for one continuous stroke.</small
+                  >
+                </dd>
+              </div>
+              <div class="control-row">
+                <dt><kbd class="">D</kbd></dt>
+                <dd>Place a pup</dd>
+              </div>
+              <div class="control-row">
+                <dt>
+                  <kbd class="">Delete</kbd> <span class="or">/</span>
+                  <kbd class="">Backspace</kbd>
+                </dt>
+                <dd>
+                  Clear a mark<small
+                    >Placed pups can only be removed with Undo.</small
+                  >
+                </dd>
+              </div>
+            </dl>
+          </div>
+          <p class="control-note">
+            Release X to finish a stroke. Revisited cells are not toggled again,
+            and placed pups are skipped.
+          </p>
+        </div>
+        <div
+          id="panel-gamepad"
+          class="controls-panel"
+          role="tabpanel"
+          aria-labelledby="tab-gamepad"
+          tabindex="0"
+        >
+          <h3 class="panel-heading">Gamepad</h3>
+          <div class="device-controls">
+            <figure class="controller-visual">
+              <img
+                class="controller"
+                src="./help/dualsense.svg"
+                width="1464"
+                height="957"
+                alt="DualSense controller, with Create to the left of the touchpad."
+              />
+              <figcaption>PlayStation / Xbox equivalents</figcaption>
+            </figure>
+            <dl class="control-list gamepad-controls">
+              <div class="control-row">
+                <dt>D-pad / left stick</dt>
+                <dd>Move between cells</dd>
+              </div>
+              <div class="control-row">
+                <dt>
+                  <kbd class="face-key">×</kbd> <span class="or">/</span>
+                  <kbd class="">A</kbd>
+                </dt>
+                <dd>Place a pup</dd>
+              </div>
+              <div class="control-row">
+                <dt>
+                  <kbd class="face-key">□</kbd> <span class="or">/</span>
+                  <kbd class="">X</kbd>
+                </dt>
+                <dd>
+                  Mark or erase<small
+                    >Hold and move for one continuous stroke.</small
+                  >
+                </dd>
+              </div>
+              <div class="control-row">
+                <dt>
+                  <kbd class="face-key">○</kbd> <span class="or">/</span>
+                  <kbd class="">B</kbd>
+                </dt>
+                <dd>Clear a mark</dd>
+              </div>
+              <div class="control-row">
+                <dt>
+                  <kbd class="">L1</kbd> <span class="or">/</span>
+                  <kbd class="">LB</kbd>
+                </dt>
+                <dd>Undo</dd>
+              </div>
+              <div class="control-row">
+                <dt>
+                  <kbd class="">R1</kbd> <span class="or">/</span>
+                  <kbd class="">RB</kbd>
+                </dt>
+                <dd>Hint</dd>
+              </div>
+              <div class="control-row">
+                <dt>
+                  <kbd class="">Create</kbd> <span class="or">/</span>
+                  <kbd class="">Back</kbd>
+                </dt>
+                <dd>Restart on release</dd>
+              </div>
+            </dl>
+          </div>
+          <p class="control-note">
+            Focus the game first. Your first confirm reveals the cursor; press
+            again to place a pup. Create is the small button to the left of the
+            touchpad.
+          </p>
+          <p class="platform-note">
+            Create + Options and Guide / PS are reserved for the platform menu.
+          </p>
+        </div>
+      </section>
+      <section class="help-section" aria-labelledby="notes-heading">
+        <h2 id="notes-heading">Good to know</h2>
+        <div class="good-to-know">
+          <div class="good-note">
+            <svg class="icon heart" viewBox="0 0 32 32" aria-hidden="true">
+              <use href="#heart-icon" />
+            </svg>
+            <div>
+              <h3>Three lives</h3>
+              <p>A wrong pup costs one life. Marks don’t cost lives.</p>
+            </div>
+          </div>
+          <div class="good-note">
+            <svg class="icon" viewBox="0 0 32 32" aria-hidden="true">
+              <use href="#undo-icon" />
+            </svg>
+            <div>
+              <h3>Undo</h3>
+              <p>Undo does not restore lives. Use it to remove placed pups.</p>
+            </div>
+          </div>
+          <div class="good-note">
+            <svg class="icon hint" viewBox="0 0 32 32" aria-hidden="true">
+              <use href="#hint-icon" />
+            </svg>
+            <div>
+              <h3>Hints</h3>
+              <p>Reveal one logical step at a time.</p>
+            </div>
+          </div>
+        </div>
+        <p class="restart-note">
+          Out of lives? Restart the same puzzle to try again. Solve it to
+          automatically play the next one.
+        </p>
+      </section>
+      <footer class="crown-note">
+        <svg class="icon crown" viewBox="0 0 32 32" aria-hidden="true">
+          <use href="#crown-icon" />
+        </svg>
+        <p>
+          Solve without mistakes, marks or hints to earn a crown.<small
+            >Undo and restarting do not restore crown eligibility.</small
+          >
+        </p>
+      </footer>
     </main>
   </body>
 </html>

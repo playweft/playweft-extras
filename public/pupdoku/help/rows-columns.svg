@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 156 156">
+<title>A pup excludes every other cell in its row and column.</title>
+<rect x="0" y="0" width="36" height="36" rx="3" fill="#58a60d"/>
+<rect x="40" y="0" width="36" height="36" rx="3" fill="#58a60d"/>
+<rect x="80" y="0" width="36" height="36" rx="3" fill="#58a60d"/>
+<rect x="120" y="0" width="36" height="36" rx="3" fill="#58a60d"/>
+<rect x="0" y="40" width="36" height="36" rx="3" fill="#2e8efd"/>
+<rect x="40" y="40" width="36" height="36" rx="3" fill="#2e8efd"/>
+<rect x="80" y="40" width="36" height="36" rx="3" fill="#2e8efd"/>
+<rect x="120" y="40" width="36" height="36" rx="3" fill="#2e8efd"/>
+<rect x="0" y="80" width="36" height="36" rx="3" fill="#a665fd"/>
+<rect x="40" y="80" width="36" height="36" rx="3" fill="#a665fd"/>
+<rect x="80" y="80" width="36" height="36" rx="3" fill="#a665fd"/>
+<rect x="120" y="80" width="36" height="36" rx="3" fill="#a665fd"/>
+<rect x="0" y="120" width="36" height="36" rx="3" fill="#dd5b8b"/>
+<rect x="40" y="120" width="36" height="36" rx="3" fill="#dd5b8b"/>
+<rect x="80" y="120" width="36" height="36" rx="3" fill="#dd5b8b"/>
+<rect x="120" y="120" width="36" height="36" rx="3" fill="#dd5b8b"/>
+<g fill="none" stroke="#fffdf6" stroke-width="5" stroke-linecap="round">
+<path d="m50 10 16 16m0-16-16 16"/>
+<path d="m10 50 16 16m0-16-16 16"/>
+<path d="m90 50 16 16m0-16-16 16"/>
+<path d="m130 50 16 16m0-16-16 16"/>
+<path d="m50 90 16 16m0-16-16 16"/>
+<path d="m50 130 16 16m0-16-16 16"/>
+</g>
+<text x="58" y="69" text-anchor="middle" font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif" font-size="29">🐶</text>
+</svg>

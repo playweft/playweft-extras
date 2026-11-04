@@ -5,7 +5,8 @@ import vm from "node:vm";
 import { Window } from "happy-dom";
 import * as rules from "../games/bubble-mischief-crew/game.js";
 import { createTouchControls } from "../games/bubble-mischief-crew/touch-controls.js";
-async function mount({ deferred = false, stateFactory = rules.createGame, floating = false } = {}) {
+import { BubbleGamepadInput } from "../games/bubble-mischief-crew/gamepad.js";
+async function mount({ deferred = false, stateFactory = rules.createGame, floating = false, pads = null, playerId = "local-0" } = {}) {
   const window = new Window(),
     document = window.document;
   document.write(
@@ -42,8 +43,13 @@ async function mount({ deferred = false, stateFactory = rules.createGame, floati
     now = 1000;
   const actions = [],
     replies = [];
+  let focused = true;
+  if (pads) {
+    window.navigator.getGamepads = () => pads;
+    document.hasFocus = () => focused;
+  }
   class Bridge extends EventTarget {
-    context = { playerId: "local-0" };
+    context = { playerId };
     constructor() {
       super();
       bridge = this;
@@ -59,6 +65,7 @@ async function mount({ deferred = false, stateFactory = rules.createGame, floati
     ...rules,
     createGame: stateFactory,
     createTouchControls,
+    BubbleGamepadInput,
     render(_ctx, state, _now, options) {
       rendered = structuredClone(state);
       renderedPoses = new Map(options.positions);
@@ -109,10 +116,145 @@ async function mount({ deferred = false, stateFactory = rules.createGame, floati
       frame(now);
     },
     dispatch,
+    focus(value) {
+      focused = value;
+      window.dispatchEvent(new window.Event(value ? "focus" : "blur"));
+    },
     close: () => window.happyDOM.close(),
   };
 }
 const flush = () => new Promise((r) => setImmediate(r));
+function controller(index = 0) {
+  return { index, id: `Controller ${index}`, connected: true, mapping: "standard", axes: [0, 0, 0, 0],
+    buttons: Array.from({ length: 17 }, () => ({ pressed: false })) };
+}
+
+test("gamepad starts, moves while using items, pauses and resumes without replaying held buttons", async () => {
+  const p = controller(), pads = [p];
+  const stateFactory = options => {
+    const s = rules.createGame(options);
+    s.players[0].inventory = [{ kind: "glue", count: 3 }, { kind: "banana", count: 2 }];
+    return s;
+  };
+  const ui = await mount({ pads, stateFactory });
+  try {
+    const $ = id => ui.document.getElementById(id);
+    ui.frame();
+    assert.equal($("gamepad-status").textContent, "手柄：1P");
+    p.buttons[0].pressed = true; ui.frame();
+    assert.equal($("overlay").hidden, true);
+    for (let i = 0; i < 160; i++) ui.frame(20);
+    assert.equal(ui.state.players[0].inventory[0].count, 3, "held confirm must not place glue after the countdown");
+    p.buttons[0].pressed = false; ui.frame(20);
+    const before = ui.state.players[0].x;
+    p.axes[0] = 1; p.buttons[2].pressed = true; ui.frame(20);
+    assert.ok(ui.state.players[0].x > before);
+    assert.equal(ui.state.players[0].inventory[1].count, 1);
+    ui.frame(20);
+    assert.equal(ui.state.players[0].inventory[1].count, 1, "held item buttons must not repeat");
+    p.buttons[9].pressed = true; ui.frame(20);
+    assert.equal($("overlay").hidden, false);
+    const frozen = ui.state.players[0].x;
+    p.buttons[9].pressed = false; p.buttons[0].pressed = false; p.axes[0] = 0; ui.frame(20);
+    p.buttons[0].pressed = true; ui.frame(20);
+    assert.equal($("overlay").hidden, true);
+    assert.equal(ui.state.players[0].x, frozen);
+    assert.equal(ui.state.players[0].inventory[0].count, 3);
+    p.buttons[0].pressed = false; ui.frame(20);
+    p.axes[0] = -1; ui.frame(20);
+    pads.splice(0); ui.frame(20);
+    assert.equal($("overlay").hidden, false, "disconnecting a used controller pauses local play");
+  } finally { await ui.close(); }
+});
+
+test("two gamepads independently control local players; one gamepad also works alongside player-two keyboard controls", async () => {
+  const a = controller(), b = controller(1), pads = [a, b];
+  const stateFactory = options => {
+    const s = rules.createGame(options);
+    s.players.forEach(p => p.inventory = [{ kind: "glue", count: 3 }, { kind: "banana", count: 2 }]);
+    return s;
+  };
+  const ui = await mount({ pads, stateFactory });
+  try {
+    ui.frame(); a.buttons[5].pressed = true; ui.frame();
+    assert.equal(ui.document.querySelector('[data-mode="local"]').classList.contains("selected"), true);
+    a.buttons[5].pressed = false; ui.frame();
+    ui.document.getElementById("start").click();
+    for (let i = 0; i < 160; i++) ui.frame(20);
+    const before = ui.state.players.map(p => p.x);
+    a.axes[0] = 1; b.axes[0] = -1;
+    a.buttons[0].pressed = true; b.buttons[2].pressed = true;
+    ui.frame(20);
+    assert.ok(ui.state.players[0].x > before[0]);
+    assert.ok(ui.state.players[1].x < before[1]);
+    assert.equal(ui.state.players[0].inventory[0].count, 2);
+    assert.equal(ui.state.players[1].inventory[1].count, 1);
+    assert.equal(ui.state.players[0].inventory[1].count, 2);
+    assert.equal(ui.state.players[1].inventory[0].count, 3);
+    assert.match(ui.document.getElementById("gamepad-status").textContent, /1P \/ 2P/);
+    // An unused reconnect is baselined, and a keyboard can take over either seat.
+    ui.focus(false); b.connected = false; ui.frame();
+    ui.focus(true); a.axes[0] = 0; a.buttons[0].pressed = false; ui.frame();
+    ui.document.getElementById("start").click(); ui.frame();
+    ui.window.dispatchEvent(new ui.window.KeyboardEvent("keydown", { key: "ArrowLeft" }));
+    a.axes[0] = 1; ui.frame(20);
+    assert.equal(ui.state.players[0].input, 0);
+    assert.equal(ui.state.players[1].input, 2);
+  } finally { await ui.close(); }
+});
+
+test("room gamepad controls only its own seat, releases on focus loss, and never controls a spectator", async () => {
+  const a = controller(), extra = controller(1), pads = [a, extra];
+  const ui = await mount({ pads, playerId: "local-2" });
+  try {
+    ui.dispatch("initialize", { mode: "room" });
+    const state = rules.createGame({ humans: 4 }); state.phase = "playing";
+    state.players[2].inventory = [{ kind: "glue", count: 3 }];
+    ui.dispatch("state", { state, serverTime: Date.now() }); ui.frame();
+    a.axes[0] = 1; a.buttons[0].pressed = true;
+    extra.buttons[3].pressed = true; ui.frame(); ui.pulse(); await flush();
+    assert.equal(ui.actions.at(-1).dir, 0);
+    assert.equal(ui.actions.at(-1).itemSlot, 1);
+    assert.equal(ui.actions.at(-1).itemSeq, 1);
+    ui.focus(false); ui.frame(); await flush(); ui.pulse(); await flush();
+    assert.equal(ui.actions.at(-1).dir, -1);
+    ui.focus(true); ui.frame(); ui.pulse(); await flush();
+    assert.equal(ui.actions.at(-1).dir, -1, "held stick must be centred after focus returns");
+    a.axes[0] = 0; a.buttons[0].pressed = false; ui.frame();
+    a.axes[0] = 1; ui.frame(); ui.pulse(); await flush();
+    assert.equal(ui.actions.at(-1).dir, 0);
+    pads.splice(0); ui.frame(); ui.pulse(); await flush();
+    assert.equal(ui.actions.at(-1).dir, -1);
+    a.axes[0] = 0; a.buttons[0].pressed = false; pads.push(a);
+    state.phase = "ended"; state.winner = 0;
+    ui.dispatch("state", { state, serverTime: Date.now() }); ui.frame();
+    a.buttons[0].pressed = true; ui.frame(); ui.pulse(); await flush();
+    assert.equal(ui.actions.at(-1).type, "rematch");
+  } finally { await ui.close(); }
+  const viewer = await mount({ pads: [a], playerId: "watch" });
+  try {
+    enterRoom(viewer);
+    a.buttons[0].pressed = a.buttons[9].pressed = true; a.axes[0] = 1;
+    viewer.frame(); viewer.pulse(); await flush();
+    assert.deepEqual(viewer.actions, []);
+    assert.equal(viewer.document.getElementById("gamepad-status").hidden, true);
+  } finally { await viewer.close(); }
+});
+
+test("a denied Gamepad API leaves keyboard play available", async () => {
+  const ui = await mount({ pads: [] });
+  try {
+    ui.window.navigator.getGamepads = () => { throw new ui.window.DOMException("Blocked", "SecurityError"); };
+    ui.frame(); ui.document.getElementById("start").click();
+    for (let i = 0; i < 160; i++) ui.frame(20);
+    ui.window.dispatchEvent(new ui.window.KeyboardEvent("keydown", { key: "d" }));
+    const x = ui.state.players[0].x;
+    ui.frame(20);
+    assert.ok(ui.state.players[0].x > x);
+    assert.equal(ui.document.getElementById("gamepad-status").hidden, true);
+  } finally { await ui.close(); }
+});
+
 test("local screen starts, pauses, resumes and switches to independent two-player controls", async () => {
   const ui = await mount();
   try {

@@ -1,6 +1,7 @@
 import { createGame, input, stepGame, useItem, ITEM_LABELS, STEP, LIMIT, COLS } from "./game.js";
 import { render, drawPlayer } from "./render.js";
 import { createTouchControls } from "./touch-controls.js";
+import { BubbleGamepadInput } from "./gamepad.js";
 import { PlayweftBridge } from "../../src/playweft-client.js";
 const $ = (id) => document.getElementById(id),
   canvas = $("pitch"),
@@ -36,6 +37,12 @@ let mode = "solo",
   roomLost = false;
 let touchInput = { dir: -1 };
 let pendingItems = [], itemSequence = 0;
+const gamepads = new BubbleGamepadInput();
+let gamepadState = { players: [] };
+function resetGamepads() {
+  gamepads.reset();
+  gamepadState = { players: [] };
+}
 const touchControls = createTouchControls({
   joystick: $("joystick"),
   onChange: (value) => {
@@ -127,6 +134,7 @@ function overlay(title, description, button, note = "") {
 function start() {
   if (portraitBlocked) return;
   if (room) {
+    if (own < 0) return;
     if (s.phase === "ended") {
       rematchRequested = true;
       toast("等待其他玩家准备");
@@ -134,6 +142,7 @@ function start() {
     return;
   }
   if (paused) {
+    resetGamepads();
     paused = false;
     $("pause").textContent = "Ⅱ 暂停";
     $("overlay").hidden = true;
@@ -149,6 +158,7 @@ function start() {
   s.scores = scores;
   s.round = round;
   active = true;
+  resetGamepads();
   wasEnded = false;
   lastBlast = 0;
   lastStatus = "";
@@ -174,6 +184,7 @@ $("sound").addEventListener("click", () => {
 function pause() {
   if (room || !active || s.phase === "ended") return;
   paused = !paused;
+  resetGamepads();
   keys.clear();
   if (paused) overlay("暂停", "", "继续游戏");
   else {
@@ -187,6 +198,7 @@ for (const b of document.querySelectorAll("[data-mode]"))
   b.addEventListener("click", () => {
     if (room) return;
     mode = b.dataset.mode;
+    resetGamepads();
     active = false;
     paused = false;
     s = createGame({ humans: mode === "local" ? 2 : 1 });
@@ -231,6 +243,8 @@ function controls(index) {
       dir = d;
       newest = keys.get(k);
     }
+  const pad = gamepadState.players[index];
+  if (pad?.dir >= 0 && pad.changedAt >= newest) dir = pad.dir;
   if (index === 0 && touchInput.dir >= 0) dir = touchInput.dir;
   return { dir };
 }
@@ -292,6 +306,7 @@ window.addEventListener("keyup", (e) =>
   keys.delete(e.key.length === 1 ? e.key.toLowerCase() : e.key),
 );
 function release() {
+  resetGamepads();
   keys.clear();
   pendingItems = [];
   touchControls.reset();
@@ -330,6 +345,7 @@ async function send(action) {
 bridge.addEventListener("initialize", ({ detail }) => {
   if (detail.mode !== "room") return;
   room = true;
+  resetGamepads();
   active = true;
   own = -1;
   $("modes").hidden = true;
@@ -343,6 +359,7 @@ bridge.addEventListener("state", ({ detail }) => {
   const next = detail.state;
   if (!next?.players) return;
   if (next.round !== s.round) {
+    resetGamepads();
     positions.clear();
     roomPoses = [];
     keys.clear();
@@ -550,8 +567,55 @@ function updateHUD() {
   }
 }
 let hudAt = 0;
+function pollGamepads(now) {
+  if (!window.navigator.getGamepads || document.hidden || !document.hasFocus() ||
+    portraitBlocked || (room && own < 0)) {
+    resetGamepads();
+    $("gamepad-status").hidden = true;
+    return;
+  }
+  try {
+    gamepadState = gamepads.poll(window.navigator.getGamepads(), now, !room && mode === "local" ? 2 : 1);
+  } catch {
+    resetGamepads();
+    $("gamepad-status").hidden = true;
+    return;
+  }
+  const assigned = gamepadState.players.flatMap((p, i) => p.connected ? [`${i + 1}P`] : []);
+  $("gamepad-status").hidden = !assigned.length;
+  $("gamepad-status").textContent = assigned.length ? `手柄：${assigned.join(" / ")}` : "";
+  $("gamepad-status").title = "左摇杆或十字键移动；A/× 慢慢胶，X/□ 香蕉皮，Y/△ 自救；Menu/Options 本地暂停";
+  if (gamepadState.disconnected.length && !room && active && !paused && s.phase !== "ended") {
+    pause();
+    toast("手柄已断开，可用键盘继续");
+    return;
+  }
+  for (const action of gamepadState.actions) {
+    if (action.type === "mode") {
+      if (!room && !active) {
+        document.querySelector(`[data-mode="${action.direction > 0 ? "local" : "solo"}"]`).click();
+        break;
+      }
+      continue;
+    }
+    const menu = action.type === "menu";
+    if (!$("overlay").hidden) {
+      if ((menu || action.kind === "glue") && !$("start").hidden && !$("start").disabled) {
+        start();
+        break;
+      }
+    } else if (menu) {
+      if (!room) { pause(); break; }
+    } else {
+      const player = s.players[room ? own : action.player];
+      const slot = player?.inventory?.findIndex(item => item.kind === action.kind && item.count > 0);
+      if (slot >= 0) requestItem(slot + 1, action.player);
+    }
+  }
+}
 function frame(now) {
-  const dt = Math.min(200, now - (last || now));
+  pollGamepads(now);
+  const dt = Math.max(0, Math.min(200, now - (last || now)));
   last = now;
   if (!room && active && !paused && !portraitBlocked) {
     acc += dt;
